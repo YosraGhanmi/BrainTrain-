@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { ArrowDown, ArrowRight } from 'lucide-react';
-import HeroScene from '@/components/3d/HeroScene';
 import TextMorph from '@/components/text/TextMorph';
 import InteractiveMesh from '@/components/hero/InteractiveMesh';
+
+// Three.js/react-three-fiber is a heavy bundle — load it only in the browser,
+// off the critical rendering path, instead of shipping it in the main chunk.
+const HeroScene = dynamic(() => import('@/components/3d/HeroScene'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse rounded-[2rem] bg-ink/5" />,
+});
 
 gsap.registerPlugin(ScrollTrigger);
 

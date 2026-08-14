@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useLayoutEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, ContactShadows, Environment } from '@react-three/drei';
+import { useGLTF, useAnimations, ContactShadows, Environment, Lightformer } from '@react-three/drei';
 import * as THREE from 'three';
 
 const MODEL_URL = '/robot.glb';
@@ -93,7 +93,13 @@ export default function HeroScene() {
         <Suspense fallback={null}>
           <RobotModel />
           <ContactShadows position={[0, 0, 0]} opacity={0.4} scale={8} blur={2.4} far={4} />
-          <Environment preset="city" />
+          {/* Procedural env map — no network fetch, unlike preset="city" which pulled
+              an HDRI from a remote CDN and stalled the same Suspense boundary as the model. */}
+          <Environment resolution={64} background={false}>
+            <Lightformer intensity={2} color="white" position={[0, 5, 0]} scale={[10, 10, 1]} />
+            <Lightformer intensity={1} color="#b7c8ff" position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} scale={[10, 5, 1]} />
+            <Lightformer intensity={1} color="#ffe6b7" position={[5, 2, 0]} rotation={[0, -Math.PI / 2, 0]} scale={[10, 5, 1]} />
+          </Environment>
         </Suspense>
       </Canvas>
     </div>

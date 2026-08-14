@@ -1,6 +1,7 @@
 import Navbar from '@/components/navbar/Navbar';
-import HeroSection from '@/components/hero/HeroSection';
+import HeroImageTransition from '@/components/hero/HeroImageTransition';
 import PhilosophySection from '@/components/philosophy/PhilosophySection';
+import QuickStats from '@/components/stats/QuickStats';
 import CoursesSection from '@/components/courses/CoursesSection';
 import StatsSection from '@/components/stats/StatsSection';
 import ContactSection from '@/components/contact/ContactSection';
@@ -10,8 +11,9 @@ export default function Home() {
     <div className="min-h-screen bg-surface text-ink">
       <Navbar />
       <main>
-        <HeroSection />
+        <HeroImageTransition />
         <PhilosophySection />
+        <QuickStats />
         <CoursesSection />
         <StatsSection />
         <ContactSection />

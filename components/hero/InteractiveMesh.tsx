@@ -31,7 +31,7 @@ export default function InteractiveMesh() {
     // Dot grid settings
     const dotSize = 0.7;
     const spacing = 26;
-    const glowRadius = 190;
+    const glowRadius = 50;
 
     // Mouse tracking
     const handleMouseMove = (e: MouseEvent) => {
