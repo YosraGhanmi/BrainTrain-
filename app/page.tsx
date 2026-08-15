@@ -4,7 +4,10 @@ import PhilosophySection from '@/components/philosophy/PhilosophySection';
 import QuickStats from '@/components/stats/QuickStats';
 import CoursesSection from '@/components/courses/CoursesSection';
 import StatsSection from '@/components/stats/StatsSection';
+import MilestonesSection from '@/components/timeline/MilestonesSection';
+import ValuesSection from '@/components/values/ValuesSection';
 import ContactSection from '@/components/contact/ContactSection';
+import Footer from '@/components/footer/Footer';
 
 export default function Home() {
   return (
@@ -16,8 +19,11 @@ export default function Home() {
         <QuickStats />
         <CoursesSection />
         <StatsSection />
+        <MilestonesSection />
+        <ValuesSection />
         <ContactSection />
       </main>
+      <Footer />
     </div>
   );
 }

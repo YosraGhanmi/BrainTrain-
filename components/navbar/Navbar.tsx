@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import RadialReveal from '@/components/effects/RadialReveal';
 
 const navItems = [
   { label: 'Home', href: '#top' },
@@ -51,10 +52,18 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          <a href="/login" className="hidden items-center gap-2 rounded-full border border-ink/15 bg-white/90 px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-ink shadow-sm transition hover:border-ink/40 hover:bg-white md:inline-flex">
-            Log in
-            <ArrowRight className="h-4 w-4" />
-          </a>
+          <div className="hidden md:inline-flex">
+            <RadialReveal
+              href="/login"
+              boxClassName="rounded-full border border-ink/15 bg-white/90 shadow-sm"
+              faceClassName="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em]"
+              restColorClassName="text-ink"
+              hoverColorClassName="bg-ink text-white"
+            >
+              Log in
+              <ArrowRight className="h-4 w-4" />
+            </RadialReveal>
+          </div>
           <button className="inline-flex items-center rounded-full border border-ink/10 bg-white/90 p-3 text-ink transition hover:border-ink/30 md:hidden" onClick={() => setOpen(!open)}>
             <Sparkles className="h-5 w-5" />
           </button>

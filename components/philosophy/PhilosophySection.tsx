@@ -12,7 +12,7 @@ const rows = [
     image: '/About us 1.jpg',
     alt: 'BrainTrain students working together in a hands-on session',
     imageFirst: false,
-    lead: 'BrainTrain is a Tunisian multidisciplinary academy for young minds aged 4–17, where curiosity becomes capability.',
+    lead: 'BrainTrain is a Tunisian multidisciplinary academy for young minds aged 6–17, where curiosity becomes capability.',
     body: 'Through hands-on programs in robotics, programming, artificial intelligence, 3D design, entrepreneurship, and technology, we help young people develop the skills to create, innovate, and solve real-world problems.',
   },
   {
@@ -54,7 +54,11 @@ export default function PhilosophySection() {
             scale: 1,
             duration: 1,
             ease: 'power3.out',
-            scrollTrigger: { trigger: row, start: 'top 80%' },
+            scrollTrigger: {
+              trigger: row,
+              start: 'top 80%',
+              once: true,
+            },
           }
         );
         gsap.fromTo(
@@ -66,7 +70,11 @@ export default function PhilosophySection() {
             duration: 0.9,
             ease: 'power3.out',
             delay: 0.15,
-            scrollTrigger: { trigger: row, start: 'top 80%' },
+            scrollTrigger: {
+              trigger: row,
+              start: 'top 80%',
+              once: true,
+            },
           }
         );
       });

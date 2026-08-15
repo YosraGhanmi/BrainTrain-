@@ -7,8 +7,8 @@ import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 const quickStats = [
-  { value: 6, label: 'Courses' },
-  { value: 300, label: 'Students' },
+  { value: 7, label: 'Courses' },
+  { value: 1500, label: 'Students' },
   { value: 19, label: 'Trophies' },
 ];
 
@@ -25,18 +25,22 @@ export default function QuickStats() {
       duration: 1.9,
       ease: 'power2.out',
       overwrite: 'auto',
-      scrollTrigger: {
-        trigger: sectionRef.current,
-        start: 'top 80%',
-        once: true,
-      },
+      paused: true,
       onUpdate() {
         setCounts(quickStats.map((_, index) => Math.round(values[index] ?? 0)));
       },
       ...quickStats.reduce((acc, stat, index) => ({ ...acc, [index]: stat.value }), {} as Record<string, number>),
     });
 
+    const trigger = ScrollTrigger.create({
+      trigger: sectionRef.current,
+      start: 'top 80%',
+      onEnter: () => timeline.restart(true),
+      onEnterBack: () => timeline.restart(true),
+    });
+
     return () => {
+      trigger.kill();
       timeline.kill();
     };
   }, []);
