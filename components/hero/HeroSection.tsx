@@ -6,6 +6,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import TextMorph from '@/components/text/TextMorph';
+import Typewriter from '@/components/text/Typewriter';
 import InteractiveMesh from '@/components/hero/InteractiveMesh';
 
 // Three.js/react-three-fiber is a heavy bundle — load it only in the browser,
@@ -16,6 +17,20 @@ const HeroScene = dynamic(() => import('@/components/3d/HeroScene'), {
 });
 
 gsap.registerPlugin(ScrollTrigger);
+
+const robotBubbles = [
+  {
+    text: "Hello! you're finally here!",
+    side: 'left' as const,
+    top: '20%',
+  },
+  {
+    prefix: 'We transform kids into ',
+    typed: ['entrepreneurs', 'innovators', 'problem solvers', "winners"],
+    side: 'right' as const,
+    top: '36%',
+  },
+];
 
 export default function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
@@ -32,6 +47,23 @@ export default function HeroSection() {
           0
         );
       }
+
+      gsap.utils.toArray<HTMLElement>('.hero-bubble').forEach((bubble, i) => {
+        const fromX = bubble.dataset.side === 'left' ? -24 : 24;
+        gsap.fromTo(
+          bubble,
+          { opacity: 0, y: 16, x: fromX, scale: 0.9 },
+          {
+            opacity: 1,
+            y: 0,
+            x: 0,
+            scale: 1,
+            duration: 0.7,
+            ease: 'back.out(1.6)',
+            delay: 1.8 + i * 0.9,
+          }
+        );
+      });
     });
 
     return () => ctx.revert();
@@ -82,12 +114,6 @@ export default function HeroSection() {
             </p>
             <div className="flex flex-wrap items-center gap-6">
               <a
-                href="/join"
-                className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-bg shadow-glow transition hover:scale-[1.02] hover:bg-accent"
-              >
-                Join us
-              </a>
-              <a
                 href="/register"
                 className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-ink transition hover:text-accent"
               >
@@ -98,8 +124,43 @@ export default function HeroSection() {
           </div>
         </div>
 
-        <div className="relative h-[520px] w-full max-w-3xl overflow-hidden rounded-[2rem] lg:h-[800px]">
-          <HeroScene />
+        <div className="relative h-[520px] w-full max-w-3xl lg:h-[800px]">
+          <div className="absolute inset-0 overflow-hidden rounded-[2rem]">
+            <HeroScene />
+          </div>
+
+          <div className="pointer-events-none absolute inset-0">
+            {robotBubbles.map((bubble, i) => (
+              <div
+                key={i}
+                data-side={bubble.side}
+                className={`hero-bubble absolute z-20 rounded-2xl border border-[#0b1a3a]/20 bg-white/95 px-4 py-3 text-sm font-medium leading-snug text-ink shadow-soft ${
+                  'text' in bubble
+                    ? `max-w-[210px] whitespace-normal ${
+                        bubble.side === 'left'
+                          ? 'left-[-8%] sm:left-[-14%] lg:left-[-20%]'
+                          : 'right-[-8%] sm:right-[-14%] lg:right-[-20%]'
+                      }`
+                    : 'left-[58%] sm:left-[64%] lg:left-[68%] w-[220px] sm:w-[280px] lg:w-[320px] whitespace-nowrap'
+                }`}
+                style={{ top: bubble.top }}
+              >
+                {'text' in bubble ? (
+                  bubble.text
+                ) : (
+                  <>
+                    {bubble.prefix}
+                    <Typewriter texts={bubble.typed} startDelay={2700} showCursor={false} />
+                  </>
+                )}
+                <span
+                  className={`absolute bottom-3 h-3 w-3 rotate-45 border-[#0b1a3a]/20 bg-white/95 ${
+                    bubble.side === 'left' ? '-right-1 border-r border-t' : '-left-1 border-b border-l'
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+import NeonBorder from '@/components/effects/NeonBorder';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -101,6 +102,9 @@ export default function PhilosophySection() {
               <div className="about-row-image relative w-full max-w-lg shrink-0 lg:w-1/2">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] shadow-soft">
                   <Image src={row.image} alt={row.alt} fill sizes="(min-width: 1024px) 40vw, 90vw" className="object-cover" />
+                </div>
+                <div className="pointer-events-none absolute inset-0">
+                  <NeonBorder color="#3d7fff" rounded={16} thickness={2} borderSize={35} glow={30} movement="continuous" speed={10} />
                 </div>
               </div>
 

@@ -1,4 +1,11 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { ArrowRight, Puzzle, Search, Sparkles, Target, Trophy, Users } from 'lucide-react';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const values = [
   { label: 'Curiosity', Icon: Search },
@@ -10,8 +17,55 @@ const values = [
 ];
 
 export default function ValuesSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!sectionRef.current) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.values-intro',
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 75%',
+            once: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        '.value-card',
+        { opacity: 0, y: 40, scale: 0.94 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.7,
+          ease: 'power3.out',
+          stagger: 0.08,
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 65%',
+            once: true,
+          },
+        }
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="relative overflow-hidden bg-[#0b1a3a] px-6 py-24 md:px-10 lg:px-16">
+    <section
+      ref={sectionRef}
+      className="relative overflow-hidden bg-[#0b1a3a] px-6 py-24 md:px-10 lg:px-16"
+    >
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         style={{
@@ -23,7 +77,7 @@ export default function ValuesSection() {
       <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-accent/20 blur-[130px]" />
 
       <div className="relative">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
+        <div className="values-intro flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
           <div className="flex flex-col items-start gap-5">
             <h2 className="font-display text-4xl font-semibold leading-[0.95] text-white sm:text-5xl">
               Our Values &amp; Mission
@@ -49,12 +103,11 @@ export default function ValuesSection() {
           {values.map(({ label, Icon }) => (
             <div
               key={label}
-              className="flex flex-col items-center gap-4 rounded-2xl bg-white/10 p-6 text-center transition hover:bg-white/15"
+              className="value-card flex flex-col items-center gap-4 rounded-2xl bg-white/10 p-6 text-center transition hover:bg-white/15"
             >
               <Icon className="h-9 w-9 text-white" strokeWidth={1.5} />
               <div>
                 <p className="font-display text-lg font-semibold text-white">{label}</p>
-                
               </div>
             </div>
           ))}
