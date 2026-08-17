@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Poppins, Baloo_2, Space_Grotesk } from 'next/font/google';
+import { Poppins, Baloo_2, Space_Grotesk, Comfortaa } from 'next/font/google';
 import SmoothScroll from '@/components/providers/SmoothScroll';
 import './globals.css';
 
@@ -7,6 +7,13 @@ const display = Baloo_2({
   subsets: ['latin'],
   weight: ['600', '700', '800'],
   variable: '--font-display',
+  display: 'swap',
+});
+
+const comfortaa = Comfortaa({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-comfortaa',
   display: 'swap',
 });
 
@@ -24,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${comfortaa.variable}`}>
       <body className="bg-bg text-ink antialiased">
         <SmoothScroll>{children}</SmoothScroll>
       </body>

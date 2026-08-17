@@ -8,6 +8,7 @@ import { ArrowDown, ArrowRight } from 'lucide-react';
 import TextMorph from '@/components/text/TextMorph';
 import Typewriter from '@/components/text/Typewriter';
 import InteractiveMesh from '@/components/hero/InteractiveMesh';
+import ShinyPill from '@/components/effects/ShinyPill';
 
 // Three.js/react-three-fiber is a heavy bundle — load it only in the browser,
 // off the critical rendering path, instead of shipping it in the main chunk.
@@ -89,10 +90,10 @@ export default function HeroSection() {
         <div className="relative z-10 flex w-full max-w-2xl -translate-y-6 flex-col gap-2 lg:-translate-y-16">
           <div className="h-auto w-full max-w-2xl">
             <TextMorph
-              words="BRAIN,TRAIN"
+              words="Brain,Train"
               color="#0f2d81"
               font={{
-                fontFamily: 'var(--font-display)',
+                fontFamily: 'var(--font-comfortaa)',
                 fontWeight: 700,
                 fontSize: 120,
                 lineHeight: '1.1',
@@ -115,10 +116,23 @@ export default function HeroSection() {
             <div className="flex flex-wrap items-center gap-6">
               <a
                 href="/register"
-                className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-ink transition hover:text-accent"
+                className="group inline-flex items-center gap-2 text-ink transition hover:text-accent"
               >
-                Register your child
-                <ArrowRight className="h-4 w-4" />
+                <ShinyPill
+                  text="Register your child"
+                  textColor="#0b0c10"
+                  shineColor="#7fc8ff"
+                  speed={1.8}
+                  font={{
+                    fontFamily: 'inherit',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.25em',
+                    lineHeight: '1em',
+                    textTransform: 'uppercase',
+                  }}
+                />
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </a>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import Navbar from '@/components/navbar/Navbar';
 import HeroImageTransition from '@/components/hero/HeroImageTransition';
+import PartnersSection from '@/components/partners/PartnersSection';
 import PhilosophySection from '@/components/philosophy/PhilosophySection';
 import QuickStats from '@/components/stats/QuickStats';
 import CoursesSection from '@/components/courses/CoursesSection';
@@ -15,6 +16,7 @@ export default function Home() {
       <Navbar />
       <main>
         <HeroImageTransition />
+        <PartnersSection />
         <PhilosophySection />
         <QuickStats />
         <CoursesSection />

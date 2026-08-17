@@ -13,7 +13,7 @@ const rows = [
     image: '/About us 1.jpg',
     alt: 'BrainTrain students working together in a hands-on session',
     imageFirst: false,
-    lead: 'BrainTrain is a Tunisian multidisciplinary academy for young minds aged 6–17, where curiosity becomes capability.',
+    lead: 'BrainTrain is a Tunisian multidisciplinary academy for young minds aged 4–18, where curiosity becomes capability.',
     body: 'Through hands-on programs in robotics, programming, artificial intelligence, 3D design, entrepreneurship, and technology, we help young people develop the skills to create, innovate, and solve real-world problems.',
   },
   {

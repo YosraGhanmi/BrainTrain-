@@ -47,16 +47,16 @@ export default function QuickStats() {
 
   return (
     <section ref={sectionRef} className="px-6 py-20 md:px-10 lg:px-16">
-      <div className="mx-auto max-w-4xl text-center">
-        <h2 className="text-3xl font-display font-bold text-ink sm:text-4xl">Statistics</h2>
+      <div className="mx-auto max-w-5xl text-center">
+        <h2 className="text-4xl font-display font-bold text-ink sm:text-5xl">Statistics</h2>
 
-        <div className="mt-12 grid grid-cols-3 gap-8">
+        <div className="mt-16 grid grid-cols-3 gap-8">
           {quickStats.map((stat, index) => (
             <div key={stat.label}>
-              <p className="font-display text-5xl font-extrabold leading-none text-[#0f2d81] sm:text-6xl">
+              <p className="font-display text-7xl font-extrabold leading-none text-[#0f2d81] sm:text-8xl">
                 {counts[index]}
               </p>
-              <p className="mt-3 text-base font-bold text-ink sm:text-lg">{stat.label}</p>
+              <p className="mt-4 text-lg font-bold text-ink sm:text-xl">{stat.label}</p>
             </div>
           ))}
         </div>
