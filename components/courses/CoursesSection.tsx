@@ -1,16 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import {
-  Bot,
-  Code2,
-  Rocket,
-  Smile,
-  CircuitBoard,
-  Printer,
-  Terminal,
   X,
   Pin,
   CheckCircle2,
@@ -28,18 +22,10 @@ import {
   Heart,
   Feather,
   Puzzle,
+  ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
-
-const courses: { title: string; icon: LucideIcon; color: string }[] = [
-  { title: 'Robotique', icon: Bot, color: '#f7b500' },
-  { title: 'Programmation', icon: Code2, color: '#3d7fff' },
-  { title: 'Entrepreneuriat', icon: Rocket, color: '#ff5a5f' },
-  { title: "Jeu d'intelligence émotionnelle", icon: Smile, color: '#6c5ce7' },
-  { title: 'Électronique', icon: CircuitBoard, color: '#00b894' },
-  { title: 'Impression et design 3D', icon: Printer, color: '#ff8c42' },
-  { title: 'Python', icon: Terminal, color: '#0b8793' },
-];
+import { courses } from '@/lib/coursesData';
 
 const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: number; rotate: number }[] = [
   { icon: X, top: '6%', left: '8%', size: 28, rotate: -8 },
@@ -155,6 +141,16 @@ export default function CoursesSection() {
               <h3 className="text-lg font-extrabold text-white">{title}</h3>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <Link
+            href="/courses"
+            className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-white/20"
+          >
+            See more
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>
