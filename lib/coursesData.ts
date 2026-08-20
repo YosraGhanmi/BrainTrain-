@@ -6,6 +6,10 @@ import {
   CircuitBoard,
   Printer,
   Terminal,
+  Baby,
+  Puzzle,
+  Cpu,
+  GraduationCap,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -28,6 +32,8 @@ const courseByTitle: Record<string, Course> = Object.fromEntries(
 export type AgeGroup = {
   slug: string;
   label: string;
+  description: string;
+  icon: LucideIcon;
   image: string;
   courseTitles: string[];
 };
@@ -36,24 +42,32 @@ export const ageGroups: AgeGroup[] = [
   {
     slug: '4-5',
     label: '4-5 years',
+    description: 'First steps into discovery, playing with emotions and simple ideas in a fun, guided way.',
+    icon: Baby,
     image: '/age/4-5.jpg',
     courseTitles: ["Jeu d'intelligence émotionnelle"],
   },
   {
     slug: '6-9',
     label: '6-9 years',
+    description: 'Robotics, coding and entrepreneurship basics introduced through hands-on, playful projects.',
+    icon: Puzzle,
     image: '/age/6-9.jpg',
     courseTitles: ['Robotique', 'Programmation', 'Entrepreneuriat', "Jeu d'intelligence émotionnelle"],
   },
   {
     slug: '10-13',
     label: '10-13 years',
+    description: 'Deeper dives into electronics, 3D design and programming to build real, working projects.',
+    icon: Cpu,
     image: '/age/10-13.png',
     courseTitles: ['Robotique', 'Entrepreneuriat', 'Programmation', 'Électronique', 'Impression et design 3D'],
   },
   {
     slug: '14-18',
     label: '14-18 years',
+    description: 'Advanced Python, robotics and entrepreneurship to prepare teens for real-world challenges.',
+    icon: GraduationCap,
     image: '/age/14-18.png',
     courseTitles: ['Python', 'Robotique', 'Entrepreneuriat'],
   },

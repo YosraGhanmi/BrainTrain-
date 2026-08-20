@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import { ageGroups } from '@/lib/coursesData';
@@ -42,25 +42,29 @@ export default function CoursesPage() {
             </svg>
           </div>
 
-          <div className="mt-16 grid grid-cols-2 gap-6 lg:grid-cols-4">
-            {ageGroups.map((group) => (
-              <Link
-                key={group.slug}
-                href={`/courses/${group.slug}`}
-                className="group relative block aspect-[3/4] overflow-hidden rounded-[1.75rem] border border-ink/10 bg-[#eaf2ff] shadow-sm"
-              >
-                <Image
-                  src={group.image}
-                  alt={group.label}
-                  fill
-                  sizes="(min-width: 1024px) 25vw, 50vw"
-                  className="object-cover opacity-0 transition duration-500 ease-out group-hover:scale-105 group-hover:opacity-100"
-                />
-                <span className="absolute inset-0 flex items-center justify-center text-center text-xl font-extrabold text-accent transition duration-300 group-hover:opacity-0 sm:text-2xl">
-                  {group.label}
-                </span>
-              </Link>
-            ))}
+          <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {ageGroups.map((group) => {
+              const Icon = group.icon;
+              return (
+                <div
+                  key={group.slug}
+                  className="rounded-3xl bg-white p-8 shadow-sm"
+                >
+                  <Icon className="h-9 w-9 text-ink" strokeWidth={1.75} />
+                  <h2 className="mt-6 text-xl font-semibold text-ink">
+                    {group.label}
+                  </h2>
+                  <p className="mt-3 text-ink/70">{group.description}</p>
+                  <Link
+                    href={`/courses/${group.slug}`}
+                    className="mt-4 inline-flex items-center gap-1.5 font-semibold text-ink underline underline-offset-4"
+                  >
+                    See courses
+                    <ArrowRight className="h-4 w-4 text-[#ff8c42]" />
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         </div>
       </main>

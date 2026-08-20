@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Poppins, Baloo_2, Space_Grotesk, Comfortaa } from 'next/font/google';
 import SmoothScroll from '@/components/providers/SmoothScroll';
+import StringTuneProvider from '@/components/providers/StringTuneProvider';
 import './globals.css';
 
 const display = Baloo_2({
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${comfortaa.variable}`}>
       <body className="bg-bg text-ink antialiased">
+        <StringTuneProvider />
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
