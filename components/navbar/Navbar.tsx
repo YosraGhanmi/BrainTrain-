@@ -6,7 +6,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import RadialReveal from '@/components/effects/RadialReveal';
 
 const navItems = [
-  { label: 'Home', href: '/#top' },
+  { label: 'Home', href: '/' },
   { label: 'About', href: '/#philosophy' },
   { label: 'Achievements', href: '/#stats' },
   { label: 'Courses', href: '/courses' },
@@ -28,7 +28,7 @@ export default function Navbar() {
     <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${shrink ? 'bg-white/80 border-white/30 shadow-soft' : 'bg-white/10 border-white/10'} backdrop-blur-3xl`}> 
       <div className="relative flex items-center px-6 py-2.5 xl:px-8">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-0">
-          <a className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/#top">
+          <a className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
             <span className="relative h-12 w-32 overflow-hidden">
               <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill className="object-contain object-left opacity-90" />
             </span>

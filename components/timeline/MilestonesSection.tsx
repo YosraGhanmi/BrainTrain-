@@ -5,39 +5,13 @@ import Image from 'next/image';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { CalendarDays } from 'lucide-react';
+import type { TimelineEntry } from '@/lib/content/types';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const NAVY = '#0b1a3a';
 
-const milestones = [
-  {
-    date: 'October 2023',
-    title: 'BrainTrain is Founded',
-    logo: true,
-    summary: 'A Tunisian academy opens its doors with one idea: let kids learn by building.',
-    detail:
-      'BrainTrain launches in Tunisia as a multidisciplinary academy for young minds, built around robotics, programming, AI, 3D design and entrepreneurship, learned hands-on rather than from a textbook.',
-  },
-  {
-    date: '2025',
-    title: 'FIRST® LEGO® League World Competition',
-    logo: false,
-    summary: 'Barely two years in, BrainTrain students take the international stage.',
-    detail:
-      'BrainTrain proudly represents Tunisia at the FIRST® LEGO® League 2025 world competition, putting robots and ideas built in Tunisian classrooms up against teams from around the globe.',
-  },
-  {
-    date: 'December 2025',
-    title: 'Arab Championship — 3 Prizes',
-    logo: false,
-    summary: 'The season closes with three wins at the Arab level.',
-    detail:
-      'At the Arab competition in December 2025, BrainTrain students win 3 prizes at the Arab level, adding another chapter to a young academy already competing far beyond its size.',
-  },
-];
-
-export default function MilestonesSection() {
+export default function MilestonesSection({ milestones }: { milestones: TimelineEntry[] }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 

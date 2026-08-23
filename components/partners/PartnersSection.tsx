@@ -3,19 +3,6 @@
 import { useEffect, useState } from 'react';
 import PartnersGrid from './PartnersGrid';
 
-const partnerLogos = [
-  '/partners/American corner.png',
-  '/partners/Ecole Internationale Francaise.jpg',
-  '/partners/amideast.png',
-  '/partners/arsii.jpg',
-  '/partners/asediact.jpg',
-  '/partners/class quiz.jpg',
-  '/partners/jci.jpg',
-  '/partners/ministere.png',
-  '/partners/novation city.jpg',
-  '/partners/robotna.jpg',
-];
-
 function useResponsivePerPage() {
   const [perPage, setPerPage] = useState(7);
 
@@ -35,7 +22,7 @@ function useResponsivePerPage() {
   return perPage;
 }
 
-export default function PartnersSection() {
+export default function PartnersSection({ logos }: { logos: string[] }) {
   const perPage = useResponsivePerPage();
 
   return (
@@ -47,7 +34,7 @@ export default function PartnersSection() {
       </div>
 
       <div className="mt-14 w-full">
-        <PartnersGrid logos={partnerLogos} perPage={perPage} />
+        <PartnersGrid logos={logos} perPage={perPage} />
       </div>
     </section>
   );

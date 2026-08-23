@@ -9,21 +9,26 @@ import MilestonesSection from '@/components/timeline/MilestonesSection';
 import ValuesSection from '@/components/values/ValuesSection';
 import ContactSection from '@/components/contact/ContactSection';
 import Footer from '@/components/footer/Footer';
+import { readContent } from '@/lib/content/store';
+
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
+  const content = readContent();
+
   return (
     <div className="min-h-screen bg-surface text-ink">
       <Navbar />
       <main>
         <HeroImageTransition />
-        <PartnersSection />
+        <PartnersSection logos={content.sponsors} />
         <PhilosophySection />
-        <QuickStats />
-        <CoursesSection />
-        <StatsSection />
-        <MilestonesSection />
+        <QuickStats quickStats={content.stats} />
+        <CoursesSection courses={content.courses} />
+        <StatsSection achievementsImages={content.achievementsImages} />
+        <MilestonesSection milestones={content.timeline} />
         <ValuesSection />
-        <ContactSection />
+        <ContactSection contact={content.contact} />
       </main>
       <Footer />
     </div>

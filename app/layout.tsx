@@ -2,7 +2,12 @@ import type { Metadata } from 'next';
 import { Poppins, Baloo_2, Space_Grotesk, Comfortaa } from 'next/font/google';
 import SmoothScroll from '@/components/providers/SmoothScroll';
 import StringTuneProvider from '@/components/providers/StringTuneProvider';
+import SocialSidebar from '@/components/social/SocialSidebar';
+import AdminShortcut from '@/components/admin/AdminShortcut';
+import { readContent } from '@/lib/content/store';
 import './globals.css';
+
+export const dynamic = 'force-dynamic';
 
 const display = Baloo_2({
   subsets: ['latin'],
@@ -31,10 +36,14 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const { socials } = readContent();
+
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${comfortaa.variable}`}>
       <body className="bg-bg text-ink antialiased">
         <StringTuneProvider />
+        <AdminShortcut />
+        <SocialSidebar socials={socials} />
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>

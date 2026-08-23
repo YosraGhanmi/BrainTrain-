@@ -2,24 +2,16 @@
 
 import { useState } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import type { ContactContent } from '@/lib/content/types';
 
-const MAPS_EMBED_SRC = 'https://www.google.com/maps?q=35.8441493,10.6148468&z=17&output=embed';
-const MAPS_LINK =
-  'https://www.google.com/maps/place/Braintrain+Academy/@35.8441536,10.6122719,17z/data=!3m1!4b1!4m6!3m5!1s0x12fd8b0074c0577b:0x4e986dd851ffe308!8m2!3d35.8441493!4d10.6148468!16s%2Fg%2F11vzg1d9bv?entry=tts&g_ep=EgoyMDI0MDkxOC4xKgBIAVAD';
-
-const details = [
-  { Icon: Mail, label: 'Email', value: 'contact@braintrain.tn', href: 'mailto:contact@braintrain.tn' },
-  { Icon: Phone, label: 'Phone', value: '58 996 112', href: 'tel:+21658996112' },
-  {
-    Icon: MapPin,
-    label: 'Location',
-    value: 'Rue Gp1, Khzema Ouest, Sousse, Tunisia, 4071',
-    href: MAPS_LINK,
-  },
-];
-
-export default function ContactSection() {
+export default function ContactSection({ contact }: { contact: ContactContent }) {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
+
+  const details = [
+    { Icon: Mail, label: 'Email', value: contact.email.value, href: contact.email.href },
+    { Icon: Phone, label: 'Phone', value: contact.phone.value, href: contact.phone.href },
+    { Icon: MapPin, label: 'Location', value: contact.location.value, href: contact.location.href },
+  ];
 
   function handleChange(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -30,7 +22,7 @@ export default function ContactSection() {
     e.preventDefault();
     const subject = encodeURIComponent(`Message from ${form.name || 'BrainTrain website'}`);
     const body = encodeURIComponent(`${form.message}\n\n— ${form.name} (${form.email})`);
-    window.location.href = `mailto:contact@braintrain.tn?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${contact.email.value}?subject=${subject}&body=${body}`;
   }
 
   return (
@@ -69,13 +61,13 @@ export default function ContactSection() {
               </div>
 
               <a
-                href={MAPS_LINK}
+                href={contact.location.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block flex-1 min-h-[220px] overflow-hidden rounded-2xl border border-ink/10"
               >
                 <iframe
-                  src={MAPS_EMBED_SRC}
+                  src={contact.mapsEmbedSrc}
                   className="h-full w-full"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"

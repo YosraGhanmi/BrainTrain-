@@ -1,0 +1,74 @@
+import { login } from '@/lib/admin/actions';
+import PasswordField from '@/components/admin/PasswordField';
+
+export default function AdminLoginPage({ searchParams }: { searchParams: { error?: string } }) {
+  return (
+    <div className="relative isolate flex min-h-screen w-full overflow-hidden bg-[#0b1a3a]">
+      {/* White panel behind everything on the left, extended a bit past the
+          seam so the diagonal navy panel (painted above it) has something to
+          visibly cut into. */}
+      <div className="absolute inset-y-0 left-0 z-0 w-full bg-white lg:w-[calc(50%+6rem)]" />
+
+      {/* Decorative navy panel, full height, cut on a diagonal over the white. */}
+      <div
+        className="absolute inset-y-0 right-0 z-10 hidden w-[55%] flex-col items-center justify-center bg-[#0b1a3a] px-12 text-center lg:flex"
+        style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 100%, 0 100%)' }}
+      >
+        <span className="text-sm font-bold uppercase tracking-[0.3em] text-[#ff8c42]">BrainTrain</span>
+        <h2 className="mt-5 font-display text-7xl font-bold leading-[0.95] text-white xl:text-8xl">
+          Welcome
+          <br />
+          <span className="text-[#ff8c42]">back, Admin!</span>
+        </h2>
+        <p className="mt-8 max-w-md text-lg leading-relaxed text-white/60">
+          Every course, photo, and stat on the site lives here — sign in to update it.
+        </p>
+      </div>
+
+      {/* The form, above both background layers. */}
+      <div className="relative z-20 flex w-full items-center px-8 py-16 sm:px-16 lg:w-1/2 lg:pl-24">
+        <div className="w-full max-w-md">
+          <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">BrainTrain Admin</span>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-6xl font-bold text-ink">
+            Sign in
+          </h1>
+
+          <form action={login} className="mt-12 space-y-7">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoFocus
+                className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-4 text-base text-ink outline-none transition focus:border-accent"
+                placeholder="admin@braintrain.tn"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">
+                Password
+              </label>
+              <PasswordField />
+            </div>
+
+            {searchParams.error ? (
+              <p className="text-sm font-semibold text-red-600">Incorrect email or password. Try again.</p>
+            ) : null}
+
+            <button
+              type="submit"
+              className="w-full rounded-full bg-[#0b1a3a] px-6 py-4 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
+            >
+              Log in
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -4,11 +4,9 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
-import { ageGroups, getAgeGroup, getCoursesForAgeGroup } from '@/lib/coursesData';
+import { getAgeGroup, getCoursesForAgeGroup } from '@/lib/coursesData';
 
-export function generateStaticParams() {
-  return ageGroups.map((group) => ({ slug: group.slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const group = getAgeGroup(params.slug);
@@ -41,14 +39,15 @@ export default function AgeGroupCoursesPage({ params }: { params: { slug: string
           </h1>
 
           <div className="mt-16 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-            {groupCourses.map(({ title, icon: Icon, color }) => (
-              <div
-                key={title}
-                className="flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl border border-ink/10 bg-white p-6 text-center shadow-sm"
+            {groupCourses.map(({ slug, title, icon: Icon, color }) => (
+              <Link
+                key={slug}
+                href={`/course/${slug}?age=${group.slug}`}
+                className="flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl border border-ink/10 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <Icon className="h-12 w-12" style={{ color }} strokeWidth={1.75} />
                 <h3 className="text-lg font-extrabold text-ink">{title}</h3>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

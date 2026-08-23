@@ -6,13 +6,7 @@ import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const quickStats = [
-  { value: 7, label: 'Courses' },
-  { value: 1500, label: 'Students' },
-  { value: 19, label: 'Trophies' },
-];
-
-export default function QuickStats() {
+export default function QuickStats({ quickStats }: { quickStats: { value: number; label: string }[] }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [counts, setCounts] = useState(quickStats.map(() => 0));
 

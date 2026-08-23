@@ -1,6 +1,6 @@
 import RoundCarousel from '@/components/carousel/RoundCarousel';
 
-export default function StatsSection() {
+export default function StatsSection({ achievementsImages }: { achievementsImages: string[] }) {
   return (
     <section id="stats" className="relative overflow-hidden px-6 py-28 md:px-10 lg:px-16">
       <div className="pointer-events-none absolute inset-0">
@@ -20,7 +20,13 @@ export default function StatsSection() {
       </div>
 
       <div className="relative left-1/2 mt-16 h-[600px] w-screen -translate-x-1/2">
-        <RoundCarousel background="transparent" imageWidth={520} imageHeight={520} speed={0.5} />
+        <RoundCarousel
+          images={achievementsImages.map((src) => ({ src }))}
+          background="transparent"
+          imageWidth={520}
+          imageHeight={520}
+          speed={0.5}
+        />
       </div>
     </section>
   );

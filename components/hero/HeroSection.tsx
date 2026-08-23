@@ -4,11 +4,11 @@ import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
-import { ArrowDown, ArrowRight } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 import TextMorph from '@/components/text/TextMorph';
 import Typewriter from '@/components/text/Typewriter';
 import InteractiveMesh from '@/components/hero/InteractiveMesh';
-import ShinyPill from '@/components/effects/ShinyPill';
+import OrbitBorderButton from '@/components/buttons/OrbitBorderButton';
 
 // Three.js/react-three-fiber is a heavy bundle — load it only in the browser,
 // off the critical rendering path, instead of shipping it in the main chunk.
@@ -114,26 +114,7 @@ export default function HeroSection() {
               We are a future-skills academy where students turn technology, AI, and entrepreneurship into real-world innovation.
             </p>
             <div className="flex flex-wrap items-center gap-6">
-              <a
-                href="/register"
-                className="group inline-flex items-center gap-2 text-ink transition hover:text-accent"
-              >
-                <ShinyPill
-                  text="Register your child"
-                  textColor="#0b0c10"
-                  shineColor="#7fc8ff"
-                  speed={1.8}
-                  font={{
-                    fontFamily: 'inherit',
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.25em',
-                    lineHeight: '1em',
-                    textTransform: 'uppercase',
-                  }}
-                />
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-              </a>
+              <OrbitBorderButton label="Register your child" href="/register" />
             </div>
           </div>
         </div>
