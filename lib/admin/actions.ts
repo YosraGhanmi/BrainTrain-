@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { readContent, writeContent } from '@/lib/content/store';
 import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { requireAdmin } from '@/lib/admin/guard';
@@ -38,7 +39,7 @@ export async function logout(): Promise<void> {
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-const UPLOAD_FOLDERS = ['partners', 'ach'] as const;
+const UPLOAD_FOLDERS = ['partners', 'ach', 'courses', 'age'] as const;
 type UploadFolder = (typeof UPLOAD_FOLDERS)[number];
 
 async function saveUploadedImage(file: File, folder: UploadFolder): Promise<string> {
@@ -95,7 +96,7 @@ export async function addSponsor(formData: FormData): Promise<void> {
   const content = readContent();
   content.sponsors.push(src);
   writeContent(content);
-  redirect('/admin/sponsors');
+  redirect('/admin/sponsors?saved=1');
 }
 
 export async function deleteSponsor(src: string): Promise<void> {
@@ -103,7 +104,7 @@ export async function deleteSponsor(src: string): Promise<void> {
   const content = readContent();
   content.sponsors = content.sponsors.filter((s) => s !== src);
   writeContent(content);
-  redirect('/admin/sponsors');
+  redirect('/admin/sponsors?saved=1');
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +121,7 @@ export async function updateStats(formData: FormData): Promise<void> {
     .map((label, i) => ({ label: label.trim(), value: values[i] ?? 0 }))
     .filter((s) => s.label.length > 0);
   writeContent(content);
-  redirect('/admin/stats');
+  redirect('/admin/stats?saved=1');
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +140,7 @@ export async function updateContact(formData: FormData): Promise<void> {
     mapsEmbedSrc: field('mapsEmbedSrc'),
   };
   writeContent(content);
-  redirect('/admin/contact');
+  redirect('/admin/contact?saved=1');
 }
 
 // ---------------------------------------------------------------------------
@@ -156,7 +157,7 @@ export async function updateSocials(formData: FormData): Promise<void> {
     .map((label, i) => ({ label: label.trim(), href: (hrefs[i] ?? '').trim() }))
     .filter((s) => s.label.length > 0 && s.href.length > 0);
   writeContent(content);
-  redirect('/admin/socials');
+  redirect('/admin/socials?saved=1');
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +173,7 @@ export async function addAchievementImage(formData: FormData): Promise<void> {
   const content = readContent();
   content.achievementsImages.push(src);
   writeContent(content);
-  redirect('/admin/achievements');
+  redirect('/admin/achievements?saved=1');
 }
 
 export async function deleteAchievementImage(src: string): Promise<void> {
@@ -180,7 +181,7 @@ export async function deleteAchievementImage(src: string): Promise<void> {
   const content = readContent();
   content.achievementsImages = content.achievementsImages.filter((s) => s !== src);
   writeContent(content);
-  redirect('/admin/achievements');
+  redirect('/admin/achievements?saved=1');
 }
 
 // ---------------------------------------------------------------------------
@@ -192,12 +193,14 @@ export async function upsertTimelineEntry(formData: FormData): Promise<void> {
   const indexRaw = String(formData.get('index') ?? '-1');
   const index = Number.isFinite(Number(indexRaw)) ? Number(indexRaw) : -1;
 
+  const facebookUrl = String(formData.get('facebookUrl') ?? '').trim();
   const entry: TimelineEntry = {
     date: String(formData.get('date') ?? '').trim(),
     title: String(formData.get('title') ?? '').trim(),
     logo: formData.get('logo') === 'on',
     summary: String(formData.get('summary') ?? '').trim(),
     detail: String(formData.get('detail') ?? '').trim(),
+    facebookUrl: facebookUrl || undefined,
   };
 
   const content = readContent();
@@ -207,7 +210,7 @@ export async function upsertTimelineEntry(formData: FormData): Promise<void> {
     content.timeline.push(entry);
   }
   writeContent(content);
-  redirect('/admin/timeline');
+  redirect('/admin/timeline?saved=1');
 }
 
 export async function deleteTimelineEntry(index: number): Promise<void> {
@@ -215,7 +218,21 @@ export async function deleteTimelineEntry(index: number): Promise<void> {
   const content = readContent();
   content.timeline.splice(index, 1);
   writeContent(content);
-  redirect('/admin/timeline');
+  redirect('/admin/timeline?saved=1');
+}
+
+// `order` is the current entries' original indices in their new order, e.g.
+// [2, 0, 1] to move the third entry to the front. Called directly from a
+// client component's drag-and-drop handler, not a <form>, so it revalidates
+// instead of redirecting — a redirect would fight the client's own state.
+export async function reorderTimeline(order: number[]): Promise<void> {
+  requireAdmin();
+  const content = readContent();
+  const reordered = order.map((i) => content.timeline[i]).filter((entry): entry is TimelineEntry => Boolean(entry));
+  if (reordered.length !== content.timeline.length) return;
+  content.timeline = reordered;
+  writeContent(content);
+  revalidatePath('/admin/timeline');
 }
 
 // ---------------------------------------------------------------------------
@@ -228,11 +245,14 @@ export async function upsertCourse(formData: FormData): Promise<void> {
   const title = String(formData.get('title') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim();
   const sessions = Math.max(0, Math.round(Number(formData.get('sessions')) || 0));
+  const price = Math.max(0, Math.round(Number(formData.get('price')) || 0));
+  const ageGroupSlug = String(formData.get('ageGroupSlug') ?? '').trim();
   const color = String(formData.get('color') ?? '#3d7fff').trim();
   const icon = String(formData.get('icon') ?? 'Bot').trim();
   const videoUrl = String(formData.get('videoUrl') ?? '').trim();
+  const imageFile = formData.get('image') as File | null;
 
-  if (!title) redirect('/admin/courses?error=1');
+  if (!title || !ageGroupSlug) redirect('/admin/courses?error=1');
 
   const content = readContent();
   const otherSlugs = content.courses.filter((c) => c.slug !== existingSlug).map((c) => c.slug);
@@ -240,64 +260,75 @@ export async function upsertCourse(formData: FormData): Promise<void> {
   if (existingSlug) {
     const idx = content.courses.findIndex((c) => c.slug === existingSlug);
     if (idx >= 0) {
-      const oldTitle = content.courses[idx].title;
+      const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'courses') : content.courses[idx].image;
       content.courses[idx] = {
         ...content.courses[idx],
         title,
         description,
         sessions,
+        price,
+        ageGroupSlug,
         color,
         icon,
         videoUrl: videoUrl || undefined,
+        image,
       };
-      // Keep age-group membership in sync if the title changed.
-      if (oldTitle !== title) {
-        content.ageGroups = content.ageGroups.map((g) => ({
-          ...g,
-          courseTitles: g.courseTitles.map((t) => (t === oldTitle ? title : t)),
-        }));
-      }
     }
   } else {
-    const slug = uniqueSlug(slugify(title), otherSlugs);
-    content.courses.push({ slug, title, description, sessions, color, icon, videoUrl: videoUrl || undefined });
+    const slug = uniqueSlug(slugify(`${title}-${ageGroupSlug}`), otherSlugs);
+    const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'courses') : undefined;
+    content.courses.push({ slug, title, description, sessions, price, ageGroupSlug, color, icon, videoUrl: videoUrl || undefined, image });
   }
 
   writeContent(content);
-  redirect('/admin/courses');
+  redirect('/admin/courses?saved=1');
 }
 
 export async function deleteCourse(slug: string): Promise<void> {
   requireAdmin();
   const content = readContent();
-  const course = content.courses.find((c) => c.slug === slug);
   content.courses = content.courses.filter((c) => c.slug !== slug);
-  if (course) {
-    content.ageGroups = content.ageGroups.map((g) => ({
-      ...g,
-      courseTitles: g.courseTitles.filter((t) => t !== course.title),
-    }));
-  }
   writeContent(content);
-  redirect('/admin/courses');
+  redirect('/admin/courses?saved=1');
 }
 
 // ---------------------------------------------------------------------------
 // Age groups
 // ---------------------------------------------------------------------------
 
-export async function updateAgeGroup(formData: FormData): Promise<void> {
+export async function upsertAgeGroup(formData: FormData): Promise<void> {
   requireAdmin();
-  const slug = String(formData.get('slug') ?? '').trim();
+  const existingSlug = String(formData.get('existingSlug') ?? '').trim();
   const label = String(formData.get('label') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim();
-  const courseTitles = formData.getAll('courseTitles').map(String);
+  const imageFile = formData.get('image') as File | null;
+
+  if (!label) redirect('/admin/age-groups?error=1');
 
   const content = readContent();
-  const idx = content.ageGroups.findIndex((g) => g.slug === slug);
-  if (idx >= 0) {
-    content.ageGroups[idx] = { ...content.ageGroups[idx], label, description, courseTitles };
-    writeContent(content);
+  const otherSlugs = content.ageGroups.filter((g) => g.slug !== existingSlug).map((g) => g.slug);
+
+  if (existingSlug) {
+    const idx = content.ageGroups.findIndex((g) => g.slug === existingSlug);
+    if (idx >= 0) {
+      const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'age') : content.ageGroups[idx].image;
+      content.ageGroups[idx] = { ...content.ageGroups[idx], label, description, image };
+    }
+  } else {
+    const slug = uniqueSlug(slugify(label), otherSlugs);
+    const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'age') : '';
+    content.ageGroups.push({ slug, label, description, icon: 'Puzzle', image });
   }
-  redirect('/admin/age-groups');
+
+  writeContent(content);
+  redirect('/admin/age-groups?saved=1');
+}
+
+export async function deleteAgeGroup(slug: string): Promise<void> {
+  requireAdmin();
+  const content = readContent();
+  content.ageGroups = content.ageGroups.filter((g) => g.slug !== slug);
+  content.courses = content.courses.filter((c) => c.ageGroupSlug !== slug);
+  writeContent(content);
+  redirect('/admin/age-groups?saved=1');
 }

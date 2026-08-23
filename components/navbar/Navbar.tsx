@@ -13,19 +13,20 @@ const navItems = [
   { label: 'Contact', href: '/#contact' },
 ];
 
-export default function Navbar() {
-  const [shrink, setShrink] = useState(false);
+export default function Navbar({ solid = false }: { solid?: boolean }) {
+  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const shrink = solid || scrolled;
 
   useEffect(() => {
-    const onScroll = () => setShrink(window.scrollY > 40);
+    const onScroll = () => setScrolled(window.scrollY > 40);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${shrink ? 'bg-white/80 border-white/30 shadow-soft' : 'bg-white/10 border-white/10'} backdrop-blur-3xl`}> 
+    <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${shrink ? 'bg-white/80 border-white/30 shadow-soft' : 'bg-white/10 border-white/10'} backdrop-blur-3xl`}>
       <div className="relative flex items-center px-6 py-2.5 xl:px-8">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-0">
           <a className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">

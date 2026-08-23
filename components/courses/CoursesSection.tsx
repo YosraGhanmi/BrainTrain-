@@ -25,8 +25,12 @@ import {
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
-import type { CourseEntry } from '@/lib/content/types';
 import { getIcon } from '@/lib/content/icons';
+
+// Only the plain, serializable fields this client component needs — a
+// CourseKind's `variants` carry resolved LucideIcon component references,
+// which can't cross the server/client boundary as props.
+type CourseCard = { slug: string; title: string; icon: string; color: string };
 
 const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: number; rotate: number }[] = [
   { icon: X, top: '6%', left: '8%', size: 28, rotate: -8 },
@@ -57,7 +61,7 @@ const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: numb
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function CoursesSection({ courses }: { courses: CourseEntry[] }) {
+export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -136,14 +140,13 @@ export default function CoursesSection({ courses }: { courses: CourseEntry[] }) 
           {courses.map(({ slug, title, icon, color }) => {
             const Icon = getIcon(icon);
             return (
-              <Link
+              <div
                 key={slug}
-                href={`/course/${slug}`}
-                className="course-card flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl bg-white/10 p-6 text-center transition hover:-translate-y-1 hover:bg-white/15"
+                className="course-card flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl bg-white/10 p-6 text-center"
               >
                 <Icon className="h-12 w-12" style={{ color }} strokeWidth={1.75} />
                 <h3 className="text-lg font-extrabold text-white">{title}</h3>
-              </Link>
+              </div>
             );
           })}
         </div>

@@ -10,6 +10,7 @@ import ValuesSection from '@/components/values/ValuesSection';
 import ContactSection from '@/components/contact/ContactSection';
 import Footer from '@/components/footer/Footer';
 import { readContent } from '@/lib/content/store';
+import { getCourseKinds } from '@/lib/coursesData';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,9 @@ export default function Home() {
         <PartnersSection logos={content.sponsors} />
         <PhilosophySection />
         <QuickStats quickStats={content.stats} />
-        <CoursesSection courses={content.courses} />
+        <CoursesSection
+          courses={getCourseKinds().map(({ slug, title, icon, color }) => ({ slug, title, icon, color }))}
+        />
         <StatsSection achievementsImages={content.achievementsImages} />
         <MilestonesSection milestones={content.timeline} />
         <ValuesSection />

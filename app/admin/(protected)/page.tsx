@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import DashboardGrid from '@/components/admin/DashboardGrid';
 
 const sections = [
   { label: 'Sponsors', href: '/admin/sponsors', description: 'Add or remove partner logos.' },
@@ -17,18 +17,7 @@ export default function AdminDashboardPage() {
       <h1 className="font-display text-3xl font-semibold text-ink">Website customization</h1>
       <p className="mt-2 text-stone">Everything here updates the live site immediately.</p>
 
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sections.map((s) => (
-          <Link
-            key={s.href}
-            href={s.href}
-            className="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <h2 className="font-semibold text-ink">{s.label}</h2>
-            <p className="mt-2 text-sm text-stone">{s.description}</p>
-          </Link>
-        ))}
-      </div>
+      <DashboardGrid sections={sections} />
     </div>
   );
 }

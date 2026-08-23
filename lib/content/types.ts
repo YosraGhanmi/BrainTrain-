@@ -15,6 +15,7 @@ export type TimelineEntry = {
   logo: boolean;
   summary: string;
   detail: string;
+  facebookUrl?: string;
 };
 
 export type CourseEntry = {
@@ -24,7 +25,10 @@ export type CourseEntry = {
   color: string;
   description: string;
   sessions: number;
+  price: number;
+  ageGroupSlug: string;
   videoUrl?: string;
+  image?: string;
 };
 
 export type AgeGroupEntry = {
@@ -33,7 +37,6 @@ export type AgeGroupEntry = {
   description: string;
   icon: string;
   image: string;
-  courseTitles: string[];
 };
 
 export type SocialLink = { label: string; href: string };

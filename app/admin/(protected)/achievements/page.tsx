@@ -1,5 +1,6 @@
 import { readContent } from '@/lib/content/store';
 import { addAchievementImage, deleteAchievementImage } from '@/lib/admin/actions';
+import DeleteIconButton from '@/components/admin/DeleteIconButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ export default function AdminAchievementsPage({ searchParams }: { searchParams: 
 
       <form
         action={addAchievementImage}
-        className="mt-8 flex flex-wrap items-end gap-4 rounded-2xl border border-ink/10 bg-white p-6"
+        className="mt-8 flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-dashed border-ink/30 bg-white p-6"
       >
         <div className="space-y-2">
           <label htmlFor="image" className="text-xs font-semibold uppercase tracking-[0.2em] text-stone">
@@ -30,18 +31,13 @@ export default function AdminAchievementsPage({ searchParams }: { searchParams: 
         {searchParams.error ? <p className="w-full text-sm font-semibold text-red-600">Pick a file first.</p> : null}
       </form>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {achievementsImages.map((src) => (
-          <div key={src} className="overflow-hidden rounded-2xl border border-ink/10 bg-white">
+          <div key={src} className="relative overflow-hidden rounded-2xl border border-ink/10 bg-white">
+            <div className="absolute right-2 top-2">
+              <DeleteIconButton action={deleteAchievementImage.bind(null, src)} className="[&_button]:bg-white/90" />
+            </div>
             <img src={src} alt="" className="aspect-square w-full object-cover" />
-            <form action={deleteAchievementImage.bind(null, src)} className="p-3">
-              <button
-                type="submit"
-                className="w-full rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-600 transition hover:bg-red-50"
-              >
-                Remove
-              </button>
-            </form>
           </div>
         ))}
       </div>
