@@ -9,8 +9,7 @@ export default function AdminAchievementsPage({ searchParams }: { searchParams: 
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-ink">Achievements gallery</h1>
-      <p className="mt-2 text-stone">Photos shown in the achievements carousel.</p>
+      <h1 className="text-center font-display text-4xl font-semibold text-ink">Achievements gallery</h1>
 
       <form
         action={addAchievementImage}

@@ -41,8 +41,7 @@ export default function AdminContactPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-ink">Contact</h1>
-      <p className="mt-2 text-stone">Shown in the contact section and its map card.</p>
+      <h1 className="text-center font-display text-4xl font-semibold text-ink">Contact</h1>
 
       <form action={updateContact} className="mt-8 space-y-6 rounded-2xl border border-ink/10 bg-white p-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

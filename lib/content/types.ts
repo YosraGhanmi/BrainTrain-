@@ -1,4 +1,6 @@
-export type StatEntry = { value: number; label: string };
+export type LocalizedString = { en: string; fr: string };
+
+export type StatEntry = { value: number; label: LocalizedString };
 
 export type ContactDetail = { value: string; href: string };
 
@@ -10,20 +12,19 @@ export type ContactContent = {
 };
 
 export type TimelineEntry = {
-  date: string;
-  title: string;
+  date: LocalizedString;
+  title: LocalizedString;
   logo: boolean;
-  summary: string;
-  detail: string;
+  summary: LocalizedString;
   facebookUrl?: string;
 };
 
 export type CourseEntry = {
   slug: string;
-  title: string;
+  title: LocalizedString;
   icon: string;
   color: string;
-  description: string;
+  description: LocalizedString;
   sessions: number;
   price: number;
   ageGroupSlug: string;
@@ -33,8 +34,8 @@ export type CourseEntry = {
 
 export type AgeGroupEntry = {
   slug: string;
-  label: string;
-  description: string;
+  label: LocalizedString;
+  description: LocalizedString;
   icon: string;
   image: string;
 };

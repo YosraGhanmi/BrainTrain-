@@ -1,0 +1,94 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "achievements": "Réalisations",
+    "courses": "Cours",
+    "contact": "Contact",
+    "login": "Connexion"
+  },
+  "hero": {
+    "lead": "Nous sommes une académie des compétences du futur où les élèves transforment la technologie, l'IA et l'entrepreneuriat en innovation concrète.",
+    "register": "Inscrire votre enfant",
+    "scroll": "Défiler",
+    "bubbleGreeting": "Bonjour ! Vous voilà enfin !",
+    "bubblePrefix": "Nous transformons les enfants en ",
+    "bubbleWords": ["entrepreneurs", "innovateurs", "résolveurs de problèmes", "gagnants"]
+  },
+  "philosophy": {
+    "heading": "QUI",
+    "headingAccent": "SOMMES-NOUS",
+    "row1Lead": "BrainTrain est une académie tunisienne pluridisciplinaire pour les jeunes esprits de 4 à 18 ans, où la curiosité devient compétence.",
+    "row1Body": "Grâce à des programmes pratiques en robotique, programmation, intelligence artificielle, design 3D, entrepreneuriat et technologie, nous aidons les jeunes à développer les compétences nécessaires pour créer, innover et résoudre des problèmes réels.",
+    "row1Alt": "Des élèves de BrainTrain travaillant ensemble lors d'une session pratique",
+    "row2Lead": "BrainTrain n'est pas une école traditionnelle.",
+    "row2Body": "Nous croyons que la meilleure façon d'apprendre est de faire. Notre mission est de transformer des enfants curieux en créateurs, innovateurs et résolveurs de problèmes en leur donnant la liberté d'expérimenter, de construire des idées, de collaborer et de transformer les défis en opportunités.",
+    "row2Alt": "Des élèves de BrainTrain collaborant autour d'un tableau blanc",
+    "row3Lead": "Nos élèves ne se contentent pas de s'asseoir en classe, ils construisent, compètent et GAGNENT.",
+    "row3Body": "Du développement de projets concrets à la participation à des défis nationaux et internationaux, nos élèves ont représenté la Tunisie sur des scènes à travers le monde, notamment en Grèce et en Jordanie.",
+    "row3Alt": "Des élèves de BrainTrain célébrant avec leurs trophées de compétition"
+  },
+  "values": {
+    "heading": "Nos valeurs et notre mission",
+    "cta": "Rejoindre BrainTrain Academy",
+    "intro": "Chez <b>BrainTrain</b>, nous croyons que les jeunes esprits apprennent mieux lorsqu'ils <b2>explorent, créent et relèvent de vrais défis</b2>. Nous donnons aux enfants les outils, la confiance et la liberté de transformer la curiosité en compétences, les idées en projets et les défis en opportunités.",
+    "curiosity": "Curiosité",
+    "innovation": "Innovation",
+    "problemSolving": "Résolution de problèmes",
+    "collaboration": "Collaboration",
+    "excellence": "Excellence",
+    "impact": "Impact"
+  },
+  "courses": {
+    "heading": "Des cours conçus pour les esprits curieux.",
+    "seeMore": "Voir plus",
+    "pickAgeGroup": "Choisissez une tranche d'âge pour voir ses cours.",
+    "allAgeGroups": "Toutes les tranches d'âge",
+    "viewDetails": "Voir les détails",
+    "seeCourses": "Voir les cours",
+    "enroll": "S'inscrire",
+    "allCourses": "Tous les cours",
+    "sessions": "séances",
+    "enrollInCourse": "S'inscrire à ce cours",
+    "kindIntro": "est enseigné différemment pour chaque tranche d'âge — avec son propre contenu, son propre rythme et son propre nombre de séances. Choisissez une tranche d'âge ci-dessous pour voir les détails."
+  },
+  "stats": {
+    "heading": "Statistiques"
+  },
+  "timeline": {
+    "scrollLeft": "Faire défiler la chronologie vers la gauche",
+    "scrollRight": "Faire défiler la chronologie vers la droite",
+    "viewPost": "Voir la publication"
+  },
+  "achievements": {
+    "heading": "Réalisations",
+    "body": "Les élèves de BrainTrain ne se contentent pas de terminer des cours, ils représentent la Tunisie lors de compétitions internationales et reviennent avec des trophées pour le prouver."
+  },
+  "contact": {
+    "label": "Contact",
+    "heading": "Contactez-nous",
+    "intro": "Contactez-nous pour les détails d'inscription, des conseils sur les programmes, ou pour planifier une consultation gratuite avec notre équipe.",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "location": "Adresse",
+    "formTitle": "Envoyez-nous un message",
+    "fullName": "Nom complet",
+    "fullNamePlaceholder": "Votre nom complet",
+    "emailPlaceholder": "vous@exemple.com",
+    "message": "Message",
+    "messagePlaceholder": "Dites-nous comment nous pouvons vous aider",
+    "send": "Envoyer le message",
+    "sending": "Envoi…",
+    "sent": "Message envoyé"
+  },
+  "partners": {
+    "heading": "Nos partenaires"
+  },
+  "footer": {
+    "rights": "Tous droits réservés."
+  },
+  "languageSwitcher": {
+    "en": "EN",
+    "fr": "FR"
+  }
+}

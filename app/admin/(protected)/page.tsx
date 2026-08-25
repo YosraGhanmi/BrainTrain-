@@ -1,6 +1,7 @@
 import DashboardGrid from '@/components/admin/DashboardGrid';
 
 const sections = [
+  { label: 'Messages', href: '/admin/messages', description: 'Read messages submitted through the contact form.' },
   { label: 'Sponsors', href: '/admin/sponsors', description: 'Add or remove partner logos.' },
   { label: 'Statistics', href: '/admin/stats', description: 'Edit the homepage stat counters.' },
   { label: 'Courses', href: '/admin/courses', description: 'Add, edit or remove courses — description, sessions, video.' },
@@ -14,8 +15,7 @@ const sections = [
 export default function AdminDashboardPage() {
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold text-ink">Website customization</h1>
-      <p className="mt-2 text-stone">Everything here updates the live site immediately.</p>
+      <h1 className="text-center font-display text-4xl font-semibold text-ink">Website customization</h1>
 
       <DashboardGrid sections={sections} />
     </div>

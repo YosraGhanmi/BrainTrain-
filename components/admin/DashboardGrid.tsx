@@ -2,6 +2,18 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import {
+  Handshake,
+  BarChart3,
+  BookOpen,
+  Users,
+  Mail,
+  Share2,
+  Image as ImageIcon,
+  Milestone,
+  Inbox,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface Section {
   label: string;
@@ -10,6 +22,18 @@ interface Section {
 }
 
 const COLS = 3;
+
+const ICON_BY_HREF: Record<string, LucideIcon> = {
+  '/admin/messages': Inbox,
+  '/admin/sponsors': Handshake,
+  '/admin/stats': BarChart3,
+  '/admin/courses': BookOpen,
+  '/admin/age-groups': Users,
+  '/admin/contact': Mail,
+  '/admin/socials': Share2,
+  '/admin/achievements': ImageIcon,
+  '/admin/timeline': Milestone,
+};
 
 export default function DashboardGrid({ sections }: { sections: Section[] }) {
   const [hovered, setHovered] = useState<number | null>(null);
@@ -33,13 +57,14 @@ export default function DashboardGrid({ sections }: { sections: Section[] }) {
       {sections.map((s, i) => {
         const isBig = hovered === i;
         const isSmall = !isBig && neighbours.includes(i);
+        const Icon = ICON_BY_HREF[s.href];
 
         return (
           <Link
             key={s.href}
             href={s.href}
             onPointerEnter={() => setHovered(i)}
-            className="relative rounded-2xl border border-ink/10 bg-white p-6 shadow-sm transition-all duration-200 ease-out"
+            className="relative rounded-2xl border border-ink/10 bg-white p-6 shadow-soft transition-all duration-200 ease-out"
             style={{
               transform: isBig
                 ? 'scale(1.06) translateY(-6px) translateZ(20px)'
@@ -47,12 +72,17 @@ export default function DashboardGrid({ sections }: { sections: Section[] }) {
                   ? 'scale(1.02) translateY(-2px)'
                   : 'scale(1)',
               boxShadow: isBig
-                ? '0 12px 30px -8px rgba(255, 140, 66, 0.45), 0 4px 12px rgba(11, 12, 16, 0.08)'
+                ? '0 12px 30px -8px rgba(61, 127, 255, 0.4), 0 4px 12px rgba(11, 12, 16, 0.08)'
                 : undefined,
-              borderColor: isBig ? 'rgba(255, 140, 66, 0.4)' : undefined,
+              borderColor: isBig ? 'rgba(61, 127, 255, 0.35)' : undefined,
               zIndex: isBig ? sections.length + 1 : i + 1,
             }}
           >
+            {Icon ? (
+              <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                <Icon className="h-4 w-4" />
+              </span>
+            ) : null}
             <h2 className="font-semibold text-ink">{s.label}</h2>
             <p className="mt-2 text-sm text-stone">{s.description}</p>
           </Link>

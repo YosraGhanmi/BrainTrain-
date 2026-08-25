@@ -9,8 +9,7 @@ export default function AdminStatsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-ink">Statistics</h1>
-      <p className="mt-2 text-stone">The counters shown in the homepage "Statistics" section.</p>
+      <h1 className="text-center font-display text-4xl font-semibold text-ink">Statistics</h1>
 
       <form action={updateStats} className="mt-8 rounded-2xl border border-ink/10 bg-white p-6">
         <StatsEditor initial={stats} />

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import {
@@ -63,6 +64,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations('courses');
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -132,7 +134,7 @@ export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
       <div className="relative mx-auto max-w-6xl">
         <div className="max-w-4xl space-y-6">
           <h2 className="courses-heading text-display whitespace-nowrap font-semibold leading-[0.9] text-white sm:text-[clamp(2.5rem,5vw,5.5rem)]">
-            Courses built for curious minds.
+            {t('heading')}
           </h2>
         </div>
 
@@ -156,7 +158,7 @@ export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
             href="/courses"
             className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-white/20"
           >
-            See more
+            {t('seeMore')}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

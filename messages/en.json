@@ -1,0 +1,94 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "achievements": "Achievements",
+    "courses": "Courses",
+    "contact": "Contact",
+    "login": "Log in"
+  },
+  "hero": {
+    "lead": "We are a future-skills academy where students turn technology, AI, and entrepreneurship into real-world innovation.",
+    "register": "Register your child",
+    "scroll": "Scroll",
+    "bubbleGreeting": "Hello! you're finally here!",
+    "bubblePrefix": "We transform kids into ",
+    "bubbleWords": ["entrepreneurs", "innovators", "problem solvers", "winners"]
+  },
+  "philosophy": {
+    "heading": "WHO",
+    "headingAccent": "ARE WE",
+    "row1Lead": "BrainTrain is a Tunisian multidisciplinary academy for young minds aged 4–18, where curiosity becomes capability.",
+    "row1Body": "Through hands-on programs in robotics, programming, artificial intelligence, 3D design, entrepreneurship, and technology, we help young people develop the skills to create, innovate, and solve real-world problems.",
+    "row1Alt": "BrainTrain students working together in a hands-on session",
+    "row2Lead": "BrainTrain is not a traditional school.",
+    "row2Body": "We believe the best way to learn is by doing. Our mission is to transform curious kids into creators, innovators, and problem-solvers by giving them the freedom to experiment, build ideas, work together, and turn challenges into opportunities.",
+    "row2Alt": "BrainTrain students collaborating around a whiteboard",
+    "row3Lead": "Our students don't simply sit in classrooms they build, compete, and WIN.",
+    "row3Body": "From developing real projects to taking on national and international challenges, our students have represented Tunisia on stages across the world, including Greece and Jordan.",
+    "row3Alt": "BrainTrain students celebrating with their competition trophies"
+  },
+  "values": {
+    "heading": "Our Values & Mission",
+    "cta": "Join BrainTrain Academy",
+    "intro": "At <b>BrainTrain</b>, we believe young minds learn best when they <b2>explore, create, and take on real challenges</b2>. We give children the tools, confidence, and freedom to turn curiosity into skills, ideas into projects, and challenges into opportunities.",
+    "curiosity": "Curiosity",
+    "innovation": "Innovation",
+    "problemSolving": "Problem Solving",
+    "collaboration": "Collaboration",
+    "excellence": "Excellence",
+    "impact": "Impact"
+  },
+  "courses": {
+    "heading": "Courses built for curious minds.",
+    "seeMore": "See more",
+    "pickAgeGroup": "Pick an age group to see its courses.",
+    "allAgeGroups": "All age groups",
+    "viewDetails": "View details",
+    "seeCourses": "See courses",
+    "enroll": "Enroll",
+    "allCourses": "All courses",
+    "sessions": "sessions",
+    "enrollInCourse": "Enroll in this course",
+    "kindIntro": "is taught differently for every age group — its own content, pace and session count. Pick an age group below to see the details."
+  },
+  "stats": {
+    "heading": "Statistics"
+  },
+  "timeline": {
+    "scrollLeft": "Scroll timeline left",
+    "scrollRight": "Scroll timeline right",
+    "viewPost": "View the post"
+  },
+  "achievements": {
+    "heading": "Achievements",
+    "body": "BrainTrain students don't just finish courses, they represent Tunisia at international competitions and come home with trophies to prove it."
+  },
+  "contact": {
+    "label": "Contact",
+    "heading": "Contact Us",
+    "intro": "Reach out for enrollment details, program guidance, or to schedule a free consultation with our team.",
+    "email": "Email",
+    "phone": "Phone",
+    "location": "Location",
+    "formTitle": "Send us a message",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Your full name",
+    "emailPlaceholder": "you@example.com",
+    "message": "Message",
+    "messagePlaceholder": "Tell us how we can help",
+    "send": "Send message",
+    "sending": "Sending…",
+    "sent": "Message sent"
+  },
+  "partners": {
+    "heading": "Our Partners"
+  },
+  "footer": {
+    "rights": "All Rights Reserved."
+  },
+  "languageSwitcher": {
+    "en": "EN",
+    "fr": "FR"
+  }
+}

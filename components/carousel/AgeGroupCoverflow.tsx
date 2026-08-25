@@ -13,9 +13,11 @@ import {
   type MotionValue,
 } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { AgeGroupEntry } from '@/lib/content/types';
+import { useTranslations } from 'next-intl';
 import { getIcon } from '@/lib/content/icons';
 import ArrowRevealButton from '@/components/buttons/ArrowRevealButton';
+
+type AgeGroupCard = { slug: string; label: string; description: string; icon: string; image: string };
 
 type Sizing = {
   restWidth: number;
@@ -55,7 +57,7 @@ function Card({
   sizing,
   onSelect,
 }: {
-  group: AgeGroupEntry;
+  group: AgeGroupCard;
   index: number;
   pos: MotionValue<number>;
   count: number;
@@ -63,6 +65,7 @@ function Card({
   onSelect: (index: number) => void;
 }) {
   const Icon = getIcon(group.icon);
+  const t = useTranslations('courses');
 
   const x = useTransform(pos, (p: number) => xForRel(relOf(index, p, count), sizing, GAP));
   const opacity = useTransform(pos, (p: number) => {
@@ -113,7 +116,7 @@ function Card({
           <h3 className="mt-3 text-xl font-bold text-white sm:text-2xl">{group.label}</h3>
           <p className="mt-2 line-clamp-2 max-w-sm text-sm text-white/70">{group.description}</p>
           <ArrowRevealButton
-            label="See courses"
+            label={t('seeCourses')}
             href={`/courses/${group.slug}`}
             onClick={(e) => e.stopPropagation()}
             className="mt-4"
@@ -124,7 +127,7 @@ function Card({
   );
 }
 
-export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupEntry[] }) {
+export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCard[] }) {
   const groups = ageGroups;
   const count = Math.max(1, groups.length);
   const prefersReducedMotion = useReducedMotion();

@@ -1,13 +1,16 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import AdminBackground from '@/components/admin/AdminBackground';
 import AdminToast from '@/components/admin/AdminToast';
 import SidebarNav from '@/components/admin/SidebarNav';
 import RadialReveal from '@/components/effects/RadialReveal';
 import { logout } from '@/lib/admin/actions';
 import { requireAdmin } from '@/lib/admin/guard';
+import { readMessages } from '@/lib/messages/store';
 
 export default function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
   requireAdmin();
+  const unreadMessages = readMessages().filter((m) => !m.read).length;
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-ink">
@@ -16,7 +19,7 @@ export default function AdminProtectedLayout({ children }: { children: React.Rea
           <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill className="object-contain object-left" />
         </div>
 
-        <SidebarNav />
+        <SidebarNav unreadMessages={unreadMessages} />
 
         <div className="mt-auto pt-8">
           <form action={logout}>
@@ -39,7 +42,12 @@ export default function AdminProtectedLayout({ children }: { children: React.Rea
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto px-8 py-10">{children}</main>
+      <main className="relative isolate flex-1 overflow-y-auto bg-gradient-to-br from-[#bcd4ff] via-[#cddaff] to-[#a9c6ff] px-8 py-10">
+        <div className="fixed bottom-0 left-64 right-0 top-0 z-0">
+          <AdminBackground />
+        </div>
+        <div className="relative z-10">{children}</div>
+      </main>
       <AdminToast />
     </div>
   );

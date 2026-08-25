@@ -3,13 +3,15 @@
 import { useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
-type Row = { key: number; label: string; value: string };
+type Row = { key: number; labelEn: string; labelFr: string; value: string };
 
-export default function StatsEditor({ initial }: { initial: { label: string; value: number }[] }) {
+export default function StatsEditor({ initial }: { initial: { label: { en: string; fr: string }; value: number }[] }) {
   const nextKey = useRef(initial.length);
-  const [rows, setRows] = useState<Row[]>(initial.map((r, i) => ({ key: i, label: r.label, value: String(r.value) })));
+  const [rows, setRows] = useState<Row[]>(
+    initial.map((r, i) => ({ key: i, labelEn: r.label.en, labelFr: r.label.fr, value: String(r.value) }))
+  );
 
-  const addRow = () => setRows((r) => [...r, { key: nextKey.current++, label: '', value: '0' }]);
+  const addRow = () => setRows((r) => [...r, { key: nextKey.current++, labelEn: '', labelFr: '', value: '0' }]);
   const removeRow = (key: number) => setRows((r) => r.filter((row) => row.key !== key));
 
   return (
@@ -35,9 +37,15 @@ export default function StatsEditor({ initial }: { initial: { label: string; val
             className="w-full bg-transparent text-center font-display text-5xl font-extrabold text-[#0f2d81] outline-none sm:text-6xl"
           />
           <input
-            name="label"
-            defaultValue={row.label}
-            placeholder="Label (e.g. Students)"
+            name="label_en"
+            defaultValue={row.labelEn}
+            placeholder="Label — English (e.g. Students)"
+            className="w-full rounded-xl border border-accent/15 bg-white px-3 py-2 text-center text-sm font-bold text-ink outline-none focus:border-accent/40"
+          />
+          <input
+            name="label_fr"
+            defaultValue={row.labelFr}
+            placeholder="Label — French (ex. Étudiants)"
             className="w-full rounded-xl border border-accent/15 bg-white px-3 py-2 text-center text-sm font-bold text-ink outline-none focus:border-accent/40"
           />
         </div>

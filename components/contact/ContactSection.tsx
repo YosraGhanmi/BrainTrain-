@@ -1,16 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone, CheckCircle2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ContactContent } from '@/lib/content/types';
+import { submitContactMessage } from '@/lib/contact/actions';
 
 export default function ContactSection({ contact }: { contact: ContactContent }) {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const t = useTranslations('contact');
 
   const details = [
-    { Icon: Mail, label: 'Email', value: contact.email.value, href: contact.email.href },
-    { Icon: Phone, label: 'Phone', value: contact.phone.value, href: contact.phone.href },
-    { Icon: MapPin, label: 'Location', value: contact.location.value, href: contact.location.href },
+    { Icon: Mail, label: t('email'), value: contact.email.value, href: contact.email.href },
+    { Icon: Phone, label: t('phone'), value: contact.phone.value, href: contact.phone.href },
+    { Icon: MapPin, label: t('location'), value: contact.location.value, href: contact.location.href },
   ];
 
   function handleChange(field: keyof typeof form) {
@@ -18,23 +22,24 @@ export default function ContactSection({ contact }: { contact: ContactContent })
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const subject = encodeURIComponent(`Message from ${form.name || 'BrainTrain website'}`);
-    const body = encodeURIComponent(`${form.message}\n\n— ${form.name} (${form.email})`);
-    window.location.href = `mailto:${contact.email.value}?subject=${subject}&body=${body}`;
+    setStatus('sending');
+    await submitContactMessage(form);
+    setForm({ name: '', email: '', message: '' });
+    setStatus('sent');
   }
 
   return (
     <section id="contact" className="relative overflow-hidden bg-surface px-6 py-28 md:px-10 lg:px-16">
       <div className="mx-auto max-w-6xl">
           <div className="space-y-2">
-            <span className="text-sm uppercase tracking-[0.35em] text-stone">Contact</span>
+            <span className="text-sm uppercase tracking-[0.35em] text-stone">{t('label')}</span>
             <h2 className="text-display font-semibold leading-[0.9] text-ink sm:text-[clamp(2.75rem,4.5vw,4rem)]">
-              Contact Us
+              {t('heading')}
             </h2>
             <p className="max-w-xl text-lg leading-relaxed text-stone">
-              Reach out for enrollment details, program guidance, or to schedule a free consultation with our team.
+              {t('intro')}
             </p>
           </div>
 
@@ -77,11 +82,11 @@ export default function ContactSection({ contact }: { contact: ContactContent })
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-ink/10 bg-slate-50 p-6 sm:p-8">
-              <p className="text-sm uppercase tracking-[0.35em] text-stone">Send us a message</p>
+              <p className="text-sm uppercase tracking-[0.35em] text-stone">{t('formTitle')}</p>
 
               <div className="space-y-2">
                 <label htmlFor="name" className="text-xs uppercase tracking-[0.2em] text-stone">
-                  Full name
+                  {t('fullName')}
                 </label>
                 <input
                   id="name"
@@ -90,13 +95,13 @@ export default function ContactSection({ contact }: { contact: ContactContent })
                   value={form.name}
                   onChange={handleChange('name')}
                   className="w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-ink/30"
-                  placeholder="Your full name"
+                  placeholder={t('fullNamePlaceholder')}
                 />
               </div>
 
               <div className="space-y-2">
                 <label htmlFor="email" className="text-xs uppercase tracking-[0.2em] text-stone">
-                  Email
+                  {t('email')}
                 </label>
                 <input
                   id="email"
@@ -105,13 +110,13 @@ export default function ContactSection({ contact }: { contact: ContactContent })
                   value={form.email}
                   onChange={handleChange('email')}
                   className="w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-ink/30"
-                  placeholder="you@example.com"
+                  placeholder={t('emailPlaceholder')}
                 />
               </div>
 
               <div className="flex flex-1 flex-col gap-2">
                 <label htmlFor="message" className="text-xs uppercase tracking-[0.2em] text-stone">
-                  Message
+                  {t('message')}
                 </label>
                 <textarea
                   id="message"
@@ -119,15 +124,25 @@ export default function ContactSection({ contact }: { contact: ContactContent })
                   value={form.message}
                   onChange={handleChange('message')}
                   className="w-full flex-1 min-h-[140px] resize-none rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-ink/30"
-                  placeholder="Tell us how we can help"
+                  placeholder={t('messagePlaceholder')}
                 />
               </div>
 
               <button
                 type="submit"
-                className="inline-flex rounded-full bg-ink px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
+                disabled={status === 'sending'}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90 disabled:opacity-60"
               >
-                Send message
+                {status === 'sent' ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    {t('sent')}
+                  </>
+                ) : status === 'sending' ? (
+                  t('sending')
+                ) : (
+                  t('send')
+                )}
               </button>
             </form>
           </div>

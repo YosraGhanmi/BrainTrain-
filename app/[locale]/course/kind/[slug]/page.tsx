@@ -1,26 +1,29 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarClock } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
+import { Link } from '@/i18n/navigation';
 import { getCourseKind, getAgeGroup } from '@/lib/coursesData';
 import { getIcon } from '@/lib/content/icons';
+import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const kind = getCourseKind(params.slug);
+export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
+  const kind = getCourseKind(params.slug, params.locale);
   return {
     title: kind ? `${kind.title} — BrainTrain` : 'Course — BrainTrain',
   };
 }
 
-export default function CourseKindPage({ params }: { params: { slug: string } }) {
-  const kind = getCourseKind(params.slug);
+export default async function CourseKindPage({ params }: { params: { slug: string; locale: AppLocale } }) {
+  const kind = getCourseKind(params.slug, params.locale);
   if (!kind) notFound();
 
   const Icon = getIcon(kind.icon);
+  const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
 
   return (
     <div className="flex min-h-screen flex-col bg-surface text-ink">
@@ -32,7 +35,7 @@ export default function CourseKindPage({ params }: { params: { slug: string } })
             className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-stone transition hover:text-ink"
           >
             <ArrowLeft className="h-4 w-4" />
-            All age groups
+            {t('allAgeGroups')}
           </Link>
 
           <div className="flex items-center gap-4">
@@ -45,13 +48,12 @@ export default function CourseKindPage({ params }: { params: { slug: string } })
           </div>
 
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-stone">
-            {kind.title} is taught differently for every age group — its own content, pace and session count. Pick an
-            age group below to see the details.
+            {kind.title} {t('kindIntro')}
           </p>
 
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {kind.variants.map((variant) => {
-              const group = getAgeGroup(variant.ageGroupSlug);
+              const group = getAgeGroup(variant.ageGroupSlug, params.locale);
               return (
                 <Link
                   key={variant.slug}
@@ -66,7 +68,7 @@ export default function CourseKindPage({ params }: { params: { slug: string } })
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-2 text-sm font-semibold text-ink">
                       <CalendarClock className="h-4 w-4 text-[#ff8c42]" strokeWidth={1.75} />
-                      {variant.sessions} sessions
+                      {variant.sessions} {t('sessions')}
                     </span>
                     <ArrowRight className="h-4 w-4 text-stone transition group-hover:translate-x-1 group-hover:text-ink" />
                   </div>

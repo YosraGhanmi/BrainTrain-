@@ -1,6 +1,9 @@
+import { useTranslations } from 'next-intl';
 import RoundCarousel from '@/components/carousel/RoundCarousel';
 
 export default function StatsSection({ achievementsImages }: { achievementsImages: string[] }) {
+  const t = useTranslations('achievements');
+
   return (
     <section id="stats" className="relative overflow-hidden px-6 py-28 md:px-10 lg:px-16">
       <div className="pointer-events-none absolute inset-0">
@@ -10,11 +13,10 @@ export default function StatsSection({ achievementsImages }: { achievementsImage
       <div className="relative mx-auto max-w-6xl">
         <div className="max-w-2xl space-y-6">
           <h2 className="text-display font-display font-semibold leading-[0.9] text-[#0b1a3a] sm:text-[clamp(3.5rem,6vw,6rem)]">
-            Achievements
+            {t('heading')}
           </h2>
           <p className="text-lg leading-relaxed text-stone sm:text-xl">
-            BrainTrain students don&apos;t just finish courses, they represent Tunisia at international competitions
-            and come home with trophies to prove it.
+            {t('body')}
           </p>
         </div>
       </div>

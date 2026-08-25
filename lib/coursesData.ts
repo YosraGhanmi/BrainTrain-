@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { readContent } from './content/store';
 import { getIcon } from './content/icons';
+import type { AppLocale } from '@/i18n/routing';
 
 export type Course = {
   slug: string;
@@ -53,41 +54,53 @@ function slugifyTitle(title: string): string {
 // pages that render them must opt into dynamic rendering (`export const
 // dynamic = 'force-dynamic'`) so a saved edit shows up without a rebuild.
 
-export function getCourses(): Course[] {
-  return readContent().courses.map((c) => ({ ...c, icon: getIcon(c.icon) }));
+export function getCourses(locale: AppLocale): Course[] {
+  return readContent().courses.map((c) => ({
+    ...c,
+    title: c.title[locale] || c.title.en,
+    description: c.description[locale] || c.description.en,
+    icon: getIcon(c.icon),
+  }));
 }
 
-export function getAgeGroups(): AgeGroup[] {
-  return readContent().ageGroups.map((g) => ({ ...g, icon: getIcon(g.icon) }));
+export function getAgeGroups(locale: AppLocale): AgeGroup[] {
+  return readContent().ageGroups.map((g) => ({
+    ...g,
+    label: g.label[locale] || g.label.en,
+    description: g.description[locale] || g.description.en,
+    icon: getIcon(g.icon),
+  }));
 }
 
-export function getCourse(slug: string): Course | undefined {
-  return getCourses().find((course) => course.slug === slug);
+export function getCourse(slug: string, locale: AppLocale): Course | undefined {
+  return getCourses(locale).find((course) => course.slug === slug);
 }
 
-export function getAgeGroup(slug: string): AgeGroup | undefined {
-  return getAgeGroups().find((group) => group.slug === slug);
+export function getAgeGroup(slug: string, locale: AppLocale): AgeGroup | undefined {
+  return getAgeGroups(locale).find((group) => group.slug === slug);
 }
 
-export function getCoursesForAgeGroup(group: AgeGroup): Course[] {
-  return getCourses().filter((c) => c.ageGroupSlug === group.slug);
+export function getCoursesForAgeGroup(group: AgeGroup, locale: AppLocale): Course[] {
+  return getCourses(locale).filter((c) => c.ageGroupSlug === group.slug);
 }
 
-export function getCourseKinds(): CourseKind[] {
+export function getCourseKinds(locale: AppLocale): CourseKind[] {
   const kinds = new Map<string, CourseKind>();
-  const resolved = getCourses();
+  const resolved = getCourses(locale);
   readContent().courses.forEach((raw, i) => {
-    const slug = slugifyTitle(raw.title);
+    // Slugs are generated from the English title so they stay stable across
+    // locales regardless of which language is currently being viewed.
+    const slug = slugifyTitle(raw.title.en);
     const existing = kinds.get(slug);
     if (existing) {
       existing.variants.push(resolved[i]);
     } else {
-      kinds.set(slug, { slug, title: raw.title, icon: raw.icon, color: raw.color, variants: [resolved[i]] });
+      kinds.set(slug, { slug, title: resolved[i].title, icon: raw.icon, color: raw.color, variants: [resolved[i]] });
     }
   });
   return Array.from(kinds.values());
 }
 
-export function getCourseKind(slug: string): CourseKind | undefined {
-  return getCourseKinds().find((kind) => kind.slug === slug);
+export function getCourseKind(slug: string, locale: AppLocale): CourseKind | undefined {
+  return getCourseKinds(locale).find((kind) => kind.slug === slug);
 }

@@ -4,37 +4,38 @@ import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+import { useTranslations } from 'next-intl';
 import NeonBorder from '@/components/effects/NeonBorder';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const rows = [
-  {
-    image: '/About us 1.jpg',
-    alt: 'BrainTrain students working together in a hands-on session',
-    imageFirst: false,
-    lead: 'BrainTrain is a Tunisian multidisciplinary academy for young minds aged 4–18, where curiosity becomes capability.',
-    body: 'Through hands-on programs in robotics, programming, artificial intelligence, 3D design, entrepreneurship, and technology, we help young people develop the skills to create, innovate, and solve real-world problems.',
-  },
-  {
-    image: '/About us 2.jpg',
-    alt: 'BrainTrain students collaborating around a whiteboard',
-    imageFirst: true,
-    lead: 'BrainTrain is not a traditional school.',
-    body: 'We believe the best way to learn is by doing. Our mission is to transform curious kids into creators, innovators, and problem-solvers by giving them the freedom to experiment, build ideas, work together, and turn challenges into opportunities.',
-  },
-  {
-    image: '/About us 3.jpg',
-    alt: 'BrainTrain students celebrating with their competition trophies',
-    imageFirst: false,
-    lead: "Our students don't simply sit in classrooms they build, compete, and WIN.",
-    body: 'From developing real projects to taking on national and international challenges, our students have represented Tunisia on stages across the world, including Greece and Jordan .',
-    
-  },
-];
-
 export default function PhilosophySection() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations('philosophy');
+
+  const rows = [
+    {
+      image: '/About us 1.jpg',
+      alt: t('row1Alt'),
+      imageFirst: false,
+      lead: t('row1Lead'),
+      body: t('row1Body'),
+    },
+    {
+      image: '/About us 2.jpg',
+      alt: t('row2Alt'),
+      imageFirst: true,
+      lead: t('row2Lead'),
+      body: t('row2Body'),
+    },
+    {
+      image: '/About us 3.jpg',
+      alt: t('row3Alt'),
+      imageFirst: false,
+      lead: t('row3Lead'),
+      body: t('row3Body'),
+    },
+  ];
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -88,7 +89,7 @@ export default function PhilosophySection() {
     <section id="philosophy" ref={sectionRef} className="relative overflow-hidden px-6 py-28 md:px-10 lg:px-16">
       <div className="mx-auto max-w-6xl">
         <h2 className="mb-20 max-w-3xl text-display font-display font-semibold leading-[0.9] text-ink sm:mb-28">
-          WHO <span className="text-gradient">ARE WE</span>
+          {t('heading')} <span className="text-gradient">{t('headingAccent')}</span>
         </h2>
 
         <div className="flex flex-col gap-24 sm:gap-32">

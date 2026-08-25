@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import PartnersGrid from './PartnersGrid';
 
 function useResponsivePerPage() {
@@ -24,12 +25,13 @@ function useResponsivePerPage() {
 
 export default function PartnersSection({ logos }: { logos: string[] }) {
   const perPage = useResponsivePerPage();
+  const t = useTranslations('partners');
 
   return (
     <section className="px-6 py-20 md:px-10 lg:px-16">
       <div className="text-center">
         <h2 className="text-4xl font-display font-bold text-ink sm:text-5xl">
-          Our <span>Partners</span>
+          {t('heading')}
         </h2>
       </div>
 

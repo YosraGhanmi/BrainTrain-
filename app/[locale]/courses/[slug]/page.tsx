@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import {
   ArrowLeft,
   Send,
@@ -27,12 +27,14 @@ import {
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
+import { Link } from '@/i18n/navigation';
 import { getAgeGroup, getCoursesForAgeGroup } from '@/lib/coursesData';
+import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const group = getAgeGroup(params.slug);
+export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
+  const group = getAgeGroup(params.slug, params.locale);
   return {
     title: group ? `${group.label} Courses — BrainTrain` : 'Courses — BrainTrain',
   };
@@ -66,11 +68,12 @@ const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: numb
   { icon: Leaf, top: '95%', left: '55%', size: 22, rotate: -10 },
 ];
 
-export default function AgeGroupCoursesPage({ params }: { params: { slug: string } }) {
-  const group = getAgeGroup(params.slug);
+export default async function AgeGroupCoursesPage({ params }: { params: { slug: string; locale: AppLocale } }) {
+  const group = getAgeGroup(params.slug, params.locale);
   if (!group) notFound();
 
-  const groupCourses = getCoursesForAgeGroup(group);
+  const groupCourses = getCoursesForAgeGroup(group, params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
 
   return (
     <div className="flex min-h-screen flex-col text-ink">
@@ -94,7 +97,7 @@ export default function AgeGroupCoursesPage({ params }: { params: { slug: string
             className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-stone transition hover:text-ink"
           >
             <ArrowLeft className="h-4 w-4" />
-            All age groups
+            {t('allAgeGroups')}
           </Link>
 
           <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">
@@ -126,13 +129,13 @@ export default function AgeGroupCoursesPage({ params }: { params: { slug: string
                     href={`/course/${slug}?age=${group.slug}`}
                     className="w-full rounded-full border border-ink/10 px-4 py-2 text-sm font-bold text-ink transition hover:bg-ink/5"
                   >
-                    View details
+                    {t('viewDetails')}
                   </Link>
                   <Link
                     href="/register"
                     className="w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
                   >
-                    Enroll
+                    {t('enroll')}
                   </Link>
                 </div>
               </div>

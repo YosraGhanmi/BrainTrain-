@@ -81,6 +81,9 @@ out
 # Admin-editable site content (seeded from lib/content/store.ts on first run)
 /data/content.json
 
+# Contact form submissions (seeded from lib/messages/store.ts on first run)
+/data/messages.json
+
 # Nuxt.js build / generate output
 .nuxt
 dist

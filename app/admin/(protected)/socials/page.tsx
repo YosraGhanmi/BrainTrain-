@@ -9,8 +9,7 @@ export default function AdminSocialsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-ink">Social media links</h1>
-      <p className="mt-2 text-stone">Shown in the sidebar icons on every page.</p>
+      <h1 className="text-center font-display text-4xl font-semibold text-ink">Social media links</h1>
 
       <form action={updateSocials} className="mt-8 rounded-2xl border border-ink/10 bg-white p-6">
         <SocialLinksEditor initial={socials} />

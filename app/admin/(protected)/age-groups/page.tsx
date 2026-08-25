@@ -18,7 +18,7 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
   return (
     <details className={`group rounded-2xl border bg-white ${isNew ? 'border-dashed border-ink/30' : 'border-ink'}`}>
       <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 text-sm font-semibold text-ink">
-        {isNew ? '+ New age group' : group.label || 'Untitled age group'}
+        {isNew ? '+ New age group' : group.label.en || 'Untitled age group'}
         <span className="flex items-center gap-3">
           {!isNew ? <DeleteIconButton action={deleteAgeGroup.bind(null, group.slug)} /> : null}
           <span className="text-stone transition group-open:rotate-180">▾</span>
@@ -28,21 +28,40 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
       <form action={upsertAgeGroup} className="space-y-4 border-t border-ink/10 p-6">
         <input type="hidden" name="existingSlug" value={isNew ? '' : group.slug} />
 
-        <Field label="Label (e.g. 6-9 years)">
+        <Field label="Label — English (e.g. 6-9 years)">
           <input
-            name="label"
-            defaultValue={group.label}
-            placeholder="Label (e.g. 6-9 years)"
+            name="label_en"
+            defaultValue={group.label.en}
+            placeholder="Label — English (e.g. 6-9 years)"
             required
             className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
         </Field>
 
-        <Field label="Description">
+        <Field label="Label — French (ex. 6-9 ans)">
+          <input
+            name="label_fr"
+            defaultValue={group.label.fr}
+            placeholder="Label — French (ex. 6-9 ans)"
+            className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+          />
+        </Field>
+
+        <Field label="Description — English">
           <textarea
-            name="description"
-            defaultValue={group.description}
-            placeholder="Description"
+            name="description_en"
+            defaultValue={group.description.en}
+            placeholder="Description — English"
+            rows={2}
+            className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+          />
+        </Field>
+
+        <Field label="Description — French">
+          <textarea
+            name="description_fr"
+            defaultValue={group.description.fr}
+            placeholder="Description — French"
             rows={2}
             className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
@@ -72,19 +91,17 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
 
 export default function AdminAgeGroupsPage() {
   const { ageGroups } = readContent();
-  const blank: AgeGroupEntry = { slug: '', label: '', description: '', icon: 'Puzzle', image: '' };
+  const blank: AgeGroupEntry = {
+    slug: '',
+    label: { en: '', fr: '' },
+    description: { en: '', fr: '' },
+    icon: 'Puzzle',
+    image: '',
+  };
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold text-ink">Age groups</h1>
-      <p className="mt-2 text-stone">
-        Edit each age group's label, blurb and image. Each course belongs to exactly one age group — add, edit or
-        remove courses (including which age group they belong to) on the{' '}
-        <a href="/admin/courses" className="underline">
-          courses
-        </a>{' '}
-        page.
-      </p>
+      <h1 className="text-center font-display text-4xl font-semibold text-ink">Age groups</h1>
 
       <div className="mt-8 space-y-6">
         <AgeGroupForm group={blank} isNew />

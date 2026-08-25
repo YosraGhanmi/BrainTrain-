@@ -6,9 +6,17 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { readContent, writeContent } from '@/lib/content/store';
+import { setMessageRead, deleteMessage as deleteMessageEntry } from '@/lib/messages/store';
 import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { requireAdmin } from '@/lib/admin/guard';
-import type { TimelineEntry } from '@/lib/content/types';
+import type { TimelineEntry, LocalizedString } from '@/lib/content/types';
+
+function localizedField(formData: FormData, name: string): LocalizedString {
+  return {
+    en: String(formData.get(`${name}_en`) ?? '').trim(),
+    fr: String(formData.get(`${name}_fr`) ?? '').trim(),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Auth
@@ -113,13 +121,14 @@ export async function deleteSponsor(src: string): Promise<void> {
 
 export async function updateStats(formData: FormData): Promise<void> {
   requireAdmin();
-  const labels = formData.getAll('label').map(String);
+  const labelsEn = formData.getAll('label_en').map(String);
+  const labelsFr = formData.getAll('label_fr').map(String);
   const values = formData.getAll('value').map((v) => Math.max(0, Math.round(Number(v)) || 0));
 
   const content = readContent();
-  content.stats = labels
-    .map((label, i) => ({ label: label.trim(), value: values[i] ?? 0 }))
-    .filter((s) => s.label.length > 0);
+  content.stats = labelsEn
+    .map((en, i) => ({ label: { en: en.trim(), fr: (labelsFr[i] ?? '').trim() }, value: values[i] ?? 0 }))
+    .filter((s) => s.label.en.length > 0);
   writeContent(content);
   redirect('/admin/stats?saved=1');
 }
@@ -195,11 +204,10 @@ export async function upsertTimelineEntry(formData: FormData): Promise<void> {
 
   const facebookUrl = String(formData.get('facebookUrl') ?? '').trim();
   const entry: TimelineEntry = {
-    date: String(formData.get('date') ?? '').trim(),
-    title: String(formData.get('title') ?? '').trim(),
+    date: localizedField(formData, 'date'),
+    title: localizedField(formData, 'title'),
     logo: formData.get('logo') === 'on',
-    summary: String(formData.get('summary') ?? '').trim(),
-    detail: String(formData.get('detail') ?? '').trim(),
+    summary: localizedField(formData, 'summary'),
     facebookUrl: facebookUrl || undefined,
   };
 
@@ -242,8 +250,8 @@ export async function reorderTimeline(order: number[]): Promise<void> {
 export async function upsertCourse(formData: FormData): Promise<void> {
   requireAdmin();
   const existingSlug = String(formData.get('existingSlug') ?? '').trim();
-  const title = String(formData.get('title') ?? '').trim();
-  const description = String(formData.get('description') ?? '').trim();
+  const title = localizedField(formData, 'title');
+  const description = localizedField(formData, 'description');
   const sessions = Math.max(0, Math.round(Number(formData.get('sessions')) || 0));
   const price = Math.max(0, Math.round(Number(formData.get('price')) || 0));
   const ageGroupSlug = String(formData.get('ageGroupSlug') ?? '').trim();
@@ -252,7 +260,7 @@ export async function upsertCourse(formData: FormData): Promise<void> {
   const videoUrl = String(formData.get('videoUrl') ?? '').trim();
   const imageFile = formData.get('image') as File | null;
 
-  if (!title || !ageGroupSlug) redirect('/admin/courses?error=1');
+  if (!title.en || !ageGroupSlug) redirect('/admin/courses?error=1');
 
   const content = readContent();
   const otherSlugs = content.courses.filter((c) => c.slug !== existingSlug).map((c) => c.slug);
@@ -275,7 +283,7 @@ export async function upsertCourse(formData: FormData): Promise<void> {
       };
     }
   } else {
-    const slug = uniqueSlug(slugify(`${title}-${ageGroupSlug}`), otherSlugs);
+    const slug = uniqueSlug(slugify(`${title.en}-${ageGroupSlug}`), otherSlugs);
     const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'courses') : undefined;
     content.courses.push({ slug, title, description, sessions, price, ageGroupSlug, color, icon, videoUrl: videoUrl || undefined, image });
   }
@@ -299,11 +307,11 @@ export async function deleteCourse(slug: string): Promise<void> {
 export async function upsertAgeGroup(formData: FormData): Promise<void> {
   requireAdmin();
   const existingSlug = String(formData.get('existingSlug') ?? '').trim();
-  const label = String(formData.get('label') ?? '').trim();
-  const description = String(formData.get('description') ?? '').trim();
+  const label = localizedField(formData, 'label');
+  const description = localizedField(formData, 'description');
   const imageFile = formData.get('image') as File | null;
 
-  if (!label) redirect('/admin/age-groups?error=1');
+  if (!label.en) redirect('/admin/age-groups?error=1');
 
   const content = readContent();
   const otherSlugs = content.ageGroups.filter((g) => g.slug !== existingSlug).map((g) => g.slug);
@@ -315,7 +323,7 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
       content.ageGroups[idx] = { ...content.ageGroups[idx], label, description, image };
     }
   } else {
-    const slug = uniqueSlug(slugify(label), otherSlugs);
+    const slug = uniqueSlug(slugify(label.en), otherSlugs);
     const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'age') : '';
     content.ageGroups.push({ slug, label, description, icon: 'Puzzle', image });
   }
@@ -331,4 +339,20 @@ export async function deleteAgeGroup(slug: string): Promise<void> {
   content.courses = content.courses.filter((c) => c.ageGroupSlug !== slug);
   writeContent(content);
   redirect('/admin/age-groups?saved=1');
+}
+
+// ---------------------------------------------------------------------------
+// Contact messages
+// ---------------------------------------------------------------------------
+
+export async function markMessageRead(id: string, read: boolean): Promise<void> {
+  requireAdmin();
+  setMessageRead(id, read);
+  revalidatePath('/admin/messages');
+}
+
+export async function deleteMessage(id: string): Promise<void> {
+  requireAdmin();
+  deleteMessageEntry(id);
+  redirect('/admin/messages?saved=1');
 }

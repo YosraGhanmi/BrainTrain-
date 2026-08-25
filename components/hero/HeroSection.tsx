@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { ArrowDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import TextMorph from '@/components/text/TextMorph';
 import Typewriter from '@/components/text/Typewriter';
 import InteractiveMesh from '@/components/hero/InteractiveMesh';
@@ -19,22 +20,23 @@ const HeroScene = dynamic(() => import('@/components/3d/HeroScene'), {
 
 gsap.registerPlugin(ScrollTrigger);
 
-const robotBubbles = [
-  {
-    text: "Hello! you're finally here!",
-    side: 'left' as const,
-    top: '20%',
-  },
-  {
-    prefix: 'We transform kids into ',
-    typed: ['entrepreneurs', 'innovators', 'problem solvers', "winners"],
-    side: 'right' as const,
-    top: '36%',
-  },
-];
-
 export default function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations('hero');
+
+  const robotBubbles = [
+    {
+      text: t('bubbleGreeting'),
+      side: 'left' as const,
+      top: '20%',
+    },
+    {
+      prefix: t('bubblePrefix'),
+      typed: t.raw('bubbleWords') as string[],
+      side: 'right' as const,
+      top: '36%',
+    },
+  ];
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -111,10 +113,10 @@ export default function HeroSection() {
 
           <div ref={textRef} className="max-w-xl space-y-8">
             <p className="text-lg leading-relaxed text-stone sm:text-xl">
-              We are a future-skills academy where students turn technology, AI, and entrepreneurship into real-world innovation.
+              {t('lead')}
             </p>
             <div className="flex flex-wrap items-center gap-6">
-              <OrbitBorderButton label="Register your child" href="/register" />
+              <OrbitBorderButton label={t('register')} href="/register" />
             </div>
           </div>
         </div>
@@ -162,9 +164,9 @@ export default function HeroSection() {
       <a
         href="#philosophy"
         className="relative z-10 mx-auto mt-4 flex w-fit flex-col items-center gap-2 text-stone transition hover:text-ink"
-        aria-label="Scroll to explore"
+        aria-label={t('scroll')}
       >
-        <span className="text-[0.65rem] uppercase tracking-[0.35em]">Scroll</span>
+        <span className="text-[0.65rem] uppercase tracking-[0.35em]">{t('scroll')}</span>
         <ArrowDown className="h-4 w-4 animate-bounce" />
       </a>
     </section>

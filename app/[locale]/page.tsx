@@ -11,10 +11,11 @@ import ContactSection from '@/components/contact/ContactSection';
 import Footer from '@/components/footer/Footer';
 import { readContent } from '@/lib/content/store';
 import { getCourseKinds } from '@/lib/coursesData';
+import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export default function Home() {
+export default function Home({ params }: { params: { locale: AppLocale } }) {
   const content = readContent();
 
   return (
@@ -26,7 +27,7 @@ export default function Home() {
         <PhilosophySection />
         <QuickStats quickStats={content.stats} />
         <CoursesSection
-          courses={getCourseKinds().map(({ slug, title, icon, color }) => ({ slug, title, icon, color }))}
+          courses={getCourseKinds(params.locale).map(({ slug, title, icon, color }) => ({ slug, title, icon, color }))}
         />
         <StatsSection achievementsImages={content.achievementsImages} />
         <MilestonesSection milestones={content.timeline} />

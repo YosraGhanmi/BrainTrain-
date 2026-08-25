@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { CalendarDays, Facebook, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import type { TimelineEntry } from '@/lib/content/types';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -16,6 +17,8 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
   const scrollerRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
   const [active, setActive] = useState(0);
+  const locale = useLocale() as 'en' | 'fr';
+  const t = useTranslations('timeline');
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -107,7 +110,7 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
         <button
           type="button"
           onClick={() => scrollByCards(-1)}
-          aria-label="Scroll timeline left"
+          aria-label={t('scrollLeft')}
           className="absolute left-6 top-8 z-20 hidden h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-soft transition hover:bg-ink hover:text-white sm:flex md:left-10 lg:left-16"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -115,7 +118,7 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
         <button
           type="button"
           onClick={() => scrollByCards(1)}
-          aria-label="Scroll timeline right"
+          aria-label={t('scrollRight')}
           className="absolute right-6 top-8 z-20 hidden h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-soft transition hover:bg-ink hover:text-white sm:flex md:right-10 lg:right-16"
         >
           <ChevronRight className="h-4 w-4" />
@@ -132,11 +135,14 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
             <div className="flex gap-6">
               {milestones.map((milestone, index) => {
                 const isActive = active === index;
+                const date = milestone.date[locale] || milestone.date.en;
+                const title = milestone.title[locale] || milestone.title.en;
+                const summary = milestone.summary[locale] || milestone.summary.en;
                 return (
-                  <div key={milestone.title} className="flex w-72 shrink-0 flex-col items-center gap-2 sm:w-80">
+                  <div key={`${milestone.date.en}|${milestone.title.en}`} className="flex w-72 shrink-0 flex-col items-center gap-2 sm:w-80">
                     <span className="inline-flex items-center gap-2 text-sm font-display font-bold text-ink sm:text-base">
                       <CalendarDays className="h-4 w-4 shrink-0" style={{ color: NAVY }} />
-                      {milestone.date}
+                      {date}
                     </span>
                     <span className="h-4 w-px bg-ink/15" />
                     <button
@@ -144,7 +150,7 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
                       onClick={() => setActive(index)}
                       className="relative z-10 mb-3 h-[18px] w-[18px] shrink-0 rounded-full border-4 bg-white transition"
                       style={{ borderColor: isActive ? NAVY : 'rgba(11,12,16,0.15)' }}
-                      aria-label={`Show ${milestone.title}`}
+                      aria-label={title}
                     />
 
                     <div
@@ -167,10 +173,10 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
                         </span>
                       ) : null}
 
-                      <h3 className="shrink-0 font-display text-xl font-semibold text-ink sm:text-2xl">{milestone.title}</h3>
+                      <h3 className="shrink-0 font-display text-xl font-semibold text-ink sm:text-2xl">{title}</h3>
 
                       <div className="mt-3 flex-1 overflow-y-auto pr-1">
-                        <p className="text-sm leading-relaxed text-stone">{isActive ? milestone.detail : milestone.summary}</p>
+                        <p className="text-sm leading-relaxed text-stone">{summary}</p>
                       </div>
 
                       {milestone.facebookUrl ? (
@@ -182,7 +188,7 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
                           className="relative z-10 mt-3 inline-flex shrink-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#1877f2] transition hover:underline"
                         >
                           <Facebook className="h-3.5 w-3.5" />
-                          View the post
+                          {t('viewPost')}
                         </a>
                       ) : null}
                     </div>
