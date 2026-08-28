@@ -16,6 +16,12 @@ import {
   Milestone,
   Settings2,
   Inbox,
+  UserSquare2,
+  GraduationCap,
+  CalendarClock,
+  ClipboardList,
+  CreditCard,
+  Tag,
 } from 'lucide-react';
 
 const customizationItems = [
@@ -29,10 +35,22 @@ const customizationItems = [
   { label: 'Timeline', href: '/admin/timeline', icon: Milestone },
 ];
 
+const portalItems = [
+  { label: 'Parents', href: '/admin/parents', icon: UserSquare2 },
+  { label: 'Children', href: '/admin/children', icon: Users },
+  { label: 'Teachers', href: '/admin/teachers', icon: GraduationCap },
+  { label: 'Course sessions', href: '/admin/sessions', icon: CalendarClock },
+  { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
+  { label: 'Payments', href: '/admin/payments', icon: CreditCard },
+  { label: 'Pricing', href: '/admin/pricing', icon: Tag },
+];
+
 export default function SidebarNav({ unreadMessages = 0 }: { unreadMessages?: number }) {
   const pathname = usePathname();
   const isChildActive = customizationItems.some((item) => pathname?.startsWith(item.href));
+  const isPortalActive = portalItems.some((item) => pathname?.startsWith(item.href));
   const [open, setOpen] = useState(true);
+  const [portalOpen, setPortalOpen] = useState(true);
 
   const linkClass = (active: boolean) =>
     `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 font-display text-sm font-semibold tracking-wide transition ${
@@ -84,6 +102,37 @@ export default function SidebarNav({ unreadMessages = 0 }: { unreadMessages?: nu
       {open && (
         <div className="mt-1 flex flex-col gap-1 border-l border-ink/10 pl-2">
           {customizationItems.map((item) => {
+            const active = pathname?.startsWith(item.href) ?? false;
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href} className={linkClass(active)}>
+                <span className={iconClass(active)}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setPortalOpen((v) => !v)}
+        className={`mt-6 flex w-full items-center justify-between gap-2 px-3 text-left text-[0.65rem] font-bold uppercase tracking-[0.15em] transition hover:text-ink ${
+          isPortalActive ? 'text-ink' : 'text-stone/70'
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          <GraduationCap className="h-3.5 w-3.5" />
+          Parent portal
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${portalOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {portalOpen && (
+        <div className="mt-1 flex flex-col gap-1 border-l border-ink/10 pl-2">
+          {portalItems.map((item) => {
             const active = pathname?.startsWith(item.href) ?? false;
             const Icon = item.icon;
             return (

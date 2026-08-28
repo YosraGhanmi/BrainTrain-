@@ -1,0 +1,276 @@
+// Parent Portal + Child Follow-Up System — relational data only.
+// Public-site content (courses, age groups, ...) stays in data/content.json;
+// models here reference it by slug (courseSlug / ageGroupSlug), validated in
+// application code via lib/content/lookup.ts, not by a DB foreign key.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PortalRole {
+  PARENT
+  TEACHER
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+}
+
+enum PlanType {
+  MONTHLY
+  SEASONAL
+  COURSE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  FAILED
+}
+
+enum SmsStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum SmsPurpose {
+  PAYMENT_REMINDER
+  PASSWORD_RESET
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  phone        String    @unique
+  passwordHash String
+  fullName     String
+  role         PortalRole
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  parent       Parent?
+  teacher      Teacher?
+  sessions     Session[]
+  resetTokens  PasswordResetToken[]
+
+  @@map("users")
+}
+
+// DB-backed session so a session can be revoked (logout, password change) —
+// unlike the admin panel's stateless HMAC cookie, which can't be revoked.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// Forgot-password flow: a 6-digit code sent by SMS, hashed at rest.
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Parent {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  children Child[]
+  smsNotifications SMSNotification[]
+
+  @@map("parents")
+}
+
+model Teacher {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions CourseSession[]
+  notes    TeacherNote[]
+
+  @@map("teachers")
+}
+
+model Child {
+  id            String   @id @default(cuid())
+  parentId      String
+  fullName      String
+  dateOfBirth   DateTime
+  ageGroupSlug  String
+  specialNeeds  String?
+  createdAt     DateTime @default(now())
+
+  parent      Parent       @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+  notes       TeacherNote[]
+
+  @@index([parentId])
+  @@map("children")
+}
+
+// One scheduled, capacity-limited class group for a course (courseSlug refers
+// to data/content.json's CourseEntry.slug — validated in app code).
+model CourseSession {
+  id          String   @id @default(cuid())
+  courseSlug  String
+  teacherId   String?
+  dayOfWeek   Int // 0 (Sunday) - 6 (Saturday)
+  startTime   String // "16:00"
+  endTime     String // "17:30"
+  location    String
+  capacity    Int
+  term        String // e.g. "2026 Fall"
+  createdAt   DateTime @default(now())
+
+  teacher     Teacher?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  enrollments Enrollment[]
+  notes       TeacherNote[]
+
+  @@index([courseSlug])
+  @@index([teacherId])
+  @@map("course_sessions")
+}
+
+model Enrollment {
+  id              String           @id @default(cuid())
+  childId         String
+  courseSessionId String
+  status          EnrollmentStatus @default(PENDING)
+  enrolledAt      DateTime         @default(now())
+
+  child         Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  courseSession CourseSession  @relation(fields: [courseSessionId], references: [id], onDelete: Cascade)
+  paymentPlan   PaymentPlan?
+  payments      Payment[]
+  notes         TeacherNote[]
+
+  // Prevents enrolling the same child in the same session twice.
+  @@unique([childId, courseSessionId])
+  @@index([childId])
+  @@index([courseSessionId])
+  @@map("enrollments")
+}
+
+model PaymentPlan {
+  id           String   @id @default(cuid())
+  enrollmentId String   @unique
+  type         PlanType
+  amount       Decimal  @db.Decimal(10, 2)
+  currency     String   @default("TND")
+  startDate    DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  payments   Payment[]
+
+  @@map("payment_plans")
+}
+
+model Payment {
+  id                     String        @id @default(cuid())
+  paymentPlanId          String
+  enrollmentId           String
+  amount                 Decimal       @db.Decimal(10, 2)
+  currency               String        @default("TND")
+  dueDate                DateTime
+  status                 PaymentStatus @default(PENDING)
+  paidAt                 DateTime?
+  stripeSessionId        String?       @unique
+  stripePaymentIntentId  String?
+  createdAt              DateTime      @default(now())
+
+  paymentPlan      PaymentPlan       @relation(fields: [paymentPlanId], references: [id], onDelete: Cascade)
+  // Denormalized alongside paymentPlan (which also reaches the enrollment via
+  // paymentPlan.enrollment) purely so callers like the Stripe webhook and the
+  // reminders cron can query/join on Payment without an extra hop — kept as a
+  // real FK (not a bare string) so it can never drift out of sync.
+  enrollment       Enrollment        @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  smsNotifications SMSNotification[]
+
+  @@index([paymentPlanId])
+  @@index([enrollmentId])
+  @@index([status])
+  @@map("payments")
+}
+
+// Admin-editable placeholder pricing. courseSlug = "" (empty string, not
+// null — Postgres unique constraints treat every NULL as distinct, which
+// would silently allow duplicate "default" rows) means "default for this
+// plan type, no course-specific override". Not JSON per the project's
+// data-storage rules for payment-adjacent data — seeded with clearly-labeled
+// placeholders pending the real BrainTrain pricing document.
+model PricingRule {
+  id         String   @id @default(cuid())
+  planType   PlanType
+  courseSlug String   @default("")
+  amount     Decimal  @db.Decimal(10, 2)
+  currency   String   @default("TND")
+  updatedAt  DateTime @updatedAt
+
+  @@unique([planType, courseSlug])
+  @@map("pricing_rules")
+}
+
+model TeacherNote {
+  id              String   @id @default(cuid())
+  teacherId       String
+  childId         String
+  courseSessionId String
+  enrollmentId    String?
+  content         String
+  createdAt       DateTime @default(now())
+
+  teacher       Teacher        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  child         Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  courseSession CourseSession  @relation(fields: [courseSessionId], references: [id], onDelete: Cascade)
+  enrollment    Enrollment?    @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+
+  @@index([childId])
+  @@index([teacherId])
+  @@map("teacher_notes")
+}
+
+model SMSNotification {
+  id                String     @id @default(cuid())
+  parentId          String
+  phone             String
+  message           String
+  purpose           SmsPurpose
+  status             SmsStatus  @default(QUEUED)
+  provider          String
+  providerMessageId String?
+  relatedPaymentId  String?
+  createdAt         DateTime   @default(now())
+
+  parent         Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  relatedPayment Payment? @relation(fields: [relatedPaymentId], references: [id], onDelete: SetNull)
+
+  @@index([parentId])
+  @@map("sms_notifications")
+}

@@ -116,7 +116,7 @@ export default function HeroSection() {
               {t('lead')}
             </p>
             <div className="flex flex-wrap items-center gap-6">
-              <OrbitBorderButton label={t('register')} href="/register" />
+              <OrbitBorderButton label={t('register')} href="/parent-portal/register" />
             </div>
           </div>
         </div>
@@ -133,12 +133,12 @@ export default function HeroSection() {
                 data-side={bubble.side}
                 className={`hero-bubble absolute z-20 rounded-2xl border border-[#0b1a3a]/20 bg-white/95 px-4 py-3 text-sm font-medium leading-snug text-ink shadow-soft ${
                   'text' in bubble
-                    ? `max-w-[210px] whitespace-normal ${
+                    ? `max-w-[230px] whitespace-normal text-balance ${
                         bubble.side === 'left'
                           ? 'left-[-8%] sm:left-[-14%] lg:left-[-20%]'
                           : 'right-[-8%] sm:right-[-14%] lg:right-[-20%]'
                       }`
-                    : 'left-[58%] sm:left-[64%] lg:left-[68%] w-[220px] sm:w-[280px] lg:w-[320px] whitespace-nowrap'
+                    : 'left-[58%] sm:left-[64%] lg:left-[68%] w-max max-w-[70vw] sm:max-w-[360px] lg:max-w-[420px] whitespace-nowrap'
                 }`}
                 style={{ top: bubble.top }}
               >

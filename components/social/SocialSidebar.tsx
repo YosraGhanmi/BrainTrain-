@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { Facebook, Instagram, Linkedin, Share2, type LucideIcon } from 'lucide-react';
 import type { SocialLink } from '@/lib/content/types';
 
@@ -17,9 +17,12 @@ function iconFor(label: string): LucideIcon {
 export default function SocialSidebar({ socials }: { socials: SocialLink[] }) {
   // Admin has its own left-hand nav in the same screen region — the public
   // marketing sidebar would visually collide with it, so it's hidden there
-  // rather than fighting for the same space.
+  // rather than fighting for the same space. Same idea for the parent-portal
+  // login/signup screen, whose diagonal navy panel occupies that edge too,
+  // plus its own "Back to website" link in the same corner.
   const pathname = usePathname();
   if (pathname?.startsWith('/admin')) return null;
+  if (pathname?.startsWith('/parent-portal/login') || pathname?.startsWith('/parent-portal/register')) return null;
 
   return (
     <div className="fixed left-0 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-start gap-3 lg:flex">

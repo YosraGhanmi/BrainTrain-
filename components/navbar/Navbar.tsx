@@ -76,7 +76,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
           </div>
           <div className="hidden md:inline-flex">
             <RadialReveal
-              href="/login"
+              href="/parent-portal/login"
               boxClassName="rounded-full border border-ink/15 bg-white/90 shadow-sm"
               faceClassName="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em]"
               restColorClassName="text-ink"
@@ -117,7 +117,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
                   FR
                 </Link>
               </div>
-              <Link href="/login" className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone">
+              <Link href="/parent-portal/login" className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone">
                 {t('login')}
               </Link>
             </div>

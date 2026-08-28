@@ -62,7 +62,7 @@ export default async function CourseDetailPage({
               </div>
 
               <div className="mt-10 flex justify-end">
-                <ArrowRevealButton label={t('enrollInCourse')} href="/register" />
+                <ArrowRevealButton label={t('enrollInCourse')} href="/parent-portal/register" />
               </div>
             </div>
 

@@ -12,6 +12,12 @@ import {
   Image as ImageIcon,
   Milestone,
   Inbox,
+  UserSquare2,
+  GraduationCap,
+  CalendarClock,
+  ClipboardList,
+  CreditCard,
+  Tag,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -33,6 +39,13 @@ const ICON_BY_HREF: Record<string, LucideIcon> = {
   '/admin/socials': Share2,
   '/admin/achievements': ImageIcon,
   '/admin/timeline': Milestone,
+  '/admin/parents': UserSquare2,
+  '/admin/children': Users,
+  '/admin/teachers': GraduationCap,
+  '/admin/sessions': CalendarClock,
+  '/admin/enrollments': ClipboardList,
+  '/admin/payments': CreditCard,
+  '/admin/pricing': Tag,
 };
 
 export default function DashboardGrid({ sections }: { sections: Section[] }) {

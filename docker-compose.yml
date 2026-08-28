@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: braintrain_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: braintrain
+      POSTGRES_PASSWORD: braintrain
+      POSTGRES_DB: braintrain
+    ports:
+      - '5433:5432'
+    volumes:
+      - braintrain_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  braintrain_postgres_data:
