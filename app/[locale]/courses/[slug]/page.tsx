@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import {
   ArrowLeft,
@@ -28,15 +29,30 @@ import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import { Link } from '@/i18n/navigation';
+import { readContent } from '@/lib/content/store';
 import { getAgeGroup, getCoursesForAgeGroup } from '@/lib/coursesData';
 import type { AppLocale } from '@/i18n/routing';
+import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return readContent().ageGroups.map((g) => ({ slug: g.slug }));
+}
 
 export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
   const group = getAgeGroup(params.slug, params.locale);
+  if (!group) return { title: 'Courses — BrainTrain' };
+
+  const title = `${group.label} Courses — BrainTrain`;
+  const path = `/courses/${params.slug}`;
+  const url = absoluteUrl(params.locale, path);
+
   return {
-    title: group ? `${group.label} Courses — BrainTrain` : 'Courses — BrainTrain',
+    title,
+    description: group.description,
+    alternates: { canonical: url, languages: localeAlternates(path) },
+    openGraph: { title, description: group.description, url, type: 'website' },
   };
 }
 
@@ -116,8 +132,9 @@ export default async function AgeGroupCoursesPage({ params }: { params: { slug: 
                 </span>
 
                 {image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={image} alt={title} className="h-32 w-full rounded-2xl object-cover" />
+                  <div className="relative h-32 w-full overflow-hidden rounded-2xl">
+                    <Image src={image} alt={title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
+                  </div>
                 ) : (
                   <CourseIllustration icon={Icon} color={color} className="h-32 w-full rounded-2xl" />
                 )}

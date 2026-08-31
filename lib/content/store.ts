@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { SiteContent, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry } from './types';
+import type { SiteContent, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost } from './types';
 
 // Everything the admin dashboard edits lives in one JSON file on disk. This
 // only works because the app runs on a traditional Node server with a
@@ -296,6 +296,7 @@ const DEFAULT_CONTENT: SiteContent = {
       image: '/age/14-18.png',
     },
   ],
+  news: [],
 };
 
 // `data/content.json` may still hold plain strings for fields that used to be
@@ -339,7 +340,13 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     description: toLocalized(g.description, { en: '', fr: '' }),
   }));
 
-  return { ...merged, stats, timeline, courses, ageGroups };
+  const news: NewsPost[] = (raw.news ?? DEFAULT_CONTENT.news).map((n: any) => ({
+    ...n,
+    targetAgeGroups: Array.isArray(n.targetAgeGroups) ? n.targetAgeGroups : [],
+    targetCourses: Array.isArray(n.targetCourses) ? n.targetCourses : [],
+  }));
+
+  return { ...merged, stats, timeline, courses, ageGroups, news };
 }
 
 function ensureFile(): void {

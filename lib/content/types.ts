@@ -42,6 +42,20 @@ export type AgeGroupEntry = {
 
 export type SocialLink = { label: string; href: string };
 
+// Admin-posted announcements shown on the parent-portal dashboard — plain
+// text (not localized) since the portal itself isn't localized elsewhere.
+// targetAgeGroups / targetCourses: empty array = no filter on that dimension
+// (visible to everyone); non-empty = only children matching one of the
+// listed ageGroupSlug / courseSlug values see the post.
+export type NewsPost = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  targetAgeGroups: string[];
+  targetCourses: string[];
+};
+
 export type SiteContent = {
   sponsors: string[];
   stats: StatEntry[];
@@ -51,4 +65,5 @@ export type SiteContent = {
   socials: SocialLink[];
   courses: CourseEntry[];
   ageGroups: AgeGroupEntry[];
+  news: NewsPost[];
 };

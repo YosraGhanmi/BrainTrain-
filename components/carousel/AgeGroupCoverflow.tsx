@@ -5,6 +5,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import {
   motion,
   useMotionValue,
@@ -103,11 +104,13 @@ function Card({
         style={{ x: '-50%', y: '-50%', width, height, borderRadius: RADIUS, boxShadow }}
         className="relative overflow-hidden bg-[#0b1a3a]"
       >
-        <img
+        <Image
           src={group.image}
           alt={group.label}
+          fill
           draggable={false}
-          className="pointer-events-none block h-full w-full select-none object-cover"
+          sizes="(min-width: 640px) 560px, 90vw"
+          className="pointer-events-none select-none object-cover"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b1a3a]/90 via-[#0b1a3a]/10 to-transparent" />
 

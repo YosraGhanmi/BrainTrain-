@@ -113,6 +113,7 @@ model Teacher {
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions CourseSession[]
   notes    TeacherNote[]
+  badges   Badge[]
 
   @@map("teachers")
 }
@@ -129,9 +130,30 @@ model Child {
   parent      Parent       @relation(fields: [parentId], references: [id], onDelete: Cascade)
   enrollments Enrollment[]
   notes       TeacherNote[]
+  badges      Badge[]
 
   @@index([parentId])
   @@map("children")
+}
+
+// Awarded by a teacher to a student — shows up on that child's parent-portal
+// dashboard. Free-form title/note (no admin-managed catalog) since teachers
+// award these directly from their own portal, same pattern as TeacherNote.
+model Badge {
+  id         String   @id @default(cuid())
+  childId    String
+  teacherId  String
+  title      String
+  note       String?
+  emoji      String   @default("🏅")
+  awardedAt  DateTime @default(now())
+
+  child   Child   @relation(fields: [childId], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
+  @@index([teacherId])
+  @@map("badges")
 }
 
 // One scheduled, capacity-limited class group for a course (courseSlug refers

@@ -13,7 +13,7 @@ import { readContent } from '@/lib/content/store';
 import { getCourseKinds } from '@/lib/coursesData';
 import type { AppLocale } from '@/i18n/routing';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default function Home({ params }: { params: { locale: AppLocale } }) {
   const content = readContent();

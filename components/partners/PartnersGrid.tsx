@@ -1,11 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PartnersGridProps {
   logos: string[];
   perPage: number;
+}
+
+// Logo filenames are the only readable label we have for each partner (e.g.
+// "/partners/American corner.png" -> "American corner") — used as alt text
+// since these logos carry real information (who the partners are), not
+// decoration.
+function labelFromSrc(src: string): string {
+  const file = src.split('/').pop() ?? '';
+  return file.replace(/\.[a-zA-Z0-9]+$/, '');
 }
 
 export default function PartnersGrid({ logos, perPage }: PartnersGridProps) {
@@ -27,12 +37,14 @@ export default function PartnersGrid({ logos, perPage }: PartnersGridProps) {
     <div className="w-full">
       <div className="flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-10">
         {visible.map((src, i) => (
-          <div key={`${src}-${i}`} className="flex h-24 flex-1 items-center justify-center sm:h-32">
-            <img
+          <div key={`${src}-${i}`} className="relative h-24 max-w-[160px] flex-1 sm:h-32 sm:max-w-[190px]">
+            <Image
               src={src}
-              alt=""
+              alt={labelFromSrc(src)}
+              fill
               draggable={false}
-              className="max-h-full max-w-[160px] object-contain mix-blend-multiply transition duration-300 hover:scale-105 sm:max-w-[190px]"
+              sizes="190px"
+              className="object-contain mix-blend-multiply transition duration-300 hover:scale-105"
             />
           </div>
         ))}

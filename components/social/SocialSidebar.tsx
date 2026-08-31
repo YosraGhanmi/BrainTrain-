@@ -15,14 +15,13 @@ function iconFor(label: string): LucideIcon {
 }
 
 export default function SocialSidebar({ socials }: { socials: SocialLink[] }) {
-  // Admin has its own left-hand nav in the same screen region — the public
-  // marketing sidebar would visually collide with it, so it's hidden there
-  // rather than fighting for the same space. Same idea for the parent-portal
-  // login/signup screen, whose diagonal navy panel occupies that edge too,
-  // plus its own "Back to website" link in the same corner.
+  // Admin, the parent/teacher portals, and the portal login/signup screens
+  // all have their own left-hand nav or diagonal navy panel in the same
+  // screen region — the public marketing sidebar would visually collide
+  // with them, so it's hidden there rather than fighting for the same space.
   const pathname = usePathname();
   if (pathname?.startsWith('/admin')) return null;
-  if (pathname?.startsWith('/parent-portal/login') || pathname?.startsWith('/parent-portal/register')) return null;
+  if (pathname?.startsWith('/parent-portal') || pathname?.startsWith('/teacher')) return null;
 
   return (
     <div className="fixed left-0 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-start gap-3 lg:flex">

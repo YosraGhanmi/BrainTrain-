@@ -5,16 +5,31 @@ import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import { Link } from '@/i18n/navigation';
-import { getCourseKind, getAgeGroup } from '@/lib/coursesData';
+import { getCourseKind, getAgeGroup, getCourseKinds } from '@/lib/coursesData';
 import { getIcon } from '@/lib/content/icons';
 import type { AppLocale } from '@/i18n/routing';
+import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  // Kind slugs are derived from the English title (see coursesData.ts), so
+  // they're the same regardless of which locale generates the list.
+  return getCourseKinds('en').map((kind) => ({ slug: kind.slug }));
+}
 
 export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
   const kind = getCourseKind(params.slug, params.locale);
+  if (!kind) return { title: 'Course — BrainTrain' };
+
+  const title = `${kind.title} — BrainTrain`;
+  const path = `/course/kind/${params.slug}`;
+  const url = absoluteUrl(params.locale, path);
+
   return {
-    title: kind ? `${kind.title} — BrainTrain` : 'Course — BrainTrain',
+    title,
+    alternates: { canonical: url, languages: localeAlternates(path) },
+    openGraph: { title, url, type: 'website' },
   };
 }
 

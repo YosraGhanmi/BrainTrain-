@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
-import { CalendarDays, Facebook, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { TimelineEntry } from '@/lib/content/types';
 
@@ -140,8 +140,8 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
                 const summary = milestone.summary[locale] || milestone.summary.en;
                 return (
                   <div key={`${milestone.date.en}|${milestone.title.en}`} className="flex w-72 shrink-0 flex-col items-center gap-2 sm:w-80">
-                    <span className="inline-flex items-center gap-2 text-sm font-display font-bold text-ink sm:text-base">
-                      <CalendarDays className="h-4 w-4 shrink-0" style={{ color: NAVY }} />
+                    <span className="inline-flex items-center gap-2.5 text-lg font-display font-bold text-ink sm:text-xl">
+                      <CalendarDays className="h-6 w-6 shrink-0" style={{ color: NAVY }} />
                       {date}
                     </span>
                     <span className="h-4 w-px bg-ink/15" />
@@ -179,18 +179,22 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
                         <p className="text-sm leading-relaxed text-stone">{summary}</p>
                       </div>
 
-                      {milestone.facebookUrl ? (
-                        <a
-                          href={milestone.facebookUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="relative z-10 mt-3 inline-flex shrink-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#1877f2] transition hover:underline"
-                        >
-                          <Facebook className="h-3.5 w-3.5" />
-                          {t('viewPost')}
-                        </a>
-                      ) : null}
+                      <a
+                        href={milestone.facebookUrl || undefined}
+                        target={milestone.facebookUrl ? '_blank' : undefined}
+                        rel={milestone.facebookUrl ? 'noopener noreferrer' : undefined}
+                        aria-hidden={!milestone.facebookUrl}
+                        tabIndex={milestone.facebookUrl ? 0 : -1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!milestone.facebookUrl) e.preventDefault();
+                        }}
+                        aria-label={milestone.facebookUrl ? t('viewPost') : undefined}
+                        className="relative z-10 mt-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition hover:opacity-90"
+                        style={{ backgroundColor: NAVY }}
+                      >
+                        <ArrowUpRight className="h-4 w-4" />
+                      </a>
                     </div>
                   </div>
                 );

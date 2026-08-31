@@ -2,6 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -16,6 +17,15 @@ function localizedField(formData: FormData, name: string): LocalizedString {
     en: String(formData.get(`${name}_en`) ?? '').trim(),
     fr: String(formData.get(`${name}_fr`) ?? '').trim(),
   };
+}
+
+// Public pages under app/[locale] now render with ISR (`revalidate = 300`)
+// instead of force-dynamic, so an admin edit no longer shows up on the very
+// next request automatically — call this after every `writeContent()` to
+// invalidate the cached HTML for both locales immediately instead of waiting
+// out the revalidate window.
+function revalidatePublicContent(): void {
+  revalidatePath('/[locale]', 'layout');
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +114,7 @@ export async function addSponsor(formData: FormData): Promise<void> {
   const content = readContent();
   content.sponsors.push(src);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/sponsors?saved=1');
 }
 
@@ -112,6 +123,7 @@ export async function deleteSponsor(src: string): Promise<void> {
   const content = readContent();
   content.sponsors = content.sponsors.filter((s) => s !== src);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/sponsors?saved=1');
 }
 
@@ -130,6 +142,7 @@ export async function updateStats(formData: FormData): Promise<void> {
     .map((en, i) => ({ label: { en: en.trim(), fr: (labelsFr[i] ?? '').trim() }, value: values[i] ?? 0 }))
     .filter((s) => s.label.en.length > 0);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/stats?saved=1');
 }
 
@@ -149,6 +162,7 @@ export async function updateContact(formData: FormData): Promise<void> {
     mapsEmbedSrc: field('mapsEmbedSrc'),
   };
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/contact?saved=1');
 }
 
@@ -166,6 +180,7 @@ export async function updateSocials(formData: FormData): Promise<void> {
     .map((label, i) => ({ label: label.trim(), href: (hrefs[i] ?? '').trim() }))
     .filter((s) => s.label.length > 0 && s.href.length > 0);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/socials?saved=1');
 }
 
@@ -182,6 +197,7 @@ export async function addAchievementImage(formData: FormData): Promise<void> {
   const content = readContent();
   content.achievementsImages.push(src);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/achievements?saved=1');
 }
 
@@ -190,7 +206,44 @@ export async function deleteAchievementImage(src: string): Promise<void> {
   const content = readContent();
   content.achievementsImages = content.achievementsImages.filter((s) => s !== src);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/achievements?saved=1');
+}
+
+// ---------------------------------------------------------------------------
+// News — announcements shown on the parent-portal dashboard
+// ---------------------------------------------------------------------------
+
+export async function addNews(formData: FormData): Promise<void> {
+  requireAdmin();
+  const title = String(formData.get('title') ?? '').trim();
+  const body = String(formData.get('body') ?? '').trim();
+  if (!title || !body) redirect('/admin/news?error=1');
+
+  const targetAgeGroups = formData.getAll('targetAgeGroups').map(String);
+  const targetCourses = formData.getAll('targetCourses').map(String);
+
+  const content = readContent();
+  content.news.unshift({
+    id: crypto.randomUUID(),
+    title,
+    body,
+    createdAt: new Date().toISOString(),
+    targetAgeGroups,
+    targetCourses,
+  });
+  writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/news?saved=1');
+}
+
+export async function deleteNews(id: string): Promise<void> {
+  requireAdmin();
+  const content = readContent();
+  content.news = content.news.filter((n) => n.id !== id);
+  writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/news?saved=1');
 }
 
 // ---------------------------------------------------------------------------
@@ -218,6 +271,7 @@ export async function upsertTimelineEntry(formData: FormData): Promise<void> {
     content.timeline.push(entry);
   }
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/timeline?saved=1');
 }
 
@@ -226,6 +280,7 @@ export async function deleteTimelineEntry(index: number): Promise<void> {
   const content = readContent();
   content.timeline.splice(index, 1);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/timeline?saved=1');
 }
 
@@ -240,6 +295,7 @@ export async function reorderTimeline(order: number[]): Promise<void> {
   if (reordered.length !== content.timeline.length) return;
   content.timeline = reordered;
   writeContent(content);
+  revalidatePublicContent();
   revalidatePath('/admin/timeline');
 }
 
@@ -289,6 +345,7 @@ export async function upsertCourse(formData: FormData): Promise<void> {
   }
 
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/courses?saved=1');
 }
 
@@ -297,6 +354,7 @@ export async function deleteCourse(slug: string): Promise<void> {
   const content = readContent();
   content.courses = content.courses.filter((c) => c.slug !== slug);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/courses?saved=1');
 }
 
@@ -329,6 +387,7 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
   }
 
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/age-groups?saved=1');
 }
 
@@ -338,6 +397,7 @@ export async function deleteAgeGroup(slug: string): Promise<void> {
   content.ageGroups = content.ageGroups.filter((g) => g.slug !== slug);
   content.courses = content.courses.filter((c) => c.ageGroupSlug !== slug);
   writeContent(content);
+  revalidatePublicContent();
   redirect('/admin/age-groups?saved=1');
 }
 

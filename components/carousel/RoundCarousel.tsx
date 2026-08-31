@@ -1,7 +1,20 @@
 // Round Carousel — Originkit
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
+
+// Combined next/image default deviceSizes + imageSizes (next.config.js sets no override).
+const NEXT_IMAGE_WIDTHS = [16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
+
+// Route local uploads through Next's image optimizer so the browser decodes/
+// composites a properly-sized asset instead of the raw admin-uploaded file
+// (which can be several MB / 2000px+) — that's what made the 3D rotation janky.
+function optimizedSrc(src: string, displayWidth: number): string {
+  if (!src.startsWith("/")) return src; // remote/absolute URLs pass through untouched
+  const target = displayWidth * 2; // headroom for retina without going full-res
+  const width = NEXT_IMAGE_WIDTHS.find((w) => w >= target) ?? NEXT_IMAGE_WIDTHS[NEXT_IMAGE_WIDTHS.length - 1];
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=70`;
+}
 
 interface RoundCarouselImage {
   src: string;
@@ -58,18 +71,35 @@ export default function RoundCarousel({
   const items = images.length > 0 ? images : DEFAULT_IMAGES;
   const count = items.length;
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
   const rotYRef = useRef(0);
   const velRef = useRef(0);
   const lastRef = useRef(0);
   const dragRef = useRef({ active: false, x: 0 });
+  const visibleRef = useRef(true);
 
   const angle = 360 / count;
   const factor = 1 + spacing * 0.15;
   const radius = (imageWidth * factor) / (2 * Math.tan(Math.PI / count));
   const radiusPx = cornerRadius;
   const degPerSec = speed * 6 * (direction === "left" ? -1 : 1);
+
+  // Pause the rAF loop entirely while the carousel is scrolled out of view —
+  // it otherwise keeps spinning (and burning CPU/GPU) for the whole page lifetime.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+      },
+      { threshold: 0.01 }
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const ring = ringRef.current;
@@ -81,6 +111,10 @@ export default function RoundCarousel({
     const draw = (now: number) => {
       const dt = lastRef.current ? (now - lastRef.current) / 1000 : 0;
       lastRef.current = now;
+      if (!visibleRef.current) {
+        rafRef.current = requestAnimationFrame(draw);
+        return;
+      }
       const f = Math.min(dt, 0.1);
       const d = dragRef.current;
       if (!d.active) {
@@ -128,8 +162,14 @@ export default function RoundCarousel({
     backgroundPosition: "center",
   };
 
+  const resolvedSrcs = useMemo(
+    () => items.map((img) => (img?.src ? optimizedSrc(img.src, imageWidth) : undefined)),
+    [items, imageWidth]
+  );
+
   return (
     <div
+      ref={rootRef}
       style={{
         ...style,
         width: "100%",
@@ -161,10 +201,11 @@ export default function RoundCarousel({
             width: imageWidth,
             height: imageHeight,
             transformStyle: "preserve-3d",
+            willChange: "transform",
           }}
         >
           {items.map((img, i) => {
-            const src = img?.src;
+            const src = resolvedSrcs[i];
             return (
               <div
                 key={i}
@@ -180,7 +221,7 @@ export default function RoundCarousel({
                     ...faceBase,
                     backgroundColor: src ? "transparent" : "#222",
                     backgroundImage: src ? `url(${src})` : undefined,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.3)",
                   }}
                 />
                 <div

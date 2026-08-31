@@ -22,6 +22,7 @@ import {
   ClipboardList,
   CreditCard,
   Tag,
+  Megaphone,
 } from 'lucide-react';
 
 const customizationItems = [
@@ -43,6 +44,7 @@ const portalItems = [
   { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
   { label: 'Payments', href: '/admin/payments', icon: CreditCard },
   { label: 'Pricing', href: '/admin/pricing', icon: Tag },
+  { label: 'News', href: '/admin/news', icon: Megaphone },
 ];
 
 export default function SidebarNav({ unreadMessages = 0 }: { unreadMessages?: number }) {

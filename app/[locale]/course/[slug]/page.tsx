@@ -7,16 +7,45 @@ import Footer from '@/components/footer/Footer';
 import VideoEmbed from '@/components/video/VideoEmbed';
 import ArrowRevealButton from '@/components/buttons/ArrowRevealButton';
 import { Link } from '@/i18n/navigation';
+import { readContent } from '@/lib/content/store';
 import { getCourse } from '@/lib/coursesData';
 import type { AppLocale } from '@/i18n/routing';
+import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
+export function generateStaticParams() {
+  return readContent().courses.map((c) => ({ slug: c.slug }));
+}
 
 export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
   const course = getCourse(params.slug, params.locale);
+  if (!course) return { title: 'Course — BrainTrain' };
+
+  const title = `${course.title} — BrainTrain`;
+  const path = `/course/${params.slug}`;
+  const url = absoluteUrl(params.locale, path);
+
   return {
-    title: course ? `${course.title} — BrainTrain` : 'Course — BrainTrain',
-    description: course?.description,
+    title,
+    description: course.description,
+    alternates: {
+      canonical: url,
+      languages: localeAlternates(path),
+    },
+    openGraph: {
+      title,
+      description: course.description,
+      url,
+      type: 'website',
+      ...(course.image ? { images: [course.image] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: course.description,
+      ...(course.image ? { images: [course.image] } : {}),
+    },
   };
 }
 
@@ -35,8 +64,25 @@ export default async function CourseDetailPage({
   const backHref = searchParams.age ? `/courses/${searchParams.age}` : '/courses';
   const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
 
+  const courseJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: course.title,
+    description: course.description,
+    provider: {
+      '@type': 'EducationalOrganization',
+      name: 'BrainTrain',
+      sameAs: absoluteUrl(params.locale),
+    },
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-surface text-ink">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
       <Navbar />
       <main className="flex-1 px-6 pb-24 pt-32 md:px-10 lg:px-16">
         <div className="mx-auto max-w-6xl">

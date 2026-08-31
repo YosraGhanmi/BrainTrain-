@@ -5,8 +5,9 @@ import Footer from '@/components/footer/Footer';
 import AgeGroupCoverflow from '@/components/carousel/AgeGroupCoverflow';
 import { readContent } from '@/lib/content/store';
 import type { AppLocale } from '@/i18n/routing';
+import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 const METADATA_BY_LOCALE: Record<string, Metadata> = {
   en: {
@@ -19,8 +20,14 @@ const METADATA_BY_LOCALE: Record<string, Metadata> = {
   },
 };
 
-export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
-  return METADATA_BY_LOCALE[params.locale] ?? METADATA_BY_LOCALE.en;
+export function generateMetadata({ params }: { params: { locale: AppLocale } }): Metadata {
+  const base = METADATA_BY_LOCALE[params.locale] ?? METADATA_BY_LOCALE.en;
+  const url = absoluteUrl(params.locale, '/courses');
+  return {
+    ...base,
+    alternates: { canonical: url, languages: localeAlternates('/courses') },
+    openGraph: { title: base.title as string, description: base.description as string, url, type: 'website' },
+  };
 }
 
 export default async function CoursesPage({ params }: { params: { locale: AppLocale } }) {

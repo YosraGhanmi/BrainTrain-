@@ -5,6 +5,7 @@ import '../globals.css';
 export const metadata: Metadata = {
   title: 'BrainTrain Admin',
   description: 'BrainTrain admin dashboard.',
+  robots: { index: false, follow: false },
 };
 
 // Self-hosted — see app/[locale]/layout.tsx for why (Google Fonts fetch

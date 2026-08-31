@@ -2,11 +2,13 @@
 
 import { z } from 'zod';
 import crypto from 'crypto';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { hashPassword, verifyPassword } from '@/lib/portal-auth/password';
 import { createPortalSession, destroyPortalSession, getPortalSessionUser, revokeAllSessions } from '@/lib/portal-auth/session';
 import { localizedPath } from '@/lib/portal-auth/guard';
+import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import { sendSms } from '@/lib/sms/send';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -91,6 +93,33 @@ export async function loginTeacher(formData: FormData): Promise<void> {
 
 export async function logoutPortal(redirectTo: string): Promise<void> {
   await destroyPortalSession();
+  redirect(redirectTo);
+}
+
+// ---------------------------------------------------------------------------
+// Parent-portal child switcher (topbar) — persisted via cookie so every tab
+// filters to the same child without threading a childId through routes.
+// ---------------------------------------------------------------------------
+
+export async function selectChild(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user || user.role !== 'PARENT' || !user.parentId) {
+    redirect(localizedPath(locale, '/parent-portal/login'));
+  }
+
+  const childId = field(formData, 'childId');
+  const pathname = field(formData, 'pathname') || '/parent-portal';
+  const redirectTo = localizedPath(locale, pathname);
+
+  const child = await prisma.child.findUnique({ where: { id: childId } });
+  if (!child || child.parentId !== user!.parentId) redirect(redirectTo);
+
+  cookies().set(SELECTED_CHILD_COOKIE, childId, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+  });
   redirect(redirectTo);
 }
 

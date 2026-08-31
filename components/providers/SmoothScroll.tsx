@@ -14,6 +14,9 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (isAdmin) return;
+    // Scroll-jacking is exactly the kind of motion prefers-reduced-motion
+    // asks sites to skip — native scroll remains fully functional without it.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const lenis = new Lenis({
       duration: 1.15,

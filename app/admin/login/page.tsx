@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { login } from '@/lib/admin/actions';
 import PasswordField from '@/components/admin/PasswordField';
 
@@ -24,6 +26,14 @@ export default function AdminLoginPage({ searchParams }: { searchParams: { error
           Every course, photo, and stat on the site lives here — sign in to update it.
         </p>
       </div>
+
+      <Link
+        href="/"
+        className="absolute left-8 top-8 z-30 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-stone transition hover:text-ink sm:left-16"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Return to website
+      </Link>
 
       {/* The form, above both background layers. */}
       <div className="relative z-20 flex w-full items-center px-8 py-16 sm:px-16 lg:w-1/2 lg:pl-24">

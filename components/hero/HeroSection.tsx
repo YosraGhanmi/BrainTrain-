@@ -107,7 +107,7 @@ export default function HeroSection() {
                 delay: 2,
                 ease: 'easeInOut',
               }}
-              tag="div"
+              tag="h1"
             />
           </div>
 

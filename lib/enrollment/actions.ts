@@ -25,10 +25,11 @@ export async function enrollChild(formData: FormData): Promise<void> {
 
   const childId = field(formData, 'childId');
   const courseSessionId = field(formData, 'courseSessionId');
+  const courseSlug = field(formData, 'courseSlug');
   const planType = field(formData, 'planType') as PlanType;
 
-  const fail = (reason: string) =>
-    redirect(localizedPath(locale, `/parent-portal/children/${childId}/enroll?error=${reason}`));
+  const detailPath = courseSlug ? `/parent-portal/courses/${courseSlug}` : '/parent-portal/courses';
+  const fail = (reason: string) => redirect(localizedPath(locale, `${detailPath}?error=${reason}`));
 
   if (!PLAN_TYPES.includes(planType)) fail('plan');
 
@@ -75,5 +76,5 @@ export async function enrollChild(formData: FormData): Promise<void> {
     throw err;
   }
 
-  redirect(localizedPath(locale, `/parent-portal/children/${childId}?saved=1`));
+  redirect(localizedPath(locale, `${detailPath}?saved=1`));
 }

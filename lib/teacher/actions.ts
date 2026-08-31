@@ -40,3 +40,35 @@ export async function addTeacherNote(formData: FormData): Promise<void> {
 
   redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?saved=1`));
 }
+
+const BADGE_EMOJIS = ['🏅', '⭐', '🏆', '🚀', '🧠', '🔥', '🎯', '💡'];
+
+export async function awardBadge(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const teacher = await requireTeacher(locale);
+
+  const childId = field(formData, 'childId');
+  const courseSessionId = field(formData, 'courseSessionId');
+  const title = field(formData, 'title');
+  const note = field(formData, 'note');
+  const emoji = BADGE_EMOJIS.includes(field(formData, 'emoji')) ? field(formData, 'emoji') : BADGE_EMOJIS[0];
+
+  const fail = () => redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?badgeError=1`));
+  if (!title) fail();
+
+  const session = await prisma.courseSession.findUnique({ where: { id: courseSessionId } });
+  if (!session || session.teacherId !== teacher.teacherId) {
+    redirect(localizedPath(locale, '/teacher?error=1'));
+  }
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { childId_courseSessionId: { childId, courseSessionId } },
+  });
+  if (!enrollment) fail();
+
+  await prisma.badge.create({
+    data: { teacherId: teacher.teacherId, childId, title, note: note || null, emoji },
+  });
+
+  redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?badgeSaved=1`));
+}

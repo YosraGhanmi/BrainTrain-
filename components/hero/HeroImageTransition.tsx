@@ -16,22 +16,27 @@ export default function HeroImageTransition() {
     if (!heroRef.current || !imageRef.current) return;
 
     const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
       // At rest the image's top 30px sits tucked under the hero (negative
       // margin below, z-index above), a fixed physical overlap — no JS
       // needed for that part. As the seam scrolls through view, the hero
       // eases up and the image eases down by equal, opposite amounts, so
       // they visibly separate together rather than one staying put while
-      // the other slides away.
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: 'bottom 90%',
-          end: 'bottom 20%',
-          scrub: 0.4,
-        },
-      });
+      // the other slides away. Skipped entirely under reduced-motion —
+      // the seam stays in its fixed at-rest overlap instead of scrubbing.
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: 'bottom 90%',
+            end: 'bottom 20%',
+            scrub: 0.4,
+          },
+        });
 
-      tl.to(heroRef.current, { y: -18, ease: 'none' }, 0).to(imageRef.current, { y: 18, ease: 'none' }, 0);
+        tl.to(heroRef.current, { y: -18, ease: 'none' }, 0).to(imageRef.current, { y: 18, ease: 'none' }, 0);
+      });
     });
 
     return () => ctx.revert();
