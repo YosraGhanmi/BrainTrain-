@@ -10,6 +10,7 @@ import { createPortalSession, destroyPortalSession, getPortalSessionUser, revoke
 import { localizedPath } from '@/lib/portal-auth/guard';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import { sendSms } from '@/lib/sms/send';
+import { sendEmail } from '@/lib/email/send';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -144,6 +145,76 @@ export async function changePhone(formData: FormData): Promise<void> {
   redirect(localizedPath(locale, '/parent-portal/account?saved=1'));
 }
 
+// A secondary phone can be added freely; the primary phone can only be
+// deleted once a secondary is on file, at which point it's promoted to
+// primary (the schema keeps `phone` required/unique).
+export async function addSecondaryPhone(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  const phone = field(formData, 'secondaryPhone');
+  if (phone.length < 8) redirect(localizedPath(locale, '/parent-portal/account?tab=personal&error=1'));
+
+  const taken = await prisma.user.findFirst({ where: { OR: [{ phone }, { secondaryPhone: phone }] } });
+  if (taken && taken.id !== user!.id) {
+    redirect(localizedPath(locale, '/parent-portal/account?tab=personal&error=phone-taken'));
+  }
+
+  await prisma.user.update({ where: { id: user!.id }, data: { secondaryPhone: phone } });
+  redirect(localizedPath(locale, '/parent-portal/account?tab=personal&saved=1'));
+}
+
+export async function deleteSecondaryPhone(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  await prisma.user.update({ where: { id: user!.id }, data: { secondaryPhone: null } });
+  redirect(localizedPath(locale, '/parent-portal/account?tab=personal&saved=1'));
+}
+
+export async function deletePrimaryPhone(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  const dbUser = await prisma.user.findUnique({ where: { id: user!.id } });
+  if (!dbUser?.secondaryPhone) {
+    // Nothing to promote — the primary phone must always stay set.
+    redirect(localizedPath(locale, '/parent-portal/account?tab=personal&error=no-secondary'));
+  }
+
+  await prisma.user.update({
+    where: { id: user!.id },
+    data: { phone: dbUser!.secondaryPhone!, secondaryPhone: null },
+  });
+  redirect(localizedPath(locale, '/parent-portal/account?tab=personal&saved=1'));
+}
+
+export async function updateBackupEmail(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  const backupEmail = field(formData, 'backupEmail').toLowerCase();
+  if (!backupEmail || !backupEmail.includes('@')) {
+    redirect(localizedPath(locale, '/parent-portal/account?tab=personal&error=1'));
+  }
+
+  await prisma.user.update({ where: { id: user!.id }, data: { backupEmail } });
+  redirect(localizedPath(locale, '/parent-portal/account?tab=personal&saved=1'));
+}
+
+export async function deleteBackupEmail(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  await prisma.user.update({ where: { id: user!.id }, data: { backupEmail: null } });
+  redirect(localizedPath(locale, '/parent-portal/account?tab=personal&saved=1'));
+}
+
 export async function changePassword(formData: FormData): Promise<void> {
   const locale = getLocale(formData);
   const user = await getPortalSessionUser();
@@ -166,6 +237,83 @@ export async function changePassword(formData: FormData): Promise<void> {
   await revokeAllSessions(user!.id);
   await destroyPortalSession();
   redirect(localizedPath(locale, '/parent-portal/login?saved=password-changed'));
+}
+
+// ---------------------------------------------------------------------------
+// Two-factor auth (email OTP). Enforcement at login is not wired up yet —
+// see lib/email/send.ts — this wires the enable/verify/disable flow end to
+// end against a placeholder mailer.
+// ---------------------------------------------------------------------------
+
+const TWO_FACTOR_CODE_TTL_MS = 10 * 60 * 1000;
+
+export async function requestTwoFactorEnable(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  const dbUser = await prisma.user.findUnique({ where: { id: user!.id } });
+  const destination = dbUser?.backupEmail || dbUser?.email;
+  if (!dbUser || !destination) {
+    redirect(localizedPath(locale, '/parent-portal/account?tab=security&error=1'));
+  }
+
+  const code = crypto.randomInt(100000, 999999).toString();
+  await prisma.user.update({
+    where: { id: user!.id },
+    data: { twoFactorCodeHash: hashCode(code), twoFactorCodeExpiresAt: new Date(Date.now() + TWO_FACTOR_CODE_TTL_MS) },
+  });
+  await sendEmail({
+    to: destination!,
+    subject: 'Your BrainTrain verification code',
+    text: `Your two-factor authentication code is ${code}. It expires in 10 minutes.`,
+  }).catch(() => undefined);
+
+  redirect(localizedPath(locale, '/parent-portal/account?tab=security&verify2fa=1'));
+}
+
+export async function confirmTwoFactorEnable(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  const code = field(formData, 'code');
+  const dbUser = await prisma.user.findUnique({ where: { id: user!.id } });
+
+  const ok =
+    dbUser?.twoFactorCodeHash &&
+    dbUser.twoFactorCodeExpiresAt &&
+    dbUser.twoFactorCodeExpiresAt > new Date() &&
+    dbUser.twoFactorCodeHash === hashCode(code);
+
+  if (!ok) {
+    redirect(localizedPath(locale, '/parent-portal/account?tab=security&verify2fa=1&error=1'));
+  }
+
+  await prisma.user.update({
+    where: { id: user!.id },
+    data: { twoFactorEnabled: true, twoFactorCodeHash: null, twoFactorCodeExpiresAt: null },
+  });
+  redirect(localizedPath(locale, '/parent-portal/account?tab=security&saved=1'));
+}
+
+export async function disableTwoFactor(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const user = await getPortalSessionUser();
+  if (!user) redirect(localizedPath(locale, '/parent-portal/login'));
+
+  const currentPassword = field(formData, 'currentPassword');
+  const dbUser = await prisma.user.findUnique({ where: { id: user!.id } });
+  const ok = dbUser && (await verifyPassword(currentPassword, dbUser.passwordHash));
+  if (!ok) {
+    redirect(localizedPath(locale, '/parent-portal/account?tab=security&error=1'));
+  }
+
+  await prisma.user.update({
+    where: { id: user!.id },
+    data: { twoFactorEnabled: false, twoFactorCodeHash: null, twoFactorCodeExpiresAt: null },
+  });
+  redirect(localizedPath(locale, '/parent-portal/account?tab=security&saved=1'));
 }
 
 // ---------------------------------------------------------------------------

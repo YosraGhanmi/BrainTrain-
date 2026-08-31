@@ -19,6 +19,15 @@ export type TimelineEntry = {
   facebookUrl?: string;
 };
 
+// One stage of a multi-phase program (e.g. "Year 1 — Discover & Control") — a
+// short heading plus a handful of high-level bullet points, not a
+// session-by-session breakdown. Optional: most courses are single-term and
+// don't need a curriculum timeline on their detail page.
+export type CurriculumPhase = {
+  title: LocalizedString;
+  points: LocalizedString[];
+};
+
 export type CourseEntry = {
   slug: string;
   title: LocalizedString;
@@ -30,6 +39,7 @@ export type CourseEntry = {
   ageGroupSlug: string;
   videoUrl?: string;
   image?: string;
+  curriculum?: CurriculumPhase[];
 };
 
 export type AgeGroupEntry = {

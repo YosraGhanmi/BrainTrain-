@@ -50,7 +50,9 @@
     "allCourses": "Tous les cours",
     "sessions": "séances",
     "enrollInCourse": "S'inscrire à ce cours",
-    "kindIntro": "est enseigné différemment pour chaque tranche d'âge — avec son propre contenu, son propre rythme et son propre nombre de séances. Choisissez une tranche d'âge ci-dessous pour voir les détails."
+    "kindIntro": "est enseigné différemment pour chaque tranche d'âge — avec son propre contenu, son propre rythme et son propre nombre de séances. Choisissez une tranche d'âge ci-dessous pour voir les détails.",
+    "curriculum": "Programme du parcours",
+    "phase": "Phase {number}"
   },
   "stats": {
     "heading": "Statistiques"

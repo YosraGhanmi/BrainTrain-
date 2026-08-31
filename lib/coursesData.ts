@@ -3,6 +3,11 @@ import { readContent } from './content/store';
 import { getIcon } from './content/icons';
 import type { AppLocale } from '@/i18n/routing';
 
+export type CurriculumPhase = {
+  title: string;
+  points: string[];
+};
+
 export type Course = {
   slug: string;
   title: string;
@@ -14,6 +19,7 @@ export type Course = {
   ageGroupSlug: string;
   videoUrl?: string;
   image?: string;
+  curriculum?: CurriculumPhase[];
 };
 
 export type AgeGroup = {
@@ -60,6 +66,10 @@ export function getCourses(locale: AppLocale): Course[] {
     title: c.title[locale] || c.title.en,
     description: c.description[locale] || c.description.en,
     icon: getIcon(c.icon),
+    curriculum: c.curriculum?.map((phase) => ({
+      title: phase.title[locale] || phase.title.en,
+      points: phase.points.map((point) => point[locale] || point.en),
+    })),
   }));
 }
 

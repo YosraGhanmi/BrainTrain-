@@ -49,6 +49,9 @@ export type PortalSessionUser = {
   id: string;
   email: string;
   phone: string;
+  secondaryPhone: string | null;
+  backupEmail: string | null;
+  twoFactorEnabled: boolean;
   fullName: string;
   role: PortalRole;
   parentId: string | null;
@@ -75,6 +78,9 @@ export async function getPortalSessionUser(): Promise<PortalSessionUser | null> 
     id: user.id,
     email: user.email,
     phone: user.phone,
+    secondaryPhone: user.secondaryPhone,
+    backupEmail: user.backupEmail,
+    twoFactorEnabled: user.twoFactorEnabled,
     fullName: user.fullName,
     role: user.role,
     parentId: user.parent?.id ?? null,

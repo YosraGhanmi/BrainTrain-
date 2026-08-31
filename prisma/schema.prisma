@@ -51,11 +51,24 @@ model User {
   id           String    @id @default(cuid())
   email        String    @unique
   phone        String    @unique
+  // Optional secondary phone. The primary `phone` can only be deleted once a
+  // secondary is on file — it then gets promoted to primary — since `phone`
+  // itself stays required (SMS OTP / uniqueness depend on it existing).
+  secondaryPhone String? @unique
+  // Backup contact email, separate from the required login `email`.
+  backupEmail  String?
   passwordHash String
   fullName     String
   role         PortalRole
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  // Email-OTP based 2FA. twoFactorCodeHash/Expiry hold a pending "enable"
+  // verification code until it's confirmed; login-time enforcement is not
+  // wired up yet (placeholder pending real email delivery — see lib/email).
+  twoFactorEnabled        Boolean   @default(false)
+  twoFactorCodeHash       String?
+  twoFactorCodeExpiresAt  DateTime?
 
   parent       Parent?
   teacher      Teacher?

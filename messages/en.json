@@ -50,7 +50,9 @@
     "allCourses": "All courses",
     "sessions": "sessions",
     "enrollInCourse": "Enroll in this course",
-    "kindIntro": "is taught differently for every age group — its own content, pace and session count. Pick an age group below to see the details."
+    "kindIntro": "is taught differently for every age group — its own content, pace and session count. Pick an age group below to see the details.",
+    "curriculum": "Program curriculum",
+    "phase": "Phase {number}"
   },
   "stats": {
     "heading": "Statistics"

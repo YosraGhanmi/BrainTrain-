@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
@@ -10,6 +11,7 @@ import { getIcon } from '@/lib/content/icons';
 import { resolvePrice } from '@/lib/pricing/compute';
 import { enrollChild } from '@/lib/enrollment/actions';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
+import CurriculumTimeline from '@/components/course/CurriculumTimeline';
 import type { AppLocale } from '@/i18n/routing';
 import type { PlanType } from '@prisma/client';
 
@@ -58,6 +60,12 @@ export default async function CourseDetailPage({
 
   const course = readContent().courses.find((c) => c.slug === params.slug);
   if (!course) notFound();
+
+  const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
+  const curriculum = course.curriculum?.map((phase) => ({
+    title: phase.title[params.locale] || phase.title.en,
+    points: phase.points.map((point) => point[params.locale] || point.en),
+  }));
 
   const sessions = await prisma.courseSession.findMany({
     where: { courseSlug: params.slug },
@@ -137,6 +145,15 @@ export default async function CourseDetailPage({
           </div>
         </div>
       </div>
+
+      {curriculum && curriculum.length > 0 ? (
+        <CurriculumTimeline
+          curriculum={curriculum}
+          color={course.color}
+          heading={t('curriculum')}
+          phaseLabels={curriculum.map((_, i) => t('phase', { number: i + 1 }))}
+        />
+      ) : null}
 
       <h2 className="mt-10 font-display text-lg font-bold text-ink">Emploi du temps — choose a group</h2>
 

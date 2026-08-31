@@ -28,6 +28,7 @@ export default async function ParentPortalLayout({
       email={parent.email}
       settingsHref="/parent-portal/account"
       loginHref={localizedPath(params.locale, '/parent-portal/login')}
+      theme="light"
       navLinks={[
         { label: 'Dashboard', href: '/parent-portal', icon: LayoutDashboard },
         { label: 'Courses', href: '/parent-portal/courses', icon: BookOpen },
