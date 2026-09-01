@@ -29,7 +29,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   plan: 'Please choose a payment plan.',
   session: 'Please pick a group.',
   ineligible: "That course isn't offered for this child's age group.",
-  capacity: 'That group is full — please pick another.',
+  capacity: 'That group is full. Please pick another.',
   duplicate: 'This child is already enrolled in that group.',
 };
 
@@ -50,7 +50,7 @@ export default async function CourseDetailPage({
   if (!selected) {
     return (
       <p className="rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-        No children yet — add a child to start enrolling in courses.
+        No children yet. Add a child to start enrolling in courses.
       </p>
     );
   }
@@ -115,11 +115,11 @@ export default async function CourseDetailPage({
       </Link>
 
       {searchParams.saved ? (
-        <p className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Enrolled — thank you!</p>
+        <p className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Enrolled. Thank you!</p>
       ) : null}
       {searchParams.error ? (
         <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">
-          {ERROR_MESSAGES[searchParams.error] ?? 'Something went wrong — please try again.'}
+          {ERROR_MESSAGES[searchParams.error] ?? 'Something went wrong. Please try again.'}
         </p>
       ) : null}
 
@@ -155,7 +155,7 @@ export default async function CourseDetailPage({
         />
       ) : null}
 
-      <h2 className="mt-10 font-display text-lg font-bold text-ink">Emploi du temps — choose a group</h2>
+      <h2 className="mt-10 font-display text-lg font-bold text-ink">Emploi du temps: choose a group</h2>
 
       {groups.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-dashed border-ink/15 bg-white p-8 text-center text-stone">

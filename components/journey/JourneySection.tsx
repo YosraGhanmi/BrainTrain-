@@ -8,9 +8,9 @@ import { Lightbulb, Wrench, Box, Flame, Medal, Globe2 } from 'lucide-react';
 gsap.registerPlugin(ScrollTrigger);
 
 const steps = [
-  { icon: Lightbulb, title: 'Curiosity', copy: 'A kid asks "how does this work?" — and we hand them the tools to find out.' },
+  { icon: Lightbulb, title: 'Curiosity', copy: 'A kid asks "how does this work?" and we hand them the tools to find out.' },
   { icon: Wrench, title: 'Skills', copy: 'Robotics, code, AI and 3D design, learned by doing rather than memorizing.' },
-  { icon: Box, title: 'Creation', copy: 'Real projects take shape — prototypes, robots, apps, ideas worth showing off.' },
+  { icon: Box, title: 'Creation', copy: 'Real projects take shape: prototypes, robots, apps, ideas worth showing off.' },
   { icon: Flame, title: 'Confidence', copy: 'Presenting, defending and improving their own work in front of a team.' },
   { icon: Medal, title: 'Competition', copy: 'Structured challenges raise the stakes and sharpen the work.' },
   { icon: Globe2, title: 'International Exposure', copy: 'Representing Tunisia on stages in Greece, Jordan and beyond.' },
@@ -72,7 +72,7 @@ export default function JourneySection() {
             Imagine what your child <span className="text-gradient">could become.</span>
           </h2>
           <p className="mx-auto max-w-xl text-lg leading-relaxed text-stone">
-            Every BrainTrain student walks the same path — from a simple question to standing on an international stage.
+            Every BrainTrain student walks the same path, from a simple question to standing on an international stage.
           </p>
         </div>
 

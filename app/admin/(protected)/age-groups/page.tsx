@@ -28,46 +28,46 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
       <form action={upsertAgeGroup} className="space-y-4 border-t border-ink/10 p-6">
         <input type="hidden" name="existingSlug" value={isNew ? '' : group.slug} />
 
-        <Field label="Label — English (e.g. 6-9 years)">
+        <Field label="Label (English, e.g. 6-9 years)">
           <input
             name="label_en"
             defaultValue={group.label.en}
-            placeholder="Label — English (e.g. 6-9 years)"
+            placeholder="Label (English, e.g. 6-9 years)"
             required
             className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
         </Field>
 
-        <Field label="Label — French (ex. 6-9 ans)">
+        <Field label="Label (French, ex. 6-9 ans)">
           <input
             name="label_fr"
             defaultValue={group.label.fr}
-            placeholder="Label — French (ex. 6-9 ans)"
+            placeholder="Label (French, ex. 6-9 ans)"
             className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
         </Field>
 
-        <Field label="Description — English">
+        <Field label="Description (English)">
           <textarea
             name="description_en"
             defaultValue={group.description.en}
-            placeholder="Description — English"
+            placeholder="Description (English)"
             rows={2}
             className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
         </Field>
 
-        <Field label="Description — French">
+        <Field label="Description (French)">
           <textarea
             name="description_fr"
             defaultValue={group.description.fr}
-            placeholder="Description — French"
+            placeholder="Description (French)"
             rows={2}
             className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
         </Field>
 
-        <Field label="Image (shown on the age group's card — optional)">
+        <Field label="Image (shown on the age group's card, optional)">
           <div className="flex items-center gap-4">
             {group.image ? (
               <img src={group.image} alt="" className="h-16 w-16 rounded-xl border border-ink/10 object-cover" />

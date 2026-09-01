@@ -42,9 +42,9 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
   const group = getAgeGroup(params.slug, params.locale);
-  if (!group) return { title: 'Courses — BrainTrain' };
+  if (!group) return { title: 'Courses | BrainTrain' };
 
-  const title = `${group.label} Courses — BrainTrain`;
+  const title = `${group.label} Courses | BrainTrain`;
   const path = `/courses/${params.slug}`;
   const url = absoluteUrl(params.locale, path);
 

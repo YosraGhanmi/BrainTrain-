@@ -20,9 +20,9 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
   const course = getCourse(params.slug, params.locale);
-  if (!course) return { title: 'Course — BrainTrain' };
+  if (!course) return { title: 'Course | BrainTrain' };
 
-  const title = `${course.title} — BrainTrain`;
+  const title = `${course.title} | BrainTrain`;
   const path = `/course/${params.slug}`;
   const url = absoluteUrl(params.locale, path);
 

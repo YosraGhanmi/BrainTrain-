@@ -23,7 +23,7 @@ export default function AdminLoginPage({ searchParams }: { searchParams: { error
           <span className="text-[#ff8c42]">back, Admin!</span>
         </h2>
         <p className="mt-8 max-w-md text-lg leading-relaxed text-white/60">
-          Every course, photo, and stat on the site lives here — sign in to update it.
+          Every course, photo, and stat on the site lives here. Sign in to update it.
         </p>
       </div>
 

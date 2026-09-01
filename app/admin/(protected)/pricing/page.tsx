@@ -17,7 +17,7 @@ export default async function AdminPricingPage({ searchParams }: { searchParams:
     <div>
       <h1 className="font-display text-3xl font-semibold text-ink">Pricing</h1>
       <p className="mt-2 max-w-2xl text-sm text-stone">
-        These amounts are placeholders — no official BrainTrain pricing document was available when this system was
+        These amounts are placeholders; no official BrainTrain pricing document was available when this system was
         built. Replace them here with real prices; each plan type needs a default (leave "Course" blank), plus any
         course-specific overrides.
       </p>

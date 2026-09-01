@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import RadialReveal from '@/components/effects/RadialReveal';
 import { Link, usePathname } from '@/i18n/navigation';
 
@@ -86,8 +86,12 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
               <ArrowRight className="h-4 w-4" />
             </RadialReveal>
           </div>
-          <button className="inline-flex items-center rounded-full border border-ink/10 bg-white/90 p-3 text-ink transition hover:border-ink/30 md:hidden" onClick={() => setOpen(!open)}>
-            <Sparkles className="h-5 w-5" />
+          <button
+            className="inline-flex items-center rounded-full border border-ink/10 bg-white/90 p-3 text-ink transition hover:border-ink/30 md:hidden"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
@@ -101,18 +105,19 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
                   {item.label}
                 </Link>
               ))}
-              <div className="flex items-center gap-1 rounded-full border border-ink/15 bg-white p-1 text-xs font-semibold uppercase tracking-[0.15em]">
+              <div className="flex items-center justify-center gap-2 py-1 text-xs font-semibold uppercase tracking-[0.15em]">
                 <Link
                   href={pathname}
                   locale="en"
-                  className={`flex-1 rounded-full px-3 py-2 text-center transition ${locale === 'en' ? 'bg-ink text-white' : 'text-ink/60'}`}
+                  className={`transition ${locale === 'en' ? 'text-ink' : 'text-ink/40 hover:text-ink/70'}`}
                 >
                   EN
                 </Link>
+                <span className="text-ink/20">/</span>
                 <Link
                   href={pathname}
                   locale="fr"
-                  className={`flex-1 rounded-full px-3 py-2 text-center transition ${locale === 'fr' ? 'bg-ink text-white' : 'text-ink/60'}`}
+                  className={`transition ${locale === 'fr' ? 'text-ink' : 'text-ink/40 hover:text-ink/70'}`}
                 >
                   FR
                 </Link>

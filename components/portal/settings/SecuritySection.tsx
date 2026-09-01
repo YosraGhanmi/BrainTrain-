@@ -46,11 +46,11 @@ export default function SecuritySection({
             <h2 className="font-display text-lg font-bold text-ink">Two-factor authentication</h2>
             <p className="mt-1 text-sm text-stone">
               {twoFactorEnabled
-                ? 'Enabled — a 6-digit code is emailed to you as an extra check.'
+                ? 'Enabled: a 6-digit code is emailed to you as an extra check.'
                 : 'Add an extra layer of security. A 6-digit code will be emailed to you to confirm sign-ins.'}
             </p>
             <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-600">
-              Coming soon — not yet required at login.
+              Coming soon. Not yet required at login.
             </p>
           </div>
         </div>

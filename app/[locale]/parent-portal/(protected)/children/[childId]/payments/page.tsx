@@ -33,11 +33,11 @@ export default async function PaymentsPage({
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-bold text-ink">{child.fullName} — Payment history</h1>
+      <h1 className="font-display text-3xl font-bold text-ink">{child.fullName}: Payment history</h1>
 
       {searchParams.paid ? (
         <p className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
-          Payment complete — thank you! It may take a moment to reflect below.
+          Payment complete. Thank you! It may take a moment to reflect below.
         </p>
       ) : null}
       {searchParams.cancelled ? (

@@ -48,7 +48,7 @@ export async function payNow(formData: FormData): Promise<void> {
         price_data: {
           currency: payment!.currency.toLowerCase(),
           unit_amount: Math.round(Number(payment!.amount) * 100),
-          product_data: { name: `BrainTrain — ${payment!.paymentPlan.type} payment` },
+          product_data: { name: `BrainTrain: ${payment!.paymentPlan.type} payment` },
         },
         quantity: 1,
       },

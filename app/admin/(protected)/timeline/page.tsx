@@ -42,39 +42,39 @@ function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: numbe
             <input
               name="date_en"
               defaultValue={entry.date.en}
-              placeholder="Date — English (e.g. October 2023)"
+              placeholder="Date (English, e.g. October 2023)"
               className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
             />
             <input
               name="date_fr"
               defaultValue={entry.date.fr}
-              placeholder="Date — French (ex. Octobre 2023)"
+              placeholder="Date (French, ex. Octobre 2023)"
               className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
             />
             <input
               name="title_en"
               defaultValue={entry.title.en}
-              placeholder="Title — English"
+              placeholder="Title (English)"
               className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
             />
             <input
               name="title_fr"
               defaultValue={entry.title.fr}
-              placeholder="Title — French"
+              placeholder="Title (French)"
               className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
             />
           </div>
           <textarea
             name="summary_en"
             defaultValue={entry.summary.en}
-            placeholder="Description — English"
+            placeholder="Description (English)"
             rows={3}
             className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
           <textarea
             name="summary_fr"
             defaultValue={entry.summary.fr}
-            placeholder="Description — French"
+            placeholder="Description (French)"
             rows={3}
             className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />

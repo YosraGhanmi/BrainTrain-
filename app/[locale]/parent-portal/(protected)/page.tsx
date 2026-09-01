@@ -35,7 +35,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
           </Link>
         </div>
         <p className="mt-10 rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-          No children yet — add your first child to start enrolling in courses.
+          No children yet. Add your first child to start enrolling in courses.
         </p>
       </div>
     );
@@ -80,7 +80,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     ...duePayments.map((p) => ({
       id: `pay-${p.id}`,
       type: 'reminder' as const,
-      title: `Payment due — ${getCourseEntryOrThrow(p.enrollment.courseSession.courseSlug).title.en}`,
+      title: `Payment due: ${getCourseEntryOrThrow(p.enrollment.courseSession.courseSlug).title.en}`,
       date: p.dueDate.toISOString(),
       href: '/parent-portal/payments',
     })),
@@ -93,7 +93,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     ...child.notes.map((n) => ({
       id: `note-${n.id}`,
       type: 'notification' as const,
-      title: 'A teacher added a note — check it now',
+      title: 'A teacher added a note. Check it now',
       date: n.createdAt.toISOString(),
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

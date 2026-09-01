@@ -24,27 +24,27 @@ function CourseFormFields({ course, ageGroups, isNew }: { course: CourseEntry; a
     <form action={upsertCourse} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <input type="hidden" name="existingSlug" value={isNew ? '' : course.slug} />
 
-      <Field label="Course title — English">
+      <Field label="Course title (English)">
         <input
           name="title_en"
           defaultValue={course.title.en}
-          placeholder="Course title — English"
+          placeholder="Course title (English)"
           required
           className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
         />
       </Field>
 
-      <Field label="Course title — French">
+      <Field label="Course title (French)">
         <input
           name="title_fr"
           defaultValue={course.title.fr}
-          placeholder="Course title — French"
+          placeholder="Course title (French)"
           className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
         />
       </Field>
 
       <div className="sm:col-span-2">
-        <Field label="Age group (this exact course — content, sessions and price — only applies to this age group)">
+        <Field label="Age group (this exact course, content, sessions and price, only applies to this age group)">
           <select
             name="ageGroupSlug"
             defaultValue={course.ageGroupSlug || ageGroups[0]?.slug}
@@ -82,32 +82,32 @@ function CourseFormFields({ course, ageGroups, isNew }: { course: CourseEntry; a
         />
       </Field>
 
-      <Field label="Description — English">
+      <Field label="Description (English)">
         <textarea
           name="description_en"
           defaultValue={course.description.en}
-          placeholder="Description — English"
+          placeholder="Description (English)"
           rows={4}
           className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
         />
       </Field>
 
-      <Field label="Description — French">
+      <Field label="Description (French)">
         <textarea
           name="description_fr"
           defaultValue={course.description.fr}
-          placeholder="Description — French"
+          placeholder="Description (French)"
           rows={4}
           className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
         />
       </Field>
 
       <div className="sm:col-span-2">
-        <Field label="Video link (YouTube or Facebook — optional)">
+        <Field label="Video link (YouTube or Facebook, optional)">
           <input
             name="videoUrl"
             defaultValue={course.videoUrl ?? ''}
-            placeholder="Video link (YouTube or Facebook — optional)"
+            placeholder="Video link (YouTube or Facebook, optional)"
             className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
           />
         </Field>
@@ -118,7 +118,7 @@ function CourseFormFields({ course, ageGroups, isNew }: { course: CourseEntry; a
       </div>
 
       <div className="sm:col-span-2">
-        <Field label="Illustration image (overrides the icon above on the age group's course grid — optional)">
+        <Field label="Illustration image (overrides the icon above on the age group's course grid, optional)">
           <div className="flex items-center gap-4">
             {course.image ? (
               <img src={course.image} alt="" className="h-16 w-16 rounded-xl border border-ink/10 object-cover" />

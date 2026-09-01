@@ -61,7 +61,7 @@ const DEFAULT_CONTENT: SiteContent = {
     },
     {
       date: { en: 'December 2025', fr: 'Décembre 2025' },
-      title: { en: 'Arab Championship — 3 Prizes', fr: 'Championnat arabe — 3 prix' },
+      title: { en: 'Arab Championship: 3 Prizes', fr: 'Championnat arabe : 3 prix' },
       logo: false,
       summary: {
         en: 'The season closes with three wins at the Arab level.',
@@ -246,8 +246,8 @@ const DEFAULT_CONTENT: SiteContent = {
       icon: 'Terminal',
       color: '#0b8793',
       description: {
-        en: 'A deeper dive into real-world programming with Python — scripting, logic and small projects that prepare teens for serious coding.',
-        fr: "Une immersion plus poussée dans la programmation réelle avec Python — scripts, logique et petits projets qui préparent les adolescents à coder sérieusement.",
+        en: 'A deeper dive into real-world programming with Python: scripting, logic and small projects that prepare teens for serious coding.',
+        fr: "Une immersion plus poussée dans la programmation réelle avec Python : scripts, logique et petits projets qui préparent les adolescents à coder sérieusement.",
       },
       sessions: 12,
       price: 0,

@@ -49,12 +49,12 @@ export function generateStaticParams() {
 
 const METADATA_BY_LOCALE: Record<string, { tagline: string; description: string }> = {
   en: {
-    tagline: 'BrainTrain — Don\'t Just Prepare For The Future. Build It.',
-    description: 'BrainTrain is a Tunisian academy where curious kids become creators — robotics, AI, 3D design and entrepreneurship, built through real projects and international competitions.',
+    tagline: 'BrainTrain: Don\'t Just Prepare For The Future. Build It.',
+    description: 'BrainTrain is a Tunisian academy where curious kids become creators: robotics, AI, 3D design and entrepreneurship, built through real projects and international competitions.',
   },
   fr: {
-    tagline: 'BrainTrain — Ne vous contentez pas de préparer l\'avenir. Construisez-le.',
-    description: 'BrainTrain est une académie tunisienne où des enfants curieux deviennent des créateurs — robotique, IA, design 3D et entrepreneuriat, à travers des projets concrets et des compétitions internationales.',
+    tagline: 'BrainTrain : ne vous contentez pas de préparer l\'avenir. Construisez-le.',
+    description: 'BrainTrain est une académie tunisienne où des enfants curieux deviennent des créateurs : robotique, IA, design 3D et entrepreneuriat, à travers des projets concrets et des compétitions internationales.',
   },
 };
 

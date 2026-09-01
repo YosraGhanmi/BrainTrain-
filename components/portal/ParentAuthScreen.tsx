@@ -137,11 +137,11 @@ export default function ParentAuthScreen({
 
             {loginSaved === 'reset' ? (
               <p data-field className="text-sm font-semibold text-emerald-600">
-                Password reset — log in with your new password.
+                Password reset. Log in with your new password.
               </p>
             ) : loginSaved === 'password-changed' ? (
               <p data-field className="text-sm font-semibold text-emerald-600">
-                Password changed — log in with your new password.
+                Password changed. Log in with your new password.
               </p>
             ) : null}
             {loginError ? (

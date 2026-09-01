@@ -23,7 +23,7 @@ export default async function TeacherDashboardPage({ params }: { params: { local
 
       {sessions.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-ink/15 bg-white p-8 text-center text-stone">
-          No sessions assigned yet — check back once the admin schedules one for you.
+          No sessions assigned yet. Check back once the admin schedules one for you.
         </p>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">

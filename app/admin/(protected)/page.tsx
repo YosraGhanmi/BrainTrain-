@@ -115,7 +115,7 @@ export default async function AdminDashboardPage() {
           className="mt-6 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700 transition hover:bg-red-100"
         >
           <AlertTriangle className="h-5 w-5 shrink-0" />
-          {overduePayments} payment{overduePayments === 1 ? '' : 's'} overdue — needs attention.
+          {overduePayments} payment{overduePayments === 1 ? '' : 's'} overdue. Needs attention.
         </Link>
       ) : null}
 

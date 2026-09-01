@@ -20,7 +20,7 @@ export default async function ParentSchedulePage({ params }: { params: { locale:
   if (!selected) {
     return (
       <p className="rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-        No children yet — add a child to start enrolling in courses.
+        No children yet. Add a child to start enrolling in courses.
       </p>
     );
   }

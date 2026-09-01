@@ -39,13 +39,13 @@ export default function StatsEditor({ initial }: { initial: { label: { en: strin
           <input
             name="label_en"
             defaultValue={row.labelEn}
-            placeholder="Label — English (e.g. Students)"
+            placeholder="Label (English, e.g. Students)"
             className="w-full rounded-xl border border-accent/15 bg-white px-3 py-2 text-center text-sm font-bold text-ink outline-none focus:border-accent/40"
           />
           <input
             name="label_fr"
             defaultValue={row.labelFr}
-            placeholder="Label — French (ex. Étudiants)"
+            placeholder="Label (French, ex. Étudiants)"
             className="w-full rounded-xl border border-accent/15 bg-white px-3 py-2 text-center text-sm font-bold text-ink outline-none focus:border-accent/40"
           />
         </div>
