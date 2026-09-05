@@ -1,19 +1,23 @@
 import { prisma } from '@/lib/db/prisma';
 import type { PlanType } from '@prisma/client';
 
-// Resolves a course-specific override if one exists, else the plan type's
-// default rule (courseSlug === ''). See prisma/schema.prisma's PricingRule
-// comment for why '' is used instead of null as the "default" sentinel.
-export async function resolvePrice(planType: PlanType, courseSlug: string): Promise<{ amount: number; currency: string }> {
+// Resolves a course-specific override if the course opted into one, else the
+// price its age group defaults to. See prisma/schema.prisma's PricingRule
+// comment for how the two are distinguished.
+export async function resolvePrice(
+  planType: PlanType,
+  courseSlug: string,
+  ageGroupSlug: string
+): Promise<{ amount: number; currency: string }> {
   const override = await prisma.pricingRule.findUnique({
     where: { planType_courseSlug: { planType, courseSlug } },
   });
   if (override) return { amount: Number(override.amount), currency: override.currency };
 
-  const fallback = await prisma.pricingRule.findUnique({
-    where: { planType_courseSlug: { planType, courseSlug: '' } },
+  const ageGroupDefault = await prisma.pricingRule.findUnique({
+    where: { planType_ageGroupSlug: { planType, ageGroupSlug } },
   });
-  if (fallback) return { amount: Number(fallback.amount), currency: fallback.currency };
+  if (ageGroupDefault) return { amount: Number(ageGroupDefault.amount), currency: ageGroupDefault.currency };
 
-  throw new Error(`No pricing rule found for plan type "${planType}" and no default rule is configured.`);
+  throw new Error(`No pricing rule found for plan type "${planType}" (course "${courseSlug}", age group "${ageGroupSlug}").`);
 }

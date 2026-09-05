@@ -6,7 +6,7 @@ export default function ParentLoginPage({
   searchParams,
 }: {
   params: { locale: AppLocale };
-  searchParams: { error?: string; saved?: string };
+  searchParams: { error?: string; saved?: string; registered?: string };
 }) {
   return (
     <ParentAuthScreen
@@ -14,6 +14,7 @@ export default function ParentLoginPage({
       initialMode="login"
       loginError={searchParams.error}
       loginSaved={searchParams.saved}
+      registered={searchParams.registered}
     />
   );
 }

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { requireTeacher, localizedPath } from '@/lib/portal-auth/guard';
+import { isValidStickerUrl } from '@/lib/badges/stickers';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -51,6 +52,8 @@ export async function awardBadge(formData: FormData): Promise<void> {
   const courseSessionId = field(formData, 'courseSessionId');
   const title = field(formData, 'title');
   const note = field(formData, 'note');
+  const stickerUrl = field(formData, 'imageUrl');
+  const imageUrl = isValidStickerUrl(stickerUrl) ? stickerUrl : null;
   const emoji = BADGE_EMOJIS.includes(field(formData, 'emoji')) ? field(formData, 'emoji') : BADGE_EMOJIS[0];
 
   const fail = () => redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?badgeError=1`));
@@ -67,7 +70,7 @@ export async function awardBadge(formData: FormData): Promise<void> {
   if (!enrollment) fail();
 
   await prisma.badge.create({
-    data: { teacherId: teacher.teacherId, childId, title, note: note || null, emoji },
+    data: { teacherId: teacher.teacherId, childId, title, note: note || null, emoji, imageUrl },
   });
 
   redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?badgeSaved=1`));

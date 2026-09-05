@@ -6,7 +6,15 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { hashPassword, verifyPassword } from '@/lib/portal-auth/password';
-import { createPortalSession, destroyPortalSession, getPortalSessionUser, revokeAllSessions } from '@/lib/portal-auth/session';
+import {
+  createPortalSession,
+  destroyPortalSession,
+  getPortalSessionUser,
+  revokeAllSessions,
+  createPendingTeacherToken,
+  verifyPendingTeacherToken,
+  PENDING_TEACHER_COOKIE_NAME,
+} from '@/lib/portal-auth/session';
 import { localizedPath } from '@/lib/portal-auth/guard';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import { sendSms } from '@/lib/sms/send';
@@ -54,12 +62,13 @@ export async function registerParent(formData: FormData): Promise<void> {
   }
 
   const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
+  // Starts as Parent.status PENDING (schema default) — no session is created
+  // here; an admin has to approve the account before it can log in.
+  await prisma.user.create({
     data: { fullName, email, phone, passwordHash, role: 'PARENT', parent: { create: {} } },
   });
 
-  await createPortalSession(user.id);
-  redirect(localizedPath(locale, '/parent-portal'));
+  redirect(localizedPath(locale, '/parent-portal/login?registered=pending'));
 }
 
 export async function loginParent(formData: FormData): Promise<void> {
@@ -67,13 +76,22 @@ export async function loginParent(formData: FormData): Promise<void> {
   const email = field(formData, 'email').toLowerCase();
   const password = field(formData, 'password');
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email }, include: { parent: true } });
   const ok = user && user.role === 'PARENT' && (await verifyPassword(password, user.passwordHash));
   if (!ok || !user) {
     redirect(localizedPath(locale, '/parent-portal/login?error=1'));
   }
+  if (user!.isFrozen) {
+    redirect(localizedPath(locale, '/parent-portal/login?error=frozen'));
+  }
+  if (user!.parent?.status === 'PENDING') {
+    redirect(localizedPath(locale, '/parent-portal/login?error=pending'));
+  }
+  if (user!.parent?.status === 'REJECTED') {
+    redirect(localizedPath(locale, '/parent-portal/login?error=rejected'));
+  }
 
-  await createPortalSession(user.id);
+  await createPortalSession(user!.id);
   redirect(localizedPath(locale, '/parent-portal'));
 }
 
@@ -87,9 +105,69 @@ export async function loginTeacher(formData: FormData): Promise<void> {
   if (!ok || !user) {
     redirect(localizedPath(locale, '/teacher/login?error=1'));
   }
+  if (user!.isFrozen) {
+    redirect(localizedPath(locale, '/teacher/login?error=frozen'));
+  }
 
-  await createPortalSession(user.id);
+  // Accounts predating the secret-code step (none yet, but a safety net for
+  // manually-created rows) skip straight to a real session.
+  if (!user!.teacherSecretCodeHash) {
+    await createPortalSession(user!.id);
+    redirect(localizedPath(locale, '/teacher'));
+  }
+
+  // Password verified — hold the userId in a short-lived signed cookie and
+  // send them to enter their 4-digit code before a real session is created.
+  cookies().set(PENDING_TEACHER_COOKIE_NAME, createPendingTeacherToken(user!.id), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 10 * 60,
+  });
+  redirect(localizedPath(locale, '/teacher/verify'));
+}
+
+export async function verifyTeacherSecretCode(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const code = field(formData, 'code');
+
+  const userId = verifyPendingTeacherToken(cookies().get(PENDING_TEACHER_COOKIE_NAME)?.value);
+  if (!userId) {
+    redirect(localizedPath(locale, '/teacher/login?error=1'));
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId! } });
+  const ok =
+    user &&
+    user.role === 'TEACHER' &&
+    !user.isFrozen &&
+    user.teacherSecretCodeHash &&
+    (await verifyPassword(code, user.teacherSecretCodeHash));
+  if (!ok) {
+    redirect(localizedPath(locale, '/teacher/verify?error=1'));
+  }
+
+  cookies().delete(PENDING_TEACHER_COOKIE_NAME);
+  await createPortalSession(user!.id);
   redirect(localizedPath(locale, '/teacher'));
+}
+
+export async function loginSecretary(formData: FormData): Promise<void> {
+  const email = field(formData, 'email').toLowerCase();
+  const password = field(formData, 'password');
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  const ok = user && user.role === 'SECRETARY' && (await verifyPassword(password, user.passwordHash));
+  if (!ok || !user) {
+    redirect('/admin/login?role=secretary&error=1');
+  }
+  if (user!.isFrozen) {
+    redirect('/admin/login?role=secretary&error=frozen');
+  }
+
+  await createPortalSession(user!.id);
+  redirect('/admin');
 }
 
 export async function logoutPortal(redirectTo: string): Promise<void> {

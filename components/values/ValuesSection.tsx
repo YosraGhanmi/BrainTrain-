@@ -86,7 +86,7 @@ export default function ValuesSection() {
               {t('heading')}
             </h2>
             <Link
-              href="/#courses"
+              href="/parent-portal/login"
               className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent2"
             >
               {t('cta')}

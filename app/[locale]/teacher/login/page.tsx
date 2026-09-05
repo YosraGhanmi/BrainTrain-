@@ -24,7 +24,11 @@ export default function TeacherLoginPage({
           <PasswordInput name="password" autoComplete="current-password" />
         </div>
 
-        {searchParams.error ? <p className="text-sm font-semibold text-red-600">Incorrect email or password.</p> : null}
+        {searchParams.error === 'frozen' ? (
+          <p className="text-sm font-semibold text-red-600">This account has been suspended. Contact BrainTrain for help.</p>
+        ) : searchParams.error ? (
+          <p className="text-sm font-semibold text-red-600">Incorrect email or password.</p>
+        ) : null}
 
         <button type="submit" className="w-full rounded-full bg-ink px-6 py-3.5 text-base font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
           Log in

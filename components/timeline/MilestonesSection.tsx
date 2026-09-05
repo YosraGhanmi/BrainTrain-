@@ -129,7 +129,7 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
           onPointerDown={onPointerDown}
           className="relative left-1/2 w-screen -translate-x-1/2 cursor-grab overflow-x-auto scroll-smooth px-6 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] active:cursor-grabbing md:px-10 lg:px-16 [&::-webkit-scrollbar]:hidden"
         >
-          <div className="relative w-max">
+          <div className="relative w-max pl-[calc(50vw-300px)]">
             <div className="milestone-line absolute left-0 top-[58px] hidden h-px w-full origin-left bg-ink/10 sm:block" />
 
             <div className="flex gap-6">
@@ -139,7 +139,10 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
                 const title = milestone.title[locale] || milestone.title.en;
                 const summary = milestone.summary[locale] || milestone.summary.en;
                 return (
-                  <div key={`${milestone.date.en}|${milestone.title.en}`} className="flex w-72 shrink-0 flex-col items-center gap-2 sm:w-80">
+                  <div
+                    key={`${milestone.date.en}|${milestone.title.en}`}
+                    className="flex w-72 shrink-0 flex-col items-center gap-2 sm:w-80"
+                  >
                     <span className="inline-flex items-center gap-2.5 text-lg font-display font-bold text-ink sm:text-xl">
                       <CalendarDays className="h-6 w-6 shrink-0" style={{ color: NAVY }} />
                       {date}
@@ -164,8 +167,9 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
                       }}
                       className={`milestone-node relative flex h-64 w-full cursor-pointer select-none flex-col rounded-2xl border bg-white p-6 ${
                         milestone.logo ? 'pt-10' : ''
-                      } text-left shadow-soft transition ${isActive ? 'border-ink/20' : 'border-ink/5'}`}
-                      style={isActive ? { boxShadow: `0 0 0 2px ${NAVY}` } : undefined}
+                      } text-left shadow-soft transition ${
+                        isActive ? 'glow-border border-transparent' : 'border-ink/5'
+                      }`}
                     >
                       {milestone.logo ? (
                         <span className="absolute -top-5 left-6 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-ink/10 bg-white shadow-md">

@@ -2,18 +2,17 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import RadialReveal from '@/components/effects/RadialReveal';
-import { Link, usePathname } from '@/i18n/navigation';
+import LanguageSwitcher from '@/components/navbar/LanguageSwitcher';
+import { Link } from '@/i18n/navigation';
 
 export default function Navbar({ solid = false }: { solid?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const shrink = solid || scrolled;
   const t = useTranslations('nav');
-  const locale = useLocale();
-  const pathname = usePathname();
 
   const navItems = [
     { label: t('home'), href: '/' },
@@ -58,21 +57,8 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden items-center gap-1 rounded-full border border-ink/15 bg-white/90 p-1 text-xs font-semibold uppercase tracking-[0.15em] md:flex">
-            <Link
-              href={pathname}
-              locale="en"
-              className={`rounded-full px-3 py-1.5 transition ${locale === 'en' ? 'bg-ink text-white' : 'text-ink/60 hover:text-ink'}`}
-            >
-              EN
-            </Link>
-            <Link
-              href={pathname}
-              locale="fr"
-              className={`rounded-full px-3 py-1.5 transition ${locale === 'fr' ? 'bg-ink text-white' : 'text-ink/60 hover:text-ink'}`}
-            >
-              FR
-            </Link>
+          <div className="hidden md:block">
+            <LanguageSwitcher />
           </div>
           <div className="hidden md:inline-flex">
             <RadialReveal
@@ -105,22 +91,8 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
                   {item.label}
                 </Link>
               ))}
-              <div className="flex items-center justify-center gap-2 py-1 text-xs font-semibold uppercase tracking-[0.15em]">
-                <Link
-                  href={pathname}
-                  locale="en"
-                  className={`transition ${locale === 'en' ? 'text-ink' : 'text-ink/40 hover:text-ink/70'}`}
-                >
-                  EN
-                </Link>
-                <span className="text-ink/20">/</span>
-                <Link
-                  href={pathname}
-                  locale="fr"
-                  className={`transition ${locale === 'fr' ? 'text-ink' : 'text-ink/40 hover:text-ink/70'}`}
-                >
-                  FR
-                </Link>
+              <div className="flex items-center justify-center py-1">
+                <LanguageSwitcher />
               </div>
               <Link href="/parent-portal/login" className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone">
                 {t('login')}

@@ -3,11 +3,10 @@ import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { addTeacherNote, awardBadge } from '@/lib/teacher/actions';
+import { BADGE_STICKERS } from '@/lib/badges/stickers';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
-
-const BADGE_EMOJIS = ['🏅', '⭐', '🏆', '🚀', '🧠', '🔥', '🎯', '💡'];
 
 export default async function TeacherSessionRosterPage({
   params,
@@ -55,9 +54,14 @@ export default async function TeacherSessionRosterPage({
                   <span
                     key={badge.id}
                     title={badge.note ?? undefined}
-                    className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800"
+                    className="flex items-center gap-1.5 rounded-full bg-amber-50 py-1 pl-1 pr-3 text-xs font-semibold text-amber-800"
                   >
-                    <span>{badge.emoji}</span>
+                    {badge.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={badge.imageUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
+                    ) : (
+                      <span>{badge.emoji}</span>
+                    )}
                     {badge.title}
                   </span>
                 ))}
@@ -93,35 +97,40 @@ export default async function TeacherSessionRosterPage({
               </button>
             </form>
 
-            <form action={awardBadge} className="mt-3 flex flex-wrap items-end gap-3 border-t border-ink/10 pt-4">
+            <form action={awardBadge} className="mt-3 space-y-3 border-t border-ink/10 pt-4">
               <input type="hidden" name="locale" value={params.locale} />
               <input type="hidden" name="childId" value={enrollment.child.id} />
               <input type="hidden" name="courseSessionId" value={session.id} />
-              <select
-                name="emoji"
-                defaultValue={BADGE_EMOJIS[0]}
-                className="rounded-xl border border-ink/10 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-accent"
-              >
-                {BADGE_EMOJIS.map((emoji) => (
-                  <option key={emoji} value={emoji}>
-                    {emoji}
-                  </option>
+
+              <div className="flex flex-wrap gap-2">
+                {BADGE_STICKERS.map((sticker, i) => (
+                  <label key={sticker.url} className="cursor-pointer">
+                    <input type="radio" name="imageUrl" value={sticker.url} defaultChecked={i === 0} required className="peer sr-only" />
+                    <span className="flex flex-col items-center gap-1 rounded-xl border-2 border-transparent p-1 peer-checked:border-accent">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={sticker.url} alt={sticker.label} className="h-12 w-12 rounded-full object-cover" />
+                      <span className="text-[0.6rem] font-semibold text-stone">{sticker.label}</span>
+                    </span>
+                  </label>
                 ))}
-              </select>
-              <input
-                name="title"
-                required
-                placeholder="Badge title (e.g. Top Builder)"
-                className="min-w-[180px] flex-1 rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
-              />
-              <input
-                name="note"
-                placeholder="Note (optional)"
-                className="min-w-[180px] flex-1 rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
-              />
-              <button type="submit" className="rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-amber-600">
-                Award badge
-              </button>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-3">
+                <input
+                  name="title"
+                  required
+                  placeholder="Badge title (e.g. Top Builder)"
+                  className="min-w-[180px] flex-1 rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
+                />
+                <input
+                  name="note"
+                  placeholder="Note (optional)"
+                  className="min-w-[180px] flex-1 rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
+                />
+                <button type="submit" className="rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-amber-600">
+                  Award badge
+                </button>
+              </div>
             </form>
           </div>
         ))}

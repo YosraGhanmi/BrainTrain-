@@ -6,7 +6,7 @@ import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import NewsCard, { type FeedItem } from '@/components/portal/NewsCard';
-import StatisticsCard from '@/components/portal/StatisticsCard';
+import TeacherNotesCard from '@/components/portal/TeacherNotesCard';
 import BadgesCard from '@/components/portal/BadgesCard';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -45,7 +45,11 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     where: { id: selected.id },
     include: {
       badges: { orderBy: { awardedAt: 'desc' } },
-      notes: { orderBy: { createdAt: 'desc' }, take: 10 },
+      notes: {
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { teacher: { include: { user: true } }, courseSession: true },
+      },
       enrollments: {
         where: { status: { in: ['PENDING', 'ACTIVE'] } },
         include: { courseSession: true },
@@ -102,7 +106,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-3 lg:[grid-template-rows:1fr]">
       <div className="flex flex-col gap-6 lg:col-span-2">
         <NewsCard items={feed} />
-        <StatisticsCard />
+        <TeacherNotesCard notes={child.notes} />
       </div>
       <BadgesCard badges={child.badges} />
     </div>

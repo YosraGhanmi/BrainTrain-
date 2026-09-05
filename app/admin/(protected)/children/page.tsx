@@ -7,7 +7,7 @@ import DeleteIconButton from '@/components/admin/DeleteIconButton';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminChildrenPage() {
-  requireAdmin();
+  await requireAdmin();
   const children = await prisma.child.findMany({
     include: { parent: { include: { user: true } }, enrollments: true },
     orderBy: { createdAt: 'desc' },

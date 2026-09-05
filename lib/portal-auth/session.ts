@@ -45,6 +45,48 @@ export async function revokeAllSessions(userId: string): Promise<void> {
   await prisma.session.deleteMany({ where: { userId } });
 }
 
+// ---------------------------------------------------------------------------
+// Teacher secret-code step — after password login, a teacher's userId is
+// held in this short-lived signed cookie (not yet a real session) until they
+// enter their 4-digit code on /teacher/verify. Mirrors the admin panel's
+// stateless HMAC token (lib/auth/session.ts) rather than a DB row, since it
+// only needs to survive a couple of minutes.
+export const PENDING_TEACHER_COOKIE_NAME = 'braintrain_teacher_pending';
+const PENDING_TEACHER_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function pendingSecret(): string {
+  return process.env.ADMIN_SESSION_SECRET || 'braintrain-dev-secret-change-me';
+}
+
+function signPending(payload: string): string {
+  return crypto.createHmac('sha256', pendingSecret()).update(payload).digest('hex');
+}
+
+export function createPendingTeacherToken(userId: string): string {
+  const payload = JSON.stringify({ userId, exp: Date.now() + PENDING_TEACHER_TTL_MS });
+  const encoded = Buffer.from(payload).toString('base64url');
+  return `${encoded}.${signPending(encoded)}`;
+}
+
+export function verifyPendingTeacherToken(token: string | undefined | null): string | null {
+  if (!token) return null;
+  const [encoded, sig] = token.split('.');
+  if (!encoded || !sig) return null;
+
+  const expectedSig = signPending(encoded);
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expectedSig);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+
+  try {
+    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf-8'));
+    if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
+    return payload.userId;
+  } catch {
+    return null;
+  }
+}
+
 export type PortalSessionUser = {
   id: string;
   email: string;

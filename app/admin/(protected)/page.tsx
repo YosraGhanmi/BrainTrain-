@@ -1,18 +1,11 @@
 import Link from 'next/link';
-import { TrendingUp, TrendingDown, CreditCard, Inbox, AlertTriangle } from 'lucide-react';
+import { Users2, CreditCard, Inbox, AlertTriangle } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { readMessages } from '@/lib/messages/store';
 
 export const dynamic = 'force-dynamic';
-
-const PAYMENT_STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PAID: 'bg-emerald-100 text-emerald-700',
-  OVERDUE: 'bg-red-100 text-red-600',
-  FAILED: 'bg-slate-200 text-slate-600',
-};
 
 const STAT_THEMES = {
   blue: {
@@ -65,35 +58,28 @@ function StatCard({
 }
 
 export default async function AdminDashboardPage() {
-  requireAdmin();
+  await requireAdmin();
 
-  const [parentsCount, teachersCount, childrenCount, activeEnrollments, overduePayments, courseSessions, recentPayments] =
+  const [parentsCount, teachersCount, childrenCount, activeEnrollments, overduePayments, childrenByAgeGroup, totalPayments, paidPayments] =
     await Promise.all([
       prisma.parent.count(),
       prisma.teacher.count(),
       prisma.child.count(),
       prisma.enrollment.count({ where: { status: 'ACTIVE' } }),
       prisma.payment.count({ where: { status: 'OVERDUE' } }),
-      prisma.courseSession.findMany({ include: { _count: { select: { enrollments: true } } } }),
-      prisma.payment.findMany({
-        include: {
-          paymentPlan: { include: { enrollment: { include: { child: true } } } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 6,
-      }),
+      prisma.child.groupBy({ by: ['ageGroupSlug'], _count: { _all: true } }),
+      prisma.payment.count(),
+      prisma.payment.count({ where: { status: 'PAID' } }),
     ]);
 
-  const enrollmentByCourseSlug = new Map<string, number>();
-  for (const session of courseSessions) {
-    enrollmentByCourseSlug.set(session.courseSlug, (enrollmentByCourseSlug.get(session.courseSlug) ?? 0) + session._count.enrollments);
-  }
-  const courseStats = readContent().courses.map((course) => ({
-    course,
-    count: enrollmentByCourseSlug.get(course.slug) ?? 0,
-  }));
-  const mostEnrolled = courseStats.length ? courseStats.reduce((a, b) => (b.count > a.count ? b : a)) : null;
-  const leastEnrolled = courseStats.length ? courseStats.reduce((a, b) => (b.count < a.count ? b : a)) : null;
+  const countByAgeGroupSlug = new Map(childrenByAgeGroup.map((g) => [g.ageGroupSlug, g._count._all]));
+  const ageGroupStats = readContent()
+    .ageGroups.map((ageGroup) => ({ ageGroup, count: countByAgeGroupSlug.get(ageGroup.slug) ?? 0 }))
+    .sort((a, b) => b.count - a.count);
+  const maxAgeGroupCount = Math.max(1, ...ageGroupStats.map((s) => s.count));
+
+  const unpaidPayments = totalPayments - paidPayments;
+  const paidPct = totalPayments > 0 ? Math.round((paidPayments / totalPayments) * 100) : 0;
 
   const unreadMessages = readMessages().filter((m) => !m.read);
 
@@ -119,36 +105,32 @@ export default async function AdminDashboardPage() {
         </Link>
       ) : null}
 
-      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
-          <div className="flex items-center gap-2 text-emerald-700">
-            <TrendingUp className="h-4 w-4" />
-            <p className="text-xs font-bold uppercase tracking-wide">Most enrolled course</p>
-          </div>
-          {mostEnrolled ? (
-            <>
-              <p className="mt-3 font-display text-xl font-bold text-ink">{mostEnrolled.course.title.en}</p>
-              <p className="mt-1 text-sm text-stone">{mostEnrolled.count} enrollment{mostEnrolled.count === 1 ? '' : 's'}</p>
-            </>
-          ) : (
-            <p className="mt-3 text-sm text-stone">No courses yet.</p>
-          )}
+      <div className="mt-8 rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
+        <div className="flex items-center gap-2 text-accent">
+          <Users2 className="h-4 w-4" />
+          <p className="text-xs font-bold uppercase tracking-wide">Children by age group</p>
         </div>
 
-        <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
-          <div className="flex items-center gap-2 text-amber-700">
-            <TrendingDown className="h-4 w-4" />
-            <p className="text-xs font-bold uppercase tracking-wide">Least enrolled course</p>
-          </div>
-          {leastEnrolled ? (
-            <>
-              <p className="mt-3 font-display text-xl font-bold text-ink">{leastEnrolled.course.title.en}</p>
-              <p className="mt-1 text-sm text-stone">{leastEnrolled.count} enrollment{leastEnrolled.count === 1 ? '' : 's'}</p>
-            </>
-          ) : (
-            <p className="mt-3 text-sm text-stone">No courses yet.</p>
-          )}
-        </div>
+        {ageGroupStats.length === 0 ? (
+          <p className="mt-4 text-sm text-stone">No age groups yet.</p>
+        ) : (
+          <ul className="mt-5 space-y-4">
+            {ageGroupStats.map(({ ageGroup, count }) => (
+              <li key={ageGroup.slug}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="text-sm font-semibold text-ink">{ageGroup.label.en}</p>
+                  <p className="text-xs text-stone">{count} child{count === 1 ? '' : 'ren'}</p>
+                </div>
+                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-accent"
+                    style={{ width: `${(count / maxAgeGroupCount) * 100}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -156,32 +138,46 @@ export default async function AdminDashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
               <CreditCard className="h-4 w-4 text-accent" />
-              Recent payments
+              Payments
             </h2>
             <Link href="/admin/payments" className="text-xs font-semibold text-accent transition hover:underline">
               View all
             </Link>
           </div>
 
-          {recentPayments.length === 0 ? (
-            <p className="mt-4 text-sm text-stone">No payments recorded yet.</p>
-          ) : (
-            <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto pr-1">
-              {recentPayments.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">{p.paymentPlan.enrollment.child.fullName}</p>
-                    <p className="text-xs text-stone">
-                      {Number(p.amount)} {p.currency} · {p.dueDate.toDateString()}
-                    </p>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${PAYMENT_STATUS_STYLES[p.status]}`}>
-                    {p.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="mt-4 flex items-center gap-6">
+            <div
+              className="relative h-32 w-32 shrink-0 rounded-full"
+              style={
+                totalPayments === 0
+                  ? { background: '#e2e8f0' }
+                  : { background: `conic-gradient(#10b981 0 ${paidPct}%, #f59e0b ${paidPct}% 100%)` }
+              }
+            >
+              <div className="absolute inset-2.5 flex flex-col items-center justify-center rounded-full bg-white">
+                <p className="font-display text-2xl font-black text-ink">{totalPayments === 0 ? '0' : `${paidPct}%`}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone">
+                  {totalPayments === 0 ? 'No payments' : 'Paid'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
+                <p className="text-sm text-ink">
+                  <span className="font-bold">{paidPayments}</span> paid
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-500" />
+                <p className="text-sm text-ink">
+                  <span className="font-bold">{unpaidPayments}</span> remaining
+                </p>
+              </div>
+              <p className="text-xs text-stone">{totalPayments} total payments</p>
+            </div>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">

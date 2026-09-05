@@ -7,7 +7,7 @@ import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { resolvePrice } from '@/lib/pricing/compute';
 import type { AppLocale } from '@/i18n/routing';
-import type { PlanType } from '@prisma/client';
+import type { PlanType, PaymentMethod } from '@prisma/client';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -17,7 +17,8 @@ function getLocale(formData: FormData): AppLocale {
   return field(formData, 'locale') === 'fr' ? 'fr' : 'en';
 }
 
-const PLAN_TYPES: PlanType[] = ['MONTHLY', 'SEASONAL', 'COURSE'];
+const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
+const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'CARD', 'CHEQUE'];
 
 export async function enrollChild(formData: FormData): Promise<void> {
   const locale = getLocale(formData);
@@ -27,11 +28,13 @@ export async function enrollChild(formData: FormData): Promise<void> {
   const courseSessionId = field(formData, 'courseSessionId');
   const courseSlug = field(formData, 'courseSlug');
   const planType = field(formData, 'planType') as PlanType;
+  const paymentMethod = field(formData, 'paymentMethod') as PaymentMethod;
 
   const detailPath = courseSlug ? `/parent-portal/courses/${courseSlug}` : '/parent-portal/courses';
   const fail = (reason: string) => redirect(localizedPath(locale, `${detailPath}?error=${reason}`));
 
   if (!PLAN_TYPES.includes(planType)) fail('plan');
+  if (!PAYMENT_METHODS.includes(paymentMethod)) fail('method');
 
   const child = await prisma.child.findUnique({ where: { id: childId } });
   if (!child || child.parentId !== parent.parentId) {
@@ -53,14 +56,14 @@ export async function enrollChild(formData: FormData): Promise<void> {
         throw new Error('CAPACITY_FULL');
       }
 
-      const { amount, currency } = await resolvePrice(planType, session!.courseSlug);
+      const { amount, currency } = await resolvePrice(planType, session!.courseSlug, course.ageGroupSlug);
 
       const enrollment = await tx.enrollment.create({
         data: { childId: childId, courseSessionId, status: 'PENDING' },
       });
 
       const paymentPlan = await tx.paymentPlan.create({
-        data: { enrollmentId: enrollment.id, type: planType, amount, currency },
+        data: { enrollmentId: enrollment.id, type: planType, method: paymentMethod, amount, currency },
       });
 
       // Only the first payment is generated here — for MONTHLY plans,

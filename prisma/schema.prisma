@@ -15,6 +15,7 @@ datasource db {
 enum PortalRole {
   PARENT
   TEACHER
+  SECRETARY
 }
 
 enum EnrollmentStatus {
@@ -23,10 +24,25 @@ enum EnrollmentStatus {
   CANCELLED
 }
 
+enum ParentApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum PlanType {
   MONTHLY
-  SEASONAL
-  COURSE
+  QUARTERLY
+  YEARLY
+}
+
+// How the parent intends to pay — captured at enrollment for record-keeping;
+// no real card/cheque processing is wired up yet (see Payment's
+// stripeSessionId/stripePaymentIntentId, also still unused placeholders).
+enum PaymentMethod {
+  CASH
+  CARD
+  CHEQUE
 }
 
 enum PaymentStatus {
@@ -60,8 +76,17 @@ model User {
   passwordHash String
   fullName     String
   role         PortalRole
+  // Frozen accounts are blocked at login and have their active sessions
+  // revoked immediately — used by admins to suspend a parent/teacher account
+  // without deleting their data.
+  isFrozen     Boolean   @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  // Teacher-only second factor: a 4-digit PIN (hashed) the admin hands out
+  // alongside the default password. Entered on a dedicated step after
+  // password login, before a teacher portal session is created.
+  teacherSecretCodeHash String?
 
   // Email-OTP based 2FA. twoFactorCodeHash/Expiry hold a pending "enable"
   // verification code until it's confirmed; login-time enforcement is not
@@ -111,6 +136,10 @@ model PasswordResetToken {
 model Parent {
   id     String @id @default(cuid())
   userId String @unique
+  // A new signup starts PENDING and can't log in until an admin reviews it
+  // (see loginParent) — APPROVED unlocks login and triggers an email;
+  // REJECTED blocks login with a message pointing them back to the admin.
+  status ParentApprovalStatus @default(PENDING)
 
   user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   children Child[]
@@ -122,6 +151,12 @@ model Parent {
 model Teacher {
   id     String @id @default(cuid())
   userId String @unique
+  // Courses this teacher is assigned to teach (data/content.json
+  // CourseEntry.slug values, validated in app code — same convention as
+  // Child.ageGroupSlug). Set to one course at creation, admin can add/remove
+  // more later; a teacher can still be assigned to any CourseSession
+  // regardless of this list.
+  courseSlugs String[] @default([])
 
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions CourseSession[]
@@ -159,6 +194,10 @@ model Badge {
   title      String
   note       String?
   emoji      String   @default("🏅")
+  // Sticker artwork (public/stickers/...) shown instead of the emoji when
+  // set — the emoji stays as the fallback for badges awarded before stickers
+  // existed, or if a teacher picks "emoji" instead of a sticker.
+  imageUrl   String?
   awardedAt  DateTime @default(now())
 
   child   Child   @relation(fields: [childId], references: [id], onDelete: Cascade)
@@ -213,13 +252,15 @@ model Enrollment {
 }
 
 model PaymentPlan {
-  id           String   @id @default(cuid())
-  enrollmentId String   @unique
+  id           String        @id @default(cuid())
+  enrollmentId String        @unique
   type         PlanType
-  amount       Decimal  @db.Decimal(10, 2)
-  currency     String   @default("TND")
-  startDate    DateTime @default(now())
-  createdAt    DateTime @default(now())
+  // How the parent said they'll pay, chosen once at enrollment.
+  method       PaymentMethod @default(CASH)
+  amount       Decimal       @db.Decimal(10, 2)
+  currency     String        @default("TND")
+  startDate    DateTime      @default(now())
+  createdAt    DateTime      @default(now())
 
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   payments   Payment[]
@@ -254,20 +295,25 @@ model Payment {
   @@map("payments")
 }
 
-// Admin-editable placeholder pricing. courseSlug = "" (empty string, not
-// null — Postgres unique constraints treat every NULL as distinct, which
-// would silently allow duplicate "default" rows) means "default for this
-// plan type, no course-specific override". Not JSON per the project's
-// data-storage rules for payment-adjacent data — seeded with clearly-labeled
-// placeholders pending the real BrainTrain pricing document.
+// Admin-editable pricing. Exactly one of ageGroupSlug / courseSlug is set on
+// each row: ageGroupSlug marks an age group's default rate for that plan
+// type (data/content.json AgeGroupEntry.slug); courseSlug marks a
+// course-specific override (data/content.json CourseEntry.slug) that a
+// course opts into instead of its age group's default — see resolvePrice().
+// Postgres treats every NULL as distinct in a unique index, so both
+// constraints below coexist without the "" sentinel the single-dimension
+// version of this model used to need. Not JSON per the project's
+// data-storage rules for payment-adjacent data.
 model PricingRule {
-  id         String   @id @default(cuid())
-  planType   PlanType
-  courseSlug String   @default("")
-  amount     Decimal  @db.Decimal(10, 2)
-  currency   String   @default("TND")
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(cuid())
+  planType     PlanType
+  ageGroupSlug String?
+  courseSlug   String?
+  amount       Decimal  @db.Decimal(10, 2)
+  currency     String   @default("TND")
+  updatedAt    DateTime @updatedAt
 
+  @@unique([planType, ageGroupSlug])
   @@unique([planType, courseSlug])
   @@map("pricing_rules")
 }

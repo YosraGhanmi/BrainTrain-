@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertCourseSession, deleteCourseSession } from '@/lib/admin/portal-actions';
+import { SCHOOL_TIME_SLOTS, findSlotLabel } from '@/lib/scheduling/slots';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default async function AdminSessionsPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
-  requireAdmin();
+  await requireAdmin();
   const [sessions, teachers, content] = await Promise.all([
     prisma.courseSession.findMany({
       include: { teacher: { include: { user: true } }, _count: { select: { enrollments: true } } },
@@ -22,6 +23,10 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
   return (
     <div>
       <h1 className="font-display text-3xl font-semibold text-ink">Course sessions</h1>
+      <p className="mt-2 max-w-2xl text-sm text-stone">
+        Every group runs on the school's fixed weekly timetable, seats 12 children, and follows the same school year
+        (15 Sep – 15 Jun) — just pick the course, the slot, and who's teaching it.
+      </p>
 
       {searchParams.error ? <p className="mt-4 text-sm font-semibold text-red-600">Please fill in every required field.</p> : null}
       {searchParams.saved ? <p className="mt-4 text-sm font-semibold text-emerald-600">Saved.</p> : null}
@@ -43,18 +48,17 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
             </option>
           ))}
         </select>
-        <select name="dayOfWeek" required defaultValue="1" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
-          {DAYS.map((d, i) => (
-            <option key={d} value={i}>
-              {d}
+        <select name="slotIndex" required defaultValue="" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
+          <option value="" disabled>
+            Time slot
+          </option>
+          {SCHOOL_TIME_SLOTS.map((slot, i) => (
+            <option key={slot.label} value={i}>
+              {slot.label} · {DAYS[slot.dayOfWeek]} {slot.startTime}–{slot.endTime}
             </option>
           ))}
         </select>
-        <input name="term" placeholder="Term, e.g. 2026 Fall" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
-        <input name="startTime" type="time" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
-        <input name="endTime" type="time" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
         <input name="location" placeholder="Location" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
-        <input name="capacity" type="number" min={1} defaultValue={12} required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
         <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2 lg:col-span-4">
           Add session
         </button>
@@ -65,7 +69,7 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
           <thead className="border-b border-ink/10 text-xs font-bold uppercase tracking-wide text-stone">
             <tr>
               <th className="px-5 py-3">Course</th>
-              <th className="px-5 py-3">Term</th>
+              <th className="px-5 py-3">Group</th>
               <th className="px-5 py-3">Schedule</th>
               <th className="px-5 py-3">Teacher</th>
               <th className="px-5 py-3">Seats</th>
@@ -75,10 +79,11 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
           <tbody>
             {sessions.map((s) => {
               const course = content.courses.find((c) => c.slug === s.courseSlug);
+              const slotLabel = findSlotLabel(s.dayOfWeek, s.startTime, s.endTime);
               return (
                 <tr key={s.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-5 py-4 font-semibold text-ink">{course?.title.en ?? s.courseSlug}</td>
-                  <td className="px-5 py-4 text-stone">{s.term}</td>
+                  <td className="px-5 py-4 text-stone">{slotLabel ?? '—'}</td>
                   <td className="px-5 py-4 text-stone">
                     {DAYS[s.dayOfWeek]} {s.startTime}–{s.endTime} · {s.location}
                   </td>

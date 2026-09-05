@@ -4,7 +4,7 @@ import { ArrowLeft, CalendarClock } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
-import VideoEmbed from '@/components/video/VideoEmbed';
+import CourseRobotShowcase from '@/components/course/CourseRobotShowcase';
 import ArrowRevealButton from '@/components/buttons/ArrowRevealButton';
 import { Link } from '@/i18n/navigation';
 import { readContent } from '@/lib/content/store';
@@ -112,11 +112,9 @@ export default async function CourseDetailPage({
               </div>
             </div>
 
-            <VideoEmbed
-              url={course.videoUrl}
-              title={course.title}
-              className="mb-[50px] max-w-md translate-x-[50px] justify-self-end"
-            />
+            <div className="mb-[50px] max-w-md translate-x-[50px] justify-self-end">
+              <CourseRobotShowcase description={course.description} locale={params.locale} />
+            </div>
           </div>
         </div>
       </main>

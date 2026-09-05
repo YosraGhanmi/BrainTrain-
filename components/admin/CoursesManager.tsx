@@ -10,6 +10,8 @@ import type { AgeGroupEntry, CourseEntry } from '@/lib/content/types';
 
 const NEW_KEY = '__new__';
 
+type CourseOverride = { MONTHLY?: number; QUARTERLY?: number; YEARLY?: number; currency: string };
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
@@ -19,7 +21,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function CourseFormFields({ course, ageGroups, isNew }: { course: CourseEntry; ageGroups: AgeGroupEntry[]; isNew: boolean }) {
+function CourseFormFields({
+  course,
+  ageGroups,
+  isNew,
+  override,
+}: {
+  course: CourseEntry;
+  ageGroups: AgeGroupEntry[];
+  isNew: boolean;
+  override?: CourseOverride;
+}) {
+  const ageGroupLabel = ageGroups.find((g) => g.slug === course.ageGroupSlug)?.label.en ?? 'this age group';
   return (
     <form action={upsertCourse} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <input type="hidden" name="existingSlug" value={isNew ? '' : course.slug} />
@@ -71,16 +84,59 @@ function CourseFormFields({ course, ageGroups, isNew }: { course: CourseEntry; a
         />
       </Field>
 
-      <Field label="Price (TND)">
+      <div className="sm:col-span-2 rounded-xl border border-ink/10 bg-slate-50 p-4">
+        {/* input/label/p/fields-div are flat siblings (not nested inside each
+            other) so Tailwind's peer-checked sibling selector can reach past
+            the label and helper text down to the fields div below. */}
         <input
-          name="price"
-          type="number"
-          min={0}
-          defaultValue={course.price}
-          placeholder="Price"
-          className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+          id="useDefaultPricing"
+          type="checkbox"
+          name="useDefaultPricing"
+          defaultChecked={!override}
+          className="peer mr-2 h-4 w-4 rounded border-ink/20 align-middle accent-accent"
         />
-      </Field>
+        <label htmlFor="useDefaultPricing" className="align-middle text-sm font-semibold text-ink">
+          Use {ageGroupLabel}&apos;s default pricing
+        </label>
+        <p className="mt-1 text-xs text-stone">
+          Defaults are set per age group on the <a href="/admin/pricing" className="underline">Pricing</a> page. Uncheck to set a
+          different monthly / 3-months / full-year price just for this course.
+        </p>
+        <input type="hidden" name="pricingCurrency" value={override?.currency ?? 'TND'} />
+
+        <div className="mt-3 grid grid-cols-1 gap-3 peer-checked:hidden sm:grid-cols-3">
+          <Field label="Monthly (TND)">
+            <input
+              name="amount_MONTHLY"
+              type="number"
+              min={0}
+              step="0.01"
+              defaultValue={override?.MONTHLY ?? ''}
+              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+          <Field label="3 months (TND)">
+            <input
+              name="amount_QUARTERLY"
+              type="number"
+              min={0}
+              step="0.01"
+              defaultValue={override?.QUARTERLY ?? ''}
+              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+          <Field label="Full year (TND)">
+            <input
+              name="amount_YEARLY"
+              type="number"
+              min={0}
+              step="0.01"
+              defaultValue={override?.YEARLY ?? ''}
+              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+        </div>
+      </div>
 
       <Field label="Description (English)">
         <textarea
@@ -178,10 +234,12 @@ export default function CoursesManager({
   ageGroups,
   groupedCourses,
   blank,
+  courseOverrides,
 }: {
   ageGroups: AgeGroupEntry[];
   groupedCourses: { group: AgeGroupEntry; color: string; courses: CourseEntry[] }[];
   blank: CourseEntry;
+  courseOverrides: Record<string, CourseOverride>;
 }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -246,7 +304,12 @@ export default function CoursesManager({
               </button>
             </div>
 
-            <CourseFormFields course={openCourse} ageGroups={ageGroups} isNew={isNew} />
+            <CourseFormFields
+              course={openCourse}
+              ageGroups={ageGroups}
+              isNew={isNew}
+              override={isNew ? undefined : courseOverrides[openCourse.slug]}
+            />
           </div>
         </div>
       ) : null}

@@ -71,7 +71,12 @@ export default function ChildOverview({ child }: { child: ChildWithEnrollments }
               title={badge.note ?? undefined}
               className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-soft"
             >
-              <span className="text-xl">{badge.emoji}</span>
+              {badge.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={badge.imageUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+              ) : (
+                <span className="text-xl">{badge.emoji}</span>
+              )}
               <div>
                 <p className="text-sm font-bold text-amber-900">{badge.title}</p>
                 <p className="text-xs text-amber-700">{badge.awardedAt.toDateString()}</p>

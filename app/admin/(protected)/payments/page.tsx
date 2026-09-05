@@ -13,7 +13,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default async function AdminPaymentsPage() {
-  requireAdmin();
+  await requireAdmin();
   const payments = await prisma.payment.findMany({
     include: {
       paymentPlan: {

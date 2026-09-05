@@ -116,7 +116,7 @@ export default function HeroSection() {
               {t('lead')}
             </p>
             <div className="flex flex-wrap items-center gap-6">
-              <OrbitBorderButton label={t('register')} href="/parent-portal/register" />
+              <OrbitBorderButton label={t('register')} href="/courses" />
             </div>
           </div>
         </div>

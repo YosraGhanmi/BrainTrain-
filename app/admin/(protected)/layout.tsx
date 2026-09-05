@@ -8,8 +8,8 @@ import { logout } from '@/lib/admin/actions';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readMessages } from '@/lib/messages/store';
 
-export default function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
-  requireAdmin();
+export default async function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
+  const session = await requireAdmin();
   const unreadMessages = readMessages().filter((m) => !m.read).length;
 
   return (
@@ -22,6 +22,9 @@ export default function AdminProtectedLayout({ children }: { children: React.Rea
         <SidebarNav unreadMessages={unreadMessages} />
 
         <div className="mt-auto pt-8">
+          <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-wide text-stone/60">
+            Signed in as {session.kind === 'admin' ? 'Admin' : `Secretary (${session.fullName})`}
+          </p>
           <form action={logout}>
             <RadialReveal
               boxClassName="w-full justify-center rounded-full border border-ink bg-ink shadow-sm"

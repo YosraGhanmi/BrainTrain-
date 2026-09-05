@@ -17,6 +17,7 @@ import {
   Settings2,
   Inbox,
   UserSquare2,
+  IdCard,
   GraduationCap,
   CalendarClock,
   ClipboardList,
@@ -26,7 +27,7 @@ import {
 } from 'lucide-react';
 
 const customizationItems = [
-  { label: 'Sponsors', href: '/admin/sponsors', icon: Handshake },
+  { label: 'Partners', href: '/admin/sponsors', icon: Handshake },
   { label: 'Statistics', href: '/admin/stats', icon: BarChart3 },
   { label: 'Courses', href: '/admin/courses', icon: BookOpen },
   { label: 'Age groups', href: '/admin/age-groups', icon: Users },
@@ -40,6 +41,7 @@ const portalItems = [
   { label: 'Parents', href: '/admin/parents', icon: UserSquare2 },
   { label: 'Children', href: '/admin/children', icon: Users },
   { label: 'Teachers', href: '/admin/teachers', icon: GraduationCap },
+  { label: 'Secretaries', href: '/admin/secretaries', icon: IdCard },
   { label: 'Course sessions', href: '/admin/sessions', icon: CalendarClock },
   { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
   { label: 'Payments', href: '/admin/payments', icon: CreditCard },

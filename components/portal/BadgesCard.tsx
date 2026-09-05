@@ -22,13 +22,22 @@ export default function BadgesCard({ badges }: { badges: Badge[] }) {
         <div className="mt-8 grid grid-cols-3 gap-x-4 gap-y-6 justify-items-center">
           {badges.map((badge, i) => (
             <div key={badge.id} className="flex flex-col items-center gap-2" title={badge.note ?? undefined}>
-              <div
-                className={`flex h-16 w-16 items-center justify-center rounded-full text-2xl ring-4 ${
-                  PALETTE[i % PALETTE.length]
-                }`}
-              >
-                {badge.emoji}
-              </div>
+              {badge.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={badge.imageUrl}
+                  alt={badge.title}
+                  className={`h-16 w-16 rounded-full object-cover ring-4 ${PALETTE[i % PALETTE.length]}`}
+                />
+              ) : (
+                <div
+                  className={`flex h-16 w-16 items-center justify-center rounded-full text-2xl ring-4 ${
+                    PALETTE[i % PALETTE.length]
+                  }`}
+                >
+                  {badge.emoji}
+                </div>
+              )}
               <p className="max-w-[5.5rem] truncate text-center text-xs font-semibold text-ink">{badge.title}</p>
             </div>
           ))}

@@ -9,7 +9,7 @@ export default function AdminSponsorsPage({ searchParams }: { searchParams: { er
 
   return (
     <div>
-      <h1 className="text-center font-display text-4xl font-semibold text-ink">Sponsors</h1>
+      <h1 className="text-center font-display text-4xl font-semibold text-ink">Partners</h1>
 
       <form
         action={addSponsor}
