@@ -42,12 +42,12 @@ export default async function ParentCoursesPage({ params }: { params: { locale: 
 
   // If a child has both a PENDING and an ACTIVE session for the same course,
   // ACTIVE is the more relevant status to surface on the catalog card.
-  const enrollmentByCourse = new Map<string, EnrollmentStatus>();
+  const enrollmentByCourse = new Map<string, { status: EnrollmentStatus; enrollmentId: string }>();
   for (const e of child.enrollments) {
     const slug = e.courseSession.courseSlug;
     const current = enrollmentByCourse.get(slug);
-    if (!current || (current === 'PENDING' && e.status === 'ACTIVE')) {
-      enrollmentByCourse.set(slug, e.status);
+    if (!current || (current.status === 'PENDING' && e.status === 'ACTIVE')) {
+      enrollmentByCourse.set(slug, { status: e.status, enrollmentId: e.id });
     }
   }
 
@@ -55,7 +55,9 @@ export default async function ParentCoursesPage({ params }: { params: { locale: 
     slug: course.slug,
     title: course.title.en,
     sessionsCount: course.sessions,
-    status: enrollmentByCourse.get(course.slug) ?? null,
+    status: enrollmentByCourse.get(course.slug)?.status ?? null,
+    enrollmentId: enrollmentByCourse.get(course.slug)?.enrollmentId ?? null,
+    childId: child.id,
     media: course.image ? (
       <div className="relative h-32 w-full overflow-hidden rounded-2xl">
         <Image

@@ -35,6 +35,7 @@ export default async function AdminPaymentsPage() {
               <th className="px-5 py-3">Parent</th>
               <th className="px-5 py-3">Course</th>
               <th className="px-5 py-3">Plan</th>
+              <th className="px-5 py-3">Method</th>
               <th className="px-5 py-3">Amount</th>
               <th className="px-5 py-3">Due</th>
               <th className="px-5 py-3">Status</th>
@@ -51,6 +52,7 @@ export default async function AdminPaymentsPage() {
                   <td className="px-5 py-4 text-stone">{enrollment.child.parent.user.fullName}</td>
                   <td className="px-5 py-4 text-stone">{course.title.en}</td>
                   <td className="px-5 py-4 text-stone">{p.paymentPlan.type}</td>
+                  <td className="px-5 py-4 text-stone">{p.paymentPlan.method}</td>
                   <td className="px-5 py-4 text-stone">
                     {Number(p.amount)} {p.currency}
                   </td>

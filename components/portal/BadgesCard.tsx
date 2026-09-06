@@ -13,7 +13,7 @@ const PALETTE = [
 
 export default function BadgesCard({ badges }: { badges: Badge[] }) {
   return (
-    <div className="rounded-3xl border border-ink/10 bg-white p-6 shadow-soft">
+    <div className="h-full rounded-3xl border border-ink/10 bg-white p-6 shadow-soft">
       <h2 className="text-center text-base font-semibold text-ink">Badges</h2>
 
       {badges.length === 0 ? (

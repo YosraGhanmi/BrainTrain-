@@ -4,10 +4,11 @@ import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
 import NewsCard, { type FeedItem } from '@/components/portal/NewsCard';
 import TeacherNotesCard from '@/components/portal/TeacherNotesCard';
 import BadgesCard from '@/components/portal/BadgesCard';
+import ChildProfileCard from '@/components/portal/ChildProfileCard';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -68,6 +69,8 @@ export default async function ParentDashboardPage({ params }: { params: { locale
   });
 
   const enrolledCourseSlugs = new Set(child.enrollments.map((e) => e.courseSession.courseSlug));
+  const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
+  const courseTitles = [...enrolledCourseSlugs].map((slug) => getCourseEntryOrThrow(slug).title.en);
   const visibleNews = news.filter(
     (n) =>
       (n.targetAgeGroups.length === 0 || n.targetAgeGroups.includes(child.ageGroupSlug)) &&
@@ -108,7 +111,20 @@ export default async function ParentDashboardPage({ params }: { params: { locale
         <NewsCard items={feed} />
         <TeacherNotesCard notes={child.notes} />
       </div>
-      <BadgesCard badges={child.badges} />
+      <div className="flex flex-col gap-6">
+        <ChildProfileCard
+          locale={params.locale}
+          childId={child.id}
+          fullName={child.fullName}
+          photoUrl={child.photoUrl}
+          photoColor={child.photoColor}
+          ageGroupLabel={ageGroup.label.en}
+          courseTitles={courseTitles}
+        />
+        <div className="flex-1">
+          <BadgesCard badges={child.badges} />
+        </div>
+      </div>
     </div>
   );
 }

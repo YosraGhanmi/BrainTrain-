@@ -1,11 +1,19 @@
 import { X } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
-import { createTeacher, deleteTeacher, setTeacherFrozen, addTeacherCourse, removeTeacherCourse } from '@/lib/admin/portal-actions';
+import {
+  createTeacher,
+  deleteTeacher,
+  setTeacherFrozen,
+  addTeacherCourse,
+  removeTeacherCourse,
+  regenerateTeacherSecretCode,
+} from '@/lib/admin/portal-actions';
 import { readContent } from '@/lib/content/store';
 import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
+import RegenerateCodeButton from '@/components/admin/RegenerateCodeButton';
 import AddTeacherDialog from '@/components/admin/AddTeacherDialog';
 import type { CourseEntry, AgeGroupEntry } from '@/lib/content/types';
 
@@ -80,7 +88,7 @@ export default async function AdminTeachersPage({
     <div>
       <div className="flex items-center justify-between gap-4">
         <h1 className="font-display text-3xl font-semibold text-ink">Teachers</h1>
-        <AddTeacherDialog defaultOpen={Boolean(searchParams.error)}>
+        <AddTeacherDialog defaultOpen={Boolean(searchParams.error)} closeKey={searchParams.code}>
           <form action={createTeacher} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <input name="fullName" placeholder="Full name" required className={selectClassName} />
             <input name="email" type="email" placeholder="Email" required className={selectClassName} />
@@ -130,6 +138,7 @@ export default async function AdminTeachersPage({
               <th className="px-5 py-3">Name</th>
               <th className="px-5 py-3">Email</th>
               <th className="px-5 py-3">Phone</th>
+              <th className="px-5 py-3">Secret code</th>
               <th className="px-5 py-3">Courses</th>
               <th className="px-5 py-3">Sessions</th>
               <th className="px-5 py-3" />
@@ -150,6 +159,15 @@ export default async function AdminTeachersPage({
                 </td>
                 <td className="px-5 py-4 text-stone align-top">{t.email}</td>
                 <td className="px-5 py-4 text-stone align-top">{t.phone}</td>
+                <td className="px-5 py-4 align-top">
+                  {t.teacherSecretCode ? (
+                    <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-sm font-bold text-ink">
+                      {t.teacherSecretCode}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-stone">Not set — regenerate</span>
+                  )}
+                </td>
                 <td className="px-5 py-4 align-top">
                   <div className="flex flex-col gap-1.5">
                     {(t.teacher?.courseSlugs ?? []).length === 0 ? (
@@ -190,6 +208,7 @@ export default async function AdminTeachersPage({
                 <td className="px-5 py-4 text-stone align-top">{t.teacher?.sessions.length ?? 0}</td>
                 <td className="px-5 py-4 align-top">
                   <div className="flex items-center justify-end gap-2">
+                    <RegenerateCodeButton action={regenerateTeacherSecretCode.bind(null, t.id)} />
                     <FreezeToggleButton action={setTeacherFrozen.bind(null, t.id, !t.isFrozen)} isFrozen={t.isFrozen} />
                     <DeleteIconButton action={deleteTeacher.bind(null, t.id)} />
                   </div>

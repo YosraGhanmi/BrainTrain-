@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ChevronDown, Globe, UserCircle, Users } from 'lucide-react';
@@ -24,6 +25,8 @@ export default function PortalTopbar({
 }) {
   const locale = useLocale();
   const pathname = usePathname();
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [childOpen, setChildOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -53,20 +56,24 @@ export default function PortalTopbar({
             <ul className="absolute left-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-ink/10 bg-white py-1.5 shadow-soft">
               {childSwitcher.children.map((c) => (
                 <li key={c.id}>
-                  <form action={selectChild}>
-                    <input type="hidden" name="locale" value={locale} />
-                    <input type="hidden" name="pathname" value={pathname} />
-                    <input type="hidden" name="childId" value={c.id} />
-                    <button
-                      type="submit"
-                      onClick={() => setChildOpen(false)}
-                      className={`block w-full truncate px-4 py-2 text-left text-sm font-semibold transition ${
-                        c.id === childSwitcher.selectedChildId ? 'bg-slate-50 text-accent' : 'text-ink hover:bg-slate-50'
-                      }`}
-                    >
-                      {c.fullName}
-                    </button>
-                  </form>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChildOpen(false);
+                      startTransition(async () => {
+                        const formData = new FormData();
+                        formData.set('locale', locale);
+                        formData.set('childId', c.id);
+                        await selectChild(formData);
+                        router.refresh();
+                      });
+                    }}
+                    className={`block w-full truncate px-4 py-2 text-left text-sm font-semibold transition ${
+                      c.id === childSwitcher.selectedChildId ? 'bg-slate-50 text-accent' : 'text-ink hover:bg-slate-50'
+                    }`}
+                  >
+                    {c.fullName}
+                  </button>
                 </li>
               ))}
               <li className="border-t border-ink/10">

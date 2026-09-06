@@ -83,10 +83,15 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  // Teacher-only second factor: a 4-digit PIN (hashed) the admin hands out
-  // alongside the default password. Entered on a dedicated step after
-  // password login, before a teacher portal session is created.
+  // Teacher-only second factor: a 4-digit PIN the admin hands out alongside
+  // the default password. Entered on a dedicated step after password login,
+  // before a teacher portal session is created. teacherSecretCodeHash is
+  // what login actually verifies against; teacherSecretCode duplicates it in
+  // plaintext solely so staff can look a teacher's current code back up in
+  // the admin panel — acceptable here since it's a handed-out PIN, not a
+  // real password (unlike passwordHash, which never gets a plaintext twin).
   teacherSecretCodeHash String?
+  teacherSecretCode     String?
 
   // Email-OTP based 2FA. twoFactorCodeHash/Expiry hold a pending "enable"
   // verification code until it's confirmed; login-time enforcement is not
@@ -173,6 +178,10 @@ model Child {
   dateOfBirth   DateTime
   ageGroupSlug  String
   specialNeeds  String?
+  // Parent-uploaded profile photo (public/children/...) and its extracted
+  // average color (hex), used to tint the profile card's banner to match.
+  photoUrl      String?
+  photoColor    String?
   createdAt     DateTime @default(now())
 
   parent      Parent       @relation(fields: [parentId], references: [id], onDelete: Cascade)
@@ -191,6 +200,9 @@ model Badge {
   id         String   @id @default(cuid())
   childId    String
   teacherId  String
+  // Course session this badge was awarded in — nullable since badges
+  // awarded before this field existed have no session on record.
+  courseSessionId String?
   title      String
   note       String?
   emoji      String   @default("🏅")
@@ -200,11 +212,13 @@ model Badge {
   imageUrl   String?
   awardedAt  DateTime @default(now())
 
-  child   Child   @relation(fields: [childId], references: [id], onDelete: Cascade)
-  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  child         Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  teacher       Teacher        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  courseSession CourseSession? @relation(fields: [courseSessionId], references: [id], onDelete: SetNull)
 
   @@index([childId])
   @@index([teacherId])
+  @@index([courseSessionId])
   @@map("badges")
 }
 
@@ -225,6 +239,7 @@ model CourseSession {
   teacher     Teacher?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
   enrollments Enrollment[]
   notes       TeacherNote[]
+  badges      Badge[]
 
   @@index([courseSlug])
   @@index([teacherId])
@@ -277,6 +292,11 @@ model Payment {
   dueDate                DateTime
   status                 PaymentStatus @default(PENDING)
   paidAt                 DateTime?
+  // Set once the parent has been shown the "payment confirmed" popup for the
+  // current PAID state — null means unseen. Reset to null whenever the
+  // status transitions (back) to PAID, e.g. from setPaymentStatus, so a
+  // reopen-then-reconfirm shows the popup again.
+  parentNotifiedAt       DateTime?
   stripeSessionId        String?       @unique
   stripePaymentIntentId  String?
   createdAt              DateTime      @default(now())

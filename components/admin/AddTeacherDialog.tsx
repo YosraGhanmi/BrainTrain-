@@ -1,10 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 
-export default function AddTeacherDialog({ children, defaultOpen = false }: { children: React.ReactNode; defaultOpen?: boolean }) {
+export default function AddTeacherDialog({
+  children,
+  defaultOpen = false,
+  closeKey,
+}: {
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  // A value (e.g. the freshly generated secret code) that changes each time
+  // the create-teacher action succeeds. The dialog is a client component
+  // that survives the post-submit redirect (same instance, new
+  // searchParams), so `defaultOpen` alone can't tell it to close — its
+  // `false` value after a success is indistinguishable from its `false`
+  // value before the dialog was ever opened.
+  closeKey?: string;
+}) {
   const [open, setOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+    else if (closeKey) setOpen(false);
+  }, [defaultOpen, closeKey]);
 
   return (
     <>

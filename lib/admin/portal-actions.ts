@@ -51,6 +51,7 @@ export async function createTeacher(formData: FormData): Promise<void> {
       passwordHash,
       role: 'TEACHER',
       teacherSecretCodeHash,
+      teacherSecretCode: secretCode,
       teacher: { create: { courseSlugs: [courseSlug] } },
     },
   });
@@ -62,6 +63,25 @@ export async function deleteTeacher(userId: string): Promise<void> {
   await requireAdmin();
   await prisma.user.delete({ where: { id: userId } });
   redirect('/admin/teachers?saved=1');
+}
+
+// The code is only ever stored hashed, so a forgotten/lost one can't be
+// looked up — issuing a new one (shown once, same as createTeacher) is the
+// only recovery path. This also invalidates the teacher's previous code.
+export async function regenerateTeacherSecretCode(userId: string): Promise<void> {
+  await requireAdmin();
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.role !== 'TEACHER') redirect('/admin/teachers?error=1');
+
+  const secretCode = crypto.randomInt(0, 10000).toString().padStart(4, '0');
+  const teacherSecretCodeHash = await hashPassword(secretCode);
+
+  await prisma.user.update({ where: { id: userId }, data: { teacherSecretCodeHash, teacherSecretCode: secretCode } });
+  // The teacher may already be past the PIN step of a pending login with the
+  // old code — revoke so they have to log in again with the new one.
+  await revokeAllSessions(userId);
+
+  redirect(`/admin/teachers?saved=1&code=${secretCode}&email=${encodeURIComponent(user!.email)}`);
 }
 
 export async function addTeacherCourse(teacherId: string, formData: FormData): Promise<void> {
@@ -281,7 +301,13 @@ export async function setPaymentStatus(id: string, status: PaymentStatus): Promi
   await requireAdmin();
   await prisma.payment.update({
     where: { id },
-    data: { status, paidAt: status === 'PAID' ? new Date() : null },
+    data: {
+      status,
+      paidAt: status === 'PAID' ? new Date() : null,
+      // Unseen again whenever a payment (re)becomes PAID, so the parent's
+      // confirmation popup shows even after a reopen-then-reconfirm.
+      parentNotifiedAt: status === 'PAID' ? null : undefined,
+    },
   });
   revalidatePath('/admin/payments');
 }

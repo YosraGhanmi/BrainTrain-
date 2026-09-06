@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { verifyTeacherSecretCode } from '@/lib/portal-auth/actions';
 import { verifyPendingTeacherToken, PENDING_TEACHER_COOKIE_NAME } from '@/lib/portal-auth/session';
 import { localizedPath } from '@/lib/portal-auth/guard';
-import AuthCard from '@/components/portal/AuthCard';
+import BrandedAuthPanel from '@/components/portal/BrandedAuthPanel';
 import type { AppLocale } from '@/i18n/routing';
 
 export default function TeacherVerifyPage({
@@ -19,16 +19,21 @@ export default function TeacherVerifyPage({
   }
 
   return (
-    <AuthCard eyebrow="Teacher Portal" title="Enter your code">
-      <p className="mt-2 text-sm text-stone">
-        Enter the 4-digit secret code your admin gave you along with your password.
-      </p>
+    <BrandedAuthPanel
+      eyebrow="BrainTrain Teacher"
+      title="Enter your code"
+      backHref="/teacher/login"
+      backLabel="Back to login"
+      heading={['One more', 'step to go!']}
+      tagline="A quick 4-digit code keeps your students' notes and grades secure."
+    >
+      <p className="mt-6 text-sm text-stone">Enter the 4-digit secret code your admin gave you along with your password.</p>
 
-      <form action={verifyTeacherSecretCode} className="mt-8 space-y-5">
+      <form action={verifyTeacherSecretCode} className="mt-8 space-y-7">
         <input type="hidden" name="locale" value={params.locale} />
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-stone">Secret code</label>
+        <div className="space-y-2">
+          <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">Secret code</label>
           <input
             name="code"
             type="text"
@@ -37,20 +42,19 @@ export default function TeacherVerifyPage({
             maxLength={4}
             required
             autoFocus
-            className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-accent"
+            className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-4 text-center text-2xl font-bold tracking-[0.5em] text-ink outline-none transition focus:border-accent"
           />
         </div>
 
         {searchParams.error ? <p className="text-sm font-semibold text-red-600">Incorrect code. Try again.</p> : null}
 
-        <button type="submit" className="w-full rounded-full bg-ink px-6 py-3.5 text-base font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+        <button
+          type="submit"
+          className="w-full rounded-full bg-[#0b1a3a] px-6 py-4 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
+        >
           Confirm
         </button>
       </form>
-
-      <a href={localizedPath(params.locale, '/teacher/login')} className="mt-6 block text-center text-sm text-stone transition hover:text-ink">
-        ← Back to login
-      </a>
-    </AuthCard>
+    </BrandedAuthPanel>
   );
 }

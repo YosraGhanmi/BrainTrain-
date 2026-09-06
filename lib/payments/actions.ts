@@ -62,3 +62,15 @@ export async function payNow(formData: FormData): Promise<void> {
 
   redirect(checkoutSession.url!);
 }
+
+export async function acknowledgePaymentConfirmation(paymentId: string, locale: AppLocale): Promise<void> {
+  const parent = await requireParent(locale);
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { paymentPlan: { include: { enrollment: { include: { child: true } } } } },
+  });
+  if (!payment || payment.paymentPlan.enrollment.child.parentId !== parent.parentId) return;
+
+  await prisma.payment.update({ where: { id: paymentId }, data: { parentNotifiedAt: new Date() } });
+}

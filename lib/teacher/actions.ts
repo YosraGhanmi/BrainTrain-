@@ -70,7 +70,7 @@ export async function awardBadge(formData: FormData): Promise<void> {
   if (!enrollment) fail();
 
   await prisma.badge.create({
-    data: { teacherId: teacher.teacherId, childId, title, note: note || null, emoji, imageUrl },
+    data: { teacherId: teacher.teacherId, childId, courseSessionId, title, note: note || null, emoji, imageUrl },
   });
 
   redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?badgeSaved=1`));

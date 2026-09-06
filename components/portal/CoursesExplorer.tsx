@@ -15,6 +15,8 @@ export type CourseInfo = {
   title: string;
   sessionsCount: number;
   status: EnrollmentStatus | null;
+  enrollmentId: string | null;
+  childId: string;
   media: ReactNode;
 };
 
@@ -28,7 +30,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 
 export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) {
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<Filter>('enrolled');
   const [filterOpen, setFilterOpen] = useState(false);
 
   const currentFilter = FILTERS.find((f) => f.key === filter)!;
@@ -102,7 +104,11 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
           {filtered.map((course) => (
             <Link
               key={course.slug}
-              href={`/parent-portal/courses/${course.slug}`}
+              href={
+                course.status && course.enrollmentId
+                  ? `/parent-portal/children/${course.childId}/courses/${course.enrollmentId}`
+                  : `/parent-portal/courses/${course.slug}`
+              }
               className="relative rounded-tl-xl rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-br-xl border border-ink/10 bg-white p-6 text-center shadow-sm transition hover:border-accent/40 hover:shadow-md"
             >
               {course.status ? (

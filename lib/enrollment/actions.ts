@@ -81,3 +81,31 @@ export async function enrollChild(formData: FormData): Promise<void> {
 
   redirect(localizedPath(locale, `${detailPath}?saved=1`));
 }
+
+export async function unenrollChild(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const parent = await requireParent(locale);
+
+  const enrollmentId = field(formData, 'enrollmentId');
+  const childId = field(formData, 'childId');
+
+  const detailPath = `/parent-portal/children/${childId}/courses/${enrollmentId}`;
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: enrollmentId },
+    include: { child: true },
+  });
+  if (!enrollment || enrollment.child.parentId !== parent.parentId) {
+    redirect(localizedPath(locale, '/parent-portal?error=1'));
+  }
+  if (enrollment!.status === 'CANCELLED') {
+    redirect(localizedPath(locale, `${detailPath}?error=already`));
+  }
+
+  await prisma.enrollment.update({
+    where: { id: enrollmentId },
+    data: { status: 'CANCELLED' },
+  });
+
+  redirect(localizedPath(locale, `/parent-portal/children/${childId}?unsubscribed=1`));
+}

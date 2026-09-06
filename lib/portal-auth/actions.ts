@@ -4,6 +4,7 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db/prisma';
 import { hashPassword, verifyPassword } from '@/lib/portal-auth/password';
 import {
@@ -180,26 +181,26 @@ export async function logoutPortal(redirectTo: string): Promise<void> {
 // filters to the same child without threading a childId through routes.
 // ---------------------------------------------------------------------------
 
+// No redirect here on purpose: the caller is virtually always already on the
+// page it wants refreshed (the topbar shows on every portal route), and a
+// redirect() to that same URL doesn't reliably bust the client router cache.
+// The client instead calls this directly and follows up with
+// router.refresh() — the documented way to force a mutated route to refetch.
 export async function selectChild(formData: FormData): Promise<void> {
-  const locale = getLocale(formData);
   const user = await getPortalSessionUser();
-  if (!user || user.role !== 'PARENT' || !user.parentId) {
-    redirect(localizedPath(locale, '/parent-portal/login'));
-  }
+  if (!user || user.role !== 'PARENT' || !user.parentId) return;
 
   const childId = field(formData, 'childId');
-  const pathname = field(formData, 'pathname') || '/parent-portal';
-  const redirectTo = localizedPath(locale, pathname);
-
   const child = await prisma.child.findUnique({ where: { id: childId } });
-  if (!child || child.parentId !== user!.parentId) redirect(redirectTo);
+  if (!child || child.parentId !== user.parentId) return;
 
   cookies().set(SELECTED_CHILD_COOKIE, childId, {
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
     sameSite: 'lax',
   });
-  redirect(redirectTo);
+
+  revalidatePath('/', 'layout');
 }
 
 // ---------------------------------------------------------------------------
