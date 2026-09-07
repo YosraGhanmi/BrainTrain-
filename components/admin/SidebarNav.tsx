@@ -24,6 +24,7 @@ import {
   CreditCard,
   Tag,
   Megaphone,
+  CalendarDays,
 } from 'lucide-react';
 
 const customizationItems = [
@@ -47,9 +48,16 @@ const portalItems = [
   { label: 'Payments', href: '/admin/payments', icon: CreditCard },
   { label: 'Pricing', href: '/admin/pricing', icon: Tag },
   { label: 'News', href: '/admin/news', icon: Megaphone },
+  { label: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
 ];
 
-export default function SidebarNav({ unreadMessages = 0 }: { unreadMessages?: number }) {
+export default function SidebarNav({
+  unreadMessages = 0,
+  pendingEnrollments = 0,
+}: {
+  unreadMessages?: number;
+  pendingEnrollments?: number;
+}) {
   const pathname = usePathname();
   const isChildActive = customizationItems.some((item) => pathname?.startsWith(item.href));
   const isPortalActive = portalItems.some((item) => pathname?.startsWith(item.href));
@@ -139,12 +147,18 @@ export default function SidebarNav({ unreadMessages = 0 }: { unreadMessages?: nu
           {portalItems.map((item) => {
             const active = pathname?.startsWith(item.href) ?? false;
             const Icon = item.icon;
+            const badge = item.href === '/admin/enrollments' ? pendingEnrollments : 0;
             return (
               <Link key={item.href} href={item.href} className={linkClass(active)}>
                 <span className={iconClass(active)}>
                   <Icon className="h-4 w-4" />
                 </span>
                 {item.label}
+                {badge > 0 ? (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-white">
+                    {badge}
+                  </span>
+                ) : null}
               </Link>
             );
           })}

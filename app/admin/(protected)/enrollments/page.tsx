@@ -1,6 +1,7 @@
+import { Clock3 } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
-import { updateEnrollmentStatus, moveEnrollment } from '@/lib/admin/portal-actions';
+import { updateEnrollmentStatus, approveEnrollment, moveEnrollment } from '@/lib/admin/portal-actions';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 
 export const dynamic = 'force-dynamic';
@@ -18,21 +19,36 @@ export default async function AdminEnrollmentsPage({ searchParams }: { searchPar
   const [enrollments, sessions] = await Promise.all([
     prisma.enrollment.findMany({
       include: { child: { include: { parent: { include: { user: true } } } }, courseSession: true },
-      orderBy: { enrolledAt: 'desc' },
+      // Enrollments awaiting approval float to the top so they're the first
+      // thing a secretary/admin sees — everything else stays newest-first.
+      orderBy: [{ status: 'asc' }, { enrolledAt: 'desc' }],
     }),
     prisma.courseSession.findMany({
       include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
     }),
   ]);
 
+  const pendingCount = enrollments.filter((e) => e.status === 'PENDING').length;
+
   return (
     <div>
       <h1 className="font-display text-3xl font-semibold text-ink">Enrollments</h1>
+
+      {pendingCount > 0 ? (
+        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          <Clock3 className="h-4 w-4 shrink-0" />
+          {pendingCount} enrollment{pendingCount > 1 ? 's' : ''} awaiting approval — confirm payment was received, then hit Approve.
+        </div>
+      ) : null}
 
       {searchParams.error === 'full' ? (
         <p className="mt-4 text-sm font-semibold text-red-600">That group is full — pick another one.</p>
       ) : searchParams.error === 'duplicate' ? (
         <p className="mt-4 text-sm font-semibold text-red-600">This child is already enrolled in that group.</p>
+      ) : searchParams.error === 'conflict' ? (
+        <p className="mt-4 text-sm font-semibold text-red-600">
+          This child already has another class at that same day and time — pick a different group.
+        </p>
       ) : searchParams.error ? (
         <p className="mt-4 text-sm font-semibold text-red-600">Something went wrong.</p>
       ) : searchParams.saved ? (
@@ -95,10 +111,19 @@ export default async function AdminEnrollmentsPage({ searchParams }: { searchPar
                           </button>
                         </form>
                       ) : null}
-                      {e.status !== 'ACTIVE' ? (
+                      {e.status === 'PENDING' ? (
+                        <form action={approveEnrollment.bind(null, e.id)}>
+                          <button
+                            type="submit"
+                            className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                          >
+                            Approve
+                          </button>
+                        </form>
+                      ) : e.status === 'CANCELLED' ? (
                         <form action={updateEnrollmentStatus.bind(null, e.id, 'ACTIVE')}>
                           <button type="submit" className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
-                            Activate
+                            Reactivate
                           </button>
                         </form>
                       ) : null}

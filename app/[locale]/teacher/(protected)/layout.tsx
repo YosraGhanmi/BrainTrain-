@@ -1,7 +1,7 @@
 import PortalShell from '@/components/portal/PortalShell';
 import { requireTeacher, localizedPath } from '@/lib/portal-auth/guard';
 import type { AppLocale } from '@/i18n/routing';
-import { CalendarDays } from 'lucide-react';
+import { Users, CalendarDays } from 'lucide-react';
 
 export default async function TeacherPortalLayout({
   children,
@@ -19,7 +19,11 @@ export default async function TeacherPortalLayout({
       fullName={teacher.fullName}
       email={teacher.email}
       loginHref={localizedPath(params.locale, '/teacher/login')}
-      navLinks={[{ label: 'My sessions', href: '/teacher', icon: CalendarDays }]}
+      theme="light"
+      navLinks={[
+        { label: 'My groups', href: '/teacher', icon: Users },
+        { label: 'Calendar', href: '/teacher/calendar', icon: CalendarDays },
+      ]}
     >
       {children}
     </PortalShell>

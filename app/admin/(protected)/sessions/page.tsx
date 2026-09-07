@@ -28,7 +28,13 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
         (15 Sep – 15 Jun) — just pick the course, the slot, and who's teaching it.
       </p>
 
-      {searchParams.error ? <p className="mt-4 text-sm font-semibold text-red-600">Please fill in every required field.</p> : null}
+      {searchParams.error === 'teacherConflict' ? (
+        <p className="mt-4 text-sm font-semibold text-red-600">
+          This teacher already has another group at that same day and time — pick a different slot or teacher.
+        </p>
+      ) : searchParams.error ? (
+        <p className="mt-4 text-sm font-semibold text-red-600">Please fill in every required field.</p>
+      ) : null}
       {searchParams.saved ? <p className="mt-4 text-sm font-semibold text-emerald-600">Saved.</p> : null}
 
       <form action={upsertCourseSession} className="mt-6 grid grid-cols-1 gap-4 rounded-2xl border border-ink/10 bg-white p-6 shadow-soft sm:grid-cols-2 lg:grid-cols-4">

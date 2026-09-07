@@ -25,3 +25,20 @@ export function findSlotLabel(dayOfWeek: number, startTime: string, endTime: str
   const slot = SCHOOL_TIME_SLOTS.find((s) => s.dayOfWeek === dayOfWeek && s.startTime === startTime && s.endTime === endTime);
   return slot?.label ?? null;
 }
+
+// "HH:MM" strings compare correctly with plain string comparison since every
+// slot is zero-padded 24h time — no need to parse them into minutes.
+export function timeRangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  return aStart < bEnd && bStart < aEnd;
+}
+
+export type WeeklyTimeRange = { dayOfWeek: number; startTime: string; endTime: string };
+
+// True when two course sessions would ask the same child to be in two
+// places at once — same weekday, overlapping time range. Different courses
+// can otherwise reuse the exact same SCHOOL_TIME_SLOTS entry (e.g. two
+// unrelated groups both scheduled "G1"), so this has to be checked per
+// enrollment, not prevented at the slot level.
+export function sessionsConflict(a: WeeklyTimeRange, b: WeeklyTimeRange): boolean {
+  return a.dayOfWeek === b.dayOfWeek && timeRangesOverlap(a.startTime, a.endTime, b.startTime, b.endTime);
+}

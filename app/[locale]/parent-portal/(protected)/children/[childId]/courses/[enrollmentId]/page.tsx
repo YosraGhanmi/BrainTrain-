@@ -19,11 +19,13 @@ import {
   Box,
   Settings,
   Mail,
+  Clock3,
 } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
+import { estimateCompletedSessions, percentFromCompleted } from '@/lib/progress';
 import { unenrollChild } from '@/lib/enrollment/actions';
 import { payNow } from '@/lib/payments/actions';
 import UnsubscribeButton from '@/components/portal/UnsubscribeButton';
@@ -54,16 +56,6 @@ const MILESTONES: { label: string; icon: typeof Flag }[] = [
 
 const BADGE_PALETTE = ['#6c5ce7', '#f7b500', '#00b894', '#3d7fff', '#ff8c42'];
 
-// No attendance model exists yet — approximate progress from the weekly
-// cadence (courseSession.dayOfWeek) elapsed since enrollment, capped at the
-// course's total planned sessions. Clearly a supportive estimate, not a
-// precise attendance record.
-function estimateCompletedSessions(enrolledAt: Date, totalSessions: number): number {
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const weeksElapsed = Math.floor((Date.now() - enrolledAt.getTime()) / msPerWeek);
-  return Math.max(0, Math.min(totalSessions, weeksElapsed));
-}
-
 export default async function EnrolledCoursePage({
   params,
   searchParams,
@@ -87,16 +79,76 @@ export default async function EnrolledCoursePage({
     notFound();
   }
 
-  const badges = await prisma.badge.findMany({
-    where: { childId: enrollment.childId, courseSessionId: enrollment.courseSessionId },
-    orderBy: { awardedAt: 'desc' },
-  });
-
   const course = getCourseEntryOrThrow(enrollment.courseSession.courseSlug);
   const Icon = getIcon(course.icon);
   const session = enrollment.courseSession;
   const teacherName = session.teacher?.user.fullName ?? null;
   const teacherEmail = session.teacher?.user.email ?? null;
+
+  // Nothing here is real yet while an admin hasn't confirmed the payment —
+  // show a focused waiting screen instead of course progress/badges/notes
+  // that don't apply until the enrollment is actually active.
+  if (enrollment.status === 'PENDING') {
+    const pendingPayment = enrollment.payments[0];
+    return (
+      <div className="w-full pb-16">
+        <Link
+          href={`/parent-portal/children/${enrollment.child.id}`}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink/60 transition hover:text-ink"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to {enrollment.child.fullName}
+        </Link>
+
+        <div className="relative mt-4 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#dce6ff] via-[#e6dcfb] to-[#fbdcec] p-10 text-center shadow-soft sm:p-14">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full bg-white/40 blur-2xl" />
+            <div className="absolute -bottom-24 right-24 h-64 w-64 animate-float rounded-full bg-white/30 blur-2xl" />
+          </div>
+
+          <div className="relative mx-auto flex max-w-md flex-col items-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
+              <Clock3 className="h-7 w-7 text-amber-500" />
+            </div>
+            <span className="mt-5 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-700">
+              Pending
+            </span>
+            <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">We're checking with Admin</h1>
+            <p className="mt-3 text-sm leading-relaxed text-ink/70">
+              {enrollment.child.fullName}'s enrollment in <strong>{course.title.en}</strong> is on its way — an admin
+              just needs to confirm your payment before the seat is locked in. You'll get a text message the moment
+              it's approved, and the course will unlock right here.
+            </p>
+
+            <div className="mt-6 w-full rounded-2xl bg-white/70 p-4 text-left text-sm text-ink/80 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-ink">{course.title.en}</span>
+                <span>{DAYS[session.dayOfWeek]} · {session.startTime}–{session.endTime}</span>
+              </div>
+              {pendingPayment ? (
+                <div className="mt-2 flex items-center justify-between border-t border-ink/5 pt-2 text-ink/70">
+                  <span>{pendingPayment.paymentPlan.method === 'CASH' ? 'Cash' : pendingPayment.paymentPlan.method === 'CHEQUE' ? 'Cheque' : 'Card'} payment</span>
+                  <span className="font-semibold text-ink">{Number(pendingPayment.amount)} {pendingPayment.currency}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <Link
+              href="/parent-portal"
+              className="mt-8 rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
+            >
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const badges = await prisma.badge.findMany({
+    where: { childId: enrollment.childId, courseSessionId: enrollment.courseSessionId },
+    orderBy: { awardedAt: 'desc' },
+  });
 
   const outstandingPayment = enrollment.payments.find((p) => p.status !== 'PAID');
   const isFullyPaid = enrollment.payments.length > 0 && !outstandingPayment;
@@ -110,7 +162,7 @@ export default async function EnrolledCoursePage({
 
   const totalSessions = course.sessions;
   const completedSessions = estimateCompletedSessions(enrollment.enrolledAt, totalSessions);
-  const percent = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+  const percent = percentFromCompleted(completedSessions, totalSessions);
   const tagline = course.description.en.split('.')[0] + '.';
 
   const displayedBadges = badges.slice(0, 4);

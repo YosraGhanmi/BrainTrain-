@@ -61,6 +61,7 @@ enum SmsStatus {
 enum SmsPurpose {
   PAYMENT_REMINDER
   PASSWORD_RESET
+  ENROLLMENT_APPROVED
 }
 
 model User {

@@ -7,10 +7,12 @@ import RadialReveal from '@/components/effects/RadialReveal';
 import { logout } from '@/lib/admin/actions';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readMessages } from '@/lib/messages/store';
+import { prisma } from '@/lib/db/prisma';
 
 export default async function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin();
   const unreadMessages = readMessages().filter((m) => !m.read).length;
+  const pendingEnrollments = await prisma.enrollment.count({ where: { status: 'PENDING' } });
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 text-ink">
@@ -19,7 +21,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
           <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill className="object-contain object-left" />
         </div>
 
-        <SidebarNav unreadMessages={unreadMessages} />
+        <SidebarNav unreadMessages={unreadMessages} pendingEnrollments={pendingEnrollments} />
 
         <div className="mt-auto pt-8">
           <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-wide text-stone/60">

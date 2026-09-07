@@ -1,10 +1,8 @@
-import { ChevronLeft, ChevronRight, Pin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { prisma } from '@/lib/db/prisma';
-import { requireParent } from '@/lib/portal-auth/guard';
-import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
+import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
-import { readContent } from '@/lib/content/store';
 import { getIcon } from '@/lib/content/icons';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -27,56 +25,28 @@ function monthParam(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
 
-export default async function ParentSchedulePage({
+export default async function TeacherCalendarPage({
   params,
   searchParams,
 }: {
   params: { locale: AppLocale };
   searchParams: { month?: string };
 }) {
-  const parent = await requireParent(params.locale);
-  const children = await prisma.child.findMany({
-    where: { parentId: parent.parentId },
-    orderBy: { createdAt: 'asc' },
+  const teacher = await requireTeacher(params.locale);
+  const sessions = await prisma.courseSession.findMany({
+    where: { teacherId: teacher.teacherId },
+    include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
   });
-  const selected = resolveSelectedChild(children);
 
-  if (!selected) {
-    return (
-      <p className="rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-        No children yet. Add a child to start enrolling in courses.
-      </p>
-    );
-  }
-
-  const child = await prisma.child.findUnique({
-    where: { id: selected.id },
-    include: {
-      enrollments: {
-        where: { status: 'ACTIVE' },
-        include: { courseSession: true },
-      },
-    },
-  });
-  if (!child) return null;
-
-  const byDayOfWeek = new Map<number, typeof child.enrollments>();
-  for (const e of child.enrollments) {
-    const list = byDayOfWeek.get(e.courseSession.dayOfWeek) ?? [];
-    list.push(e);
-    byDayOfWeek.set(e.courseSession.dayOfWeek, list);
+  const byDayOfWeek = new Map<number, typeof sessions>();
+  for (const s of sessions) {
+    const list = byDayOfWeek.get(s.dayOfWeek) ?? [];
+    list.push(s);
+    byDayOfWeek.set(s.dayOfWeek, list);
   }
   for (const list of byDayOfWeek.values()) {
-    list.sort((a, b) => a.courseSession.startTime.localeCompare(b.courseSession.startTime));
+    list.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
-
-  const enrolledCourseSlugs = new Set(child.enrollments.map((e) => e.courseSession.courseSlug));
-  const { calendarEvents } = readContent();
-  const visibleEvents = calendarEvents.filter(
-    (event) =>
-      (event.targetAgeGroups.length === 0 || event.targetAgeGroups.includes(child.ageGroupSlug)) &&
-      (event.targetCourses.length === 0 || event.targetCourses.some((slug) => enrolledCourseSlugs.has(slug)))
-  );
 
   const { year, month } = parseMonth(searchParams.month);
   const firstOfMonth = new Date(year, month, 1);
@@ -94,21 +64,10 @@ export default async function ParentSchedulePage({
   const prevMonth = month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 };
   const nextMonth = month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 };
 
-  const eventsByDayOfMonth = new Map<number, typeof visibleEvents>();
-  for (const event of visibleEvents) {
-    const eventDate = new Date(`${event.date}T00:00:00`);
-    if (eventDate.getFullYear() !== year || eventDate.getMonth() !== month) continue;
-    const list = eventsByDayOfMonth.get(eventDate.getDate()) ?? [];
-    list.push(event);
-    eventsByDayOfMonth.set(eventDate.getDate(), list);
-  }
+  const hasAny = sessions.length > 0;
 
-  const hasAny = child.enrollments.length > 0;
-
-  // Distinct courses on this child's schedule, for the color/icon legend.
-  const legend = [...new Set(child.enrollments.map((e) => e.courseSession.courseSlug))].map((slug) =>
-    getCourseEntryOrThrow(slug)
-  );
+  // Distinct courses on this teacher's timetable, for the color/icon legend.
+  const legend = [...new Set(sessions.map((s) => s.courseSlug))].map((slug) => getCourseEntryOrThrow(slug));
 
   return (
     <div>
@@ -118,14 +77,14 @@ export default async function ParentSchedulePage({
         </h1>
         <div className="flex items-center gap-2">
           <Link
-            href={`/parent-portal/schedule?month=${monthParam(prevMonth.year, prevMonth.month)}`}
+            href={`/teacher/calendar?month=${monthParam(prevMonth.year, prevMonth.month)}`}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
             aria-label="Previous month"
           >
             <ChevronLeft className="h-4 w-4" />
           </Link>
           <Link
-            href={`/parent-portal/schedule?month=${monthParam(nextMonth.year, nextMonth.month)}`}
+            href={`/teacher/calendar?month=${monthParam(nextMonth.year, nextMonth.month)}`}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
             aria-label="Next month"
           >
@@ -136,7 +95,7 @@ export default async function ParentSchedulePage({
 
       {!hasAny ? (
         <p className="mt-4 rounded-2xl border border-dashed border-ink/15 bg-white p-6 text-center text-stone">
-          No active sessions scheduled yet — the calendar below will fill in once an enrollment is activated.
+          No groups assigned yet — your working hours will fill in once the admin assigns you a session.
         </p>
       ) : (
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -170,8 +129,7 @@ export default async function ParentSchedulePage({
           {cells.map((day, i) => {
             const dayOfWeek = i % 7;
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const sessionEvents = day ? byDayOfWeek.get(dayOfWeek) ?? [] : [];
-            const pinnedEvents = day ? eventsByDayOfMonth.get(day) ?? [] : [];
+            const daySessions = day ? byDayOfWeek.get(dayOfWeek) ?? [] : [];
             const isToday = isCurrentMonth && day === today.getDate();
             return (
               <div
@@ -191,31 +149,20 @@ export default async function ParentSchedulePage({
                     </span>
 
                     <div className="mt-1.5 flex flex-wrap gap-1">
-                      {pinnedEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className="flex items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none"
-                          style={{ backgroundColor: `${event.color}1f`, color: event.color }}
-                          title={event.label}
-                        >
-                          <Pin className="h-3 w-3 shrink-0" strokeWidth={2.5} />
-                          <span className="max-w-[4.5rem] truncate">{event.label}</span>
-                        </div>
-                      ))}
-                      {sessionEvents.map((e) => {
-                        const course = getCourseEntryOrThrow(e.courseSession.courseSlug);
+                      {daySessions.map((s) => {
+                        const course = getCourseEntryOrThrow(s.courseSlug);
                         const Icon = getIcon(course.icon);
                         return (
                           <Link
-                            key={e.id}
-                            href={`/parent-portal/courses/${course.slug}`}
+                            key={s.id}
+                            href={`/teacher/sessions/${s.id}`}
                             className="group flex max-w-[9rem] items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md"
                             style={{ backgroundColor: `${course.color}1a`, color: course.color }}
-                            title={`${course.title.en} · ${e.courseSession.startTime}–${e.courseSession.endTime} · ${e.courseSession.location}`}
+                            title={`${course.title.en} · ${s.startTime}–${s.endTime} · ${s.location} · ${s._count.enrollments} students`}
                           >
                             <Icon className="h-3 w-3 shrink-0 transition group-hover:scale-110" strokeWidth={2.5} />
                             <span className="min-w-0 truncate">{course.title.en}</span>
-                            <span className="shrink-0 opacity-70">{e.courseSession.startTime}</span>
+                            <span className="shrink-0 opacity-70">{s.startTime}</span>
                           </Link>
                         );
                       })}
@@ -227,6 +174,34 @@ export default async function ParentSchedulePage({
           })}
         </div>
       </div>
+
+      {hasAny ? (
+        <div className="mt-6 space-y-2">
+          {[...sessions]
+            .sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime))
+            .map((s) => {
+              const course = getCourseEntryOrThrow(s.courseSlug);
+              return (
+                <div key={s.id} className="flex items-center gap-3 rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: course.color }}
+                    aria-hidden
+                  />
+                  <span className="font-semibold text-ink">{WEEKDAYS[s.dayOfWeek]}</span>
+                  <span className="text-stone">
+                    {s.startTime}–{s.endTime}
+                  </span>
+                  <span className="font-semibold text-ink">{course.title.en}</span>
+                  <span className="ml-auto flex items-center gap-1.5 text-xs text-stone">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {s.location}
+                  </span>
+                </div>
+              );
+            })}
+        </div>
+      ) : null}
     </div>
   );
 }

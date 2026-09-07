@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
 
 type Group = {
   id: string;
@@ -11,6 +10,7 @@ type Group = {
   endTime: string;
   seatsLeft: number;
   enrolled: boolean;
+  conflictLabel: string | null;
 };
 
 type PlanInfo = { type: string; label: string; hint: string; amount: number; currency: string };
@@ -32,7 +32,6 @@ export default function EnrollWizard({
   dayNames,
   plans,
   methods,
-  showSuccess,
 }: {
   action: (formData: FormData) => void;
   locale: string;
@@ -43,13 +42,11 @@ export default function EnrollWizard({
   dayNames: string[];
   plans: PlanInfo[];
   methods: MethodInfo[];
-  showSuccess: boolean;
 }) {
   const [step, setStep] = useState(1);
   const [groupId, setGroupId] = useState('');
   const [planType, setPlanType] = useState('');
   const [method, setMethod] = useState('');
-  const [successOpen, setSuccessOpen] = useState(showSuccess);
 
   const selectedGroup = groups.find((g) => g.id === groupId);
   const selectedPlan = plans.find((p) => p.type === planType);
@@ -98,18 +95,21 @@ export default function EnrollWizard({
                     .filter((g) => g.dayOfWeek === day)
                     .map((g) => {
                       const full = g.seatsLeft <= 0;
-                      const disabled = g.enrolled || full;
+                      const conflict = Boolean(g.conflictLabel) && !g.enrolled;
+                      const disabled = g.enrolled || full || conflict;
                       const checked = groupId === g.id;
+                      const blocked = (full || conflict) && !g.enrolled;
                       return (
                         <button
                           key={g.id}
                           type="button"
                           disabled={disabled}
                           onClick={() => setGroupId(g.id)}
+                          title={conflict ? `Overlaps with this child's ${g.conflictLabel} session` : undefined}
                           className={`block w-full rounded-xl border p-3 text-center transition ${
                             checked
                               ? 'border-accent bg-accent text-white'
-                              : full && !g.enrolled
+                              : blocked
                                 ? 'border-red-500/40 bg-red-500/10'
                                 : 'border-white/20 bg-white/10'
                           } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${g.enrolled ? 'opacity-50' : ''}`}
@@ -118,8 +118,14 @@ export default function EnrollWizard({
                           <p className="mt-0.5 text-xs text-white/80">
                             {g.startTime}–{g.endTime}
                           </p>
-                          <p className={`mt-0.5 text-[0.65rem] font-semibold ${full && !g.enrolled ? 'text-red-400' : 'text-white/60'}`}>
-                            {g.enrolled ? 'Already enrolled' : full ? 'Full' : `${g.seatsLeft} seats left`}
+                          <p className={`mt-0.5 text-[0.65rem] font-semibold ${blocked ? 'text-red-400' : 'text-white/60'}`}>
+                            {g.enrolled
+                              ? 'Already enrolled'
+                              : conflict
+                                ? `Conflicts with ${g.conflictLabel}`
+                                : full
+                                  ? 'Full'
+                                  : `${g.seatsLeft} seats left`}
                           </p>
                         </button>
                       );
@@ -214,23 +220,6 @@ export default function EnrollWizard({
           )}
         </div>
       </form>
-
-      {successOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4" onClick={() => setSuccessOpen(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
-            <h3 className="mt-4 font-display text-xl font-bold text-ink">Enrolled!</h3>
-            <p className="mt-2 text-sm text-stone">Your child has been successfully enrolled.</p>
-            <button
-              type="button"
-              onClick={() => setSuccessOpen(false)}
-              className="mt-6 rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

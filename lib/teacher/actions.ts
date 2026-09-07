@@ -14,6 +14,10 @@ function getLocale(formData: FormData): AppLocale {
   return field(formData, 'locale') === 'fr' ? 'fr' : 'en';
 }
 
+function returnPath(formData: FormData, courseSessionId: string, childId: string): string {
+  return field(formData, 'returnTo') || `/teacher/sessions/${courseSessionId}/students/${childId}`;
+}
+
 export async function addTeacherNote(formData: FormData): Promise<void> {
   const locale = getLocale(formData);
   const teacher = await requireTeacher(locale);
@@ -21,8 +25,9 @@ export async function addTeacherNote(formData: FormData): Promise<void> {
   const childId = field(formData, 'childId');
   const courseSessionId = field(formData, 'courseSessionId');
   const content = field(formData, 'content');
+  const back = returnPath(formData, courseSessionId, childId);
 
-  const fail = () => redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?error=1`));
+  const fail = () => redirect(localizedPath(locale, `${back}?error=1`));
   if (!content) fail();
 
   const session = await prisma.courseSession.findUnique({ where: { id: courseSessionId } });
@@ -39,7 +44,7 @@ export async function addTeacherNote(formData: FormData): Promise<void> {
     data: { teacherId: teacher.teacherId, childId, courseSessionId, enrollmentId: enrollment!.id, content },
   });
 
-  redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?saved=1`));
+  redirect(localizedPath(locale, `${back}?saved=1`));
 }
 
 const BADGE_EMOJIS = ['🏅', '⭐', '🏆', '🚀', '🧠', '🔥', '🎯', '💡'];
@@ -55,8 +60,9 @@ export async function awardBadge(formData: FormData): Promise<void> {
   const stickerUrl = field(formData, 'imageUrl');
   const imageUrl = isValidStickerUrl(stickerUrl) ? stickerUrl : null;
   const emoji = BADGE_EMOJIS.includes(field(formData, 'emoji')) ? field(formData, 'emoji') : BADGE_EMOJIS[0];
+  const back = returnPath(formData, courseSessionId, childId);
 
-  const fail = () => redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?badgeError=1`));
+  const fail = () => redirect(localizedPath(locale, `${back}?badgeError=1`));
   if (!title) fail();
 
   const session = await prisma.courseSession.findUnique({ where: { id: courseSessionId } });
@@ -73,5 +79,5 @@ export async function awardBadge(formData: FormData): Promise<void> {
     data: { teacherId: teacher.teacherId, childId, courseSessionId, title, note: note || null, emoji, imageUrl },
   });
 
-  redirect(localizedPath(locale, `/teacher/sessions/${courseSessionId}?badgeSaved=1`));
+  redirect(localizedPath(locale, `${back}?badgeSaved=1`));
 }

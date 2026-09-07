@@ -9,7 +9,9 @@ import { hashPassword } from '@/lib/portal-auth/password';
 import { revokeAllSessions } from '@/lib/portal-auth/session';
 import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
 import { sendEmail } from '@/lib/email/send';
-import { SCHOOL_TIME_SLOTS, DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
+import { sendSms } from '@/lib/sms/send';
+import { SCHOOL_TIME_SLOTS, DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM, sessionsConflict } from '@/lib/scheduling/slots';
+import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { Prisma } from '@prisma/client';
 import type { PlanType, EnrollmentStatus, PaymentStatus } from '@prisma/client';
 
@@ -223,6 +225,17 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
     redirect('/admin/sessions?error=1');
   }
 
+  // A teacher can't teach two groups that overlap in time — check their
+  // other assigned sessions before saving (excluding this one, when editing).
+  if (teacherId) {
+    const otherSessions = await prisma.courseSession.findMany({
+      where: { teacherId, ...(id ? { id: { not: id } } : {}) },
+    });
+    if (otherSessions.some((s) => sessionsConflict(slot!, s))) {
+      redirect('/admin/sessions?error=teacherConflict');
+    }
+  }
+
   // Every group runs on the school's fixed timetable, the same 12-seat
   // capacity, and the same 15 Sep – 15 Jun school year — none of that is set
   // per session, only which slot and which room/teacher.
@@ -262,6 +275,51 @@ export async function updateEnrollmentStatus(id: string, status: EnrollmentStatu
   revalidatePath('/admin/enrollments');
 }
 
+// The parent-facing "we're checking with Admin" step ends here: this is the
+// one action that both confirms the parent's payment was received (cash and
+// cheque aren't verified any other way) and activates the enrollment, so the
+// parent sees their course unlock and gets an SMS the moment this runs.
+export async function approveEnrollment(enrollmentId: string): Promise<void> {
+  await requireAdmin();
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: enrollmentId },
+    include: {
+      child: { include: { parent: { include: { user: true } } } },
+      courseSession: true,
+      payments: { where: { status: { not: 'PAID' } } },
+    },
+  });
+  if (!enrollment) redirect('/admin/enrollments?error=1');
+
+  await prisma.$transaction([
+    prisma.enrollment.update({ where: { id: enrollmentId }, data: { status: 'ACTIVE' } }),
+    ...enrollment!.payments.map((p) =>
+      prisma.payment.update({
+        where: { id: p.id },
+        data: { status: 'PAID', paidAt: new Date(), parentNotifiedAt: null },
+      })
+    ),
+  ]);
+
+  const course = getCourseEntryOrThrow(enrollment!.courseSession.courseSlug);
+  const parent = enrollment!.child.parent;
+  try {
+    await sendSms({
+      parentId: parent.id,
+      phone: parent.user.phone,
+      message: `BrainTrain: ${enrollment!.child.fullName}'s enrollment in ${course.title.en} is confirmed! See the parent portal for details.`,
+      purpose: 'ENROLLMENT_APPROVED',
+    });
+  } catch {
+    // Best-effort — the parent still sees the unlocked course and the
+    // payment-confirmed popup next time they open the portal either way.
+  }
+
+  revalidatePath('/admin/enrollments');
+  redirect('/admin/enrollments?saved=1');
+}
+
 // Moves a child from one group (CourseSession) to another for the same
 // course — e.g. a scheduling conflict comes up after enrollment. Blocked if
 // the destination is already at capacity.
@@ -280,6 +338,20 @@ export async function moveEnrollment(enrollmentId: string, formData: FormData): 
   if (!enrollment || !destination) redirect('/admin/enrollments?error=1');
   if (destination!._count.enrollments >= destination!.capacity) {
     redirect('/admin/enrollments?error=full');
+  }
+
+  // Same rule as parent-side enrollment: this child can't end up in two
+  // sessions that overlap in time, across any of their courses.
+  const otherSessions = await prisma.enrollment.findMany({
+    where: {
+      childId: enrollment!.childId,
+      status: { in: ['PENDING', 'ACTIVE'] },
+      id: { not: enrollmentId },
+    },
+    include: { courseSession: true },
+  });
+  if (otherSessions.some((e) => sessionsConflict(destination!, e.courseSession))) {
+    redirect('/admin/enrollments?error=conflict');
   }
 
   try {

@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { resolvePrice } from '@/lib/pricing/compute';
+import { sessionsConflict } from '@/lib/scheduling/slots';
 import type { AppLocale } from '@/i18n/routing';
 import type { PlanType, PaymentMethod } from '@prisma/client';
 
@@ -47,6 +48,8 @@ export async function enrollChild(formData: FormData): Promise<void> {
   const course = getCourseEntryOrThrow(session!.courseSlug);
   if (course.ageGroupSlug !== child!.ageGroupSlug) fail('ineligible');
 
+  let enrollmentId = '';
+
   try {
     await prisma.$transaction(async (tx) => {
       const activeCount = await tx.enrollment.count({
@@ -56,11 +59,23 @@ export async function enrollChild(formData: FormData): Promise<void> {
         throw new Error('CAPACITY_FULL');
       }
 
+      // A child can't be in two sessions that overlap in time regardless of
+      // which course they belong to — check against every other session
+      // this child is already (pending or actively) enrolled in.
+      const otherSessions = await tx.enrollment.findMany({
+        where: { childId, status: { in: ['PENDING', 'ACTIVE'] }, courseSessionId: { not: courseSessionId } },
+        include: { courseSession: true },
+      });
+      if (otherSessions.some((e) => sessionsConflict(session!, e.courseSession))) {
+        throw new Error('SCHEDULE_CONFLICT');
+      }
+
       const { amount, currency } = await resolvePrice(planType, session!.courseSlug, course.ageGroupSlug);
 
       const enrollment = await tx.enrollment.create({
         data: { childId: childId, courseSessionId, status: 'PENDING' },
       });
+      enrollmentId = enrollment.id;
 
       const paymentPlan = await tx.paymentPlan.create({
         data: { enrollmentId: enrollment.id, type: planType, method: paymentMethod, amount, currency },
@@ -75,11 +90,12 @@ export async function enrollChild(formData: FormData): Promise<void> {
     });
   } catch (err) {
     if (err instanceof Error && err.message === 'CAPACITY_FULL') fail('capacity');
+    if (err instanceof Error && err.message === 'SCHEDULE_CONFLICT') fail('conflict');
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') fail('duplicate');
     throw err;
   }
 
-  redirect(localizedPath(locale, `${detailPath}?saved=1`));
+  redirect(localizedPath(locale, `/parent-portal/children/${childId}/courses/${enrollmentId}?saved=1`));
 }
 
 export async function unenrollChild(formData: FormData): Promise<void> {

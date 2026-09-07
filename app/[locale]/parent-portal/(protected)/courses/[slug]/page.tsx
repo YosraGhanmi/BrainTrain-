@@ -7,10 +7,11 @@ import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
+import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { resolvePrice } from '@/lib/pricing/compute';
 import { enrollChild } from '@/lib/enrollment/actions';
-import { findSlotLabel } from '@/lib/scheduling/slots';
+import { findSlotLabel, sessionsConflict } from '@/lib/scheduling/slots';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CurriculumTimeline from '@/components/course/CurriculumTimeline';
 import EnrollWizard from '@/components/portal/EnrollWizard';
@@ -40,6 +41,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   ineligible: "That course isn't offered for this child's age group.",
   capacity: 'That group is full. Please pick another.',
   duplicate: 'This child is already enrolled in that group.',
+  conflict: "This child is already scheduled for another class at that same day and time. Please pick a different group.",
 };
 
 export default async function CourseDetailPage({
@@ -47,7 +49,7 @@ export default async function CourseDetailPage({
   searchParams,
 }: {
   params: { locale: AppLocale; slug: string };
-  searchParams: { saved?: string; error?: string };
+  searchParams: { error?: string };
 }) {
   const parent = await requireParent(params.locale);
   const children = await prisma.child.findMany({
@@ -91,16 +93,29 @@ export default async function CourseDetailPage({
     ).map((e) => e.courseSessionId)
   );
 
-  const groups = sessions.map((s, i) => ({
-    id: s.id,
-    label: findSlotLabel(s.dayOfWeek, s.startTime, s.endTime) ?? `G${i + 1}`,
-    dayOfWeek: s.dayOfWeek,
-    startTime: s.startTime,
-    endTime: s.endTime,
-    location: s.location,
-    seatsLeft: s.capacity - s._count.enrollments,
-    enrolled: enrolledSessionIds.has(s.id),
-  }));
+  // This child's whole schedule (every course, not just this one) — used to
+  // flag groups here that would double-book them at the same day/time.
+  const otherEnrollments = await prisma.enrollment.findMany({
+    where: { childId: child.id, status: { in: ['PENDING', 'ACTIVE'] } },
+    include: { courseSession: true },
+  });
+
+  const groups = sessions.map((s, i) => {
+    const conflict = otherEnrollments.find(
+      (e) => e.courseSessionId !== s.id && sessionsConflict(s, e.courseSession)
+    );
+    return {
+      id: s.id,
+      label: findSlotLabel(s.dayOfWeek, s.startTime, s.endTime) ?? `G${i + 1}`,
+      dayOfWeek: s.dayOfWeek,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      location: s.location,
+      seatsLeft: s.capacity - s._count.enrollments,
+      enrolled: enrolledSessionIds.has(s.id),
+      conflictLabel: conflict ? getCourseEntryOrThrow(conflict.courseSession.courseSlug).title.en : null,
+    };
+  });
 
   const dayNumbers = Array.from(new Set(groups.map((g) => g.dayOfWeek))).sort((a, b) => a - b);
 
@@ -172,7 +187,6 @@ export default async function CourseDetailPage({
           dayNames={DAYS}
           plans={prices}
           methods={PAYMENT_METHOD_INFO}
-          showSuccess={searchParams.saved === '1'}
         />
       )}
     </div>

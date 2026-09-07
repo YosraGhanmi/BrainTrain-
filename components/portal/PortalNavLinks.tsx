@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
+import useIdlePrefetch from '@/lib/hooks/useIdlePrefetch';
 
 export default function PortalNavLinks({
   navLinks,
@@ -11,6 +12,10 @@ export default function PortalNavLinks({
   theme?: 'dark' | 'light';
 }) {
   const pathname = usePathname();
+
+  // While the user is idle on this tab, warm up the other portal tabs in the
+  // background so switching between them feels instant.
+  useIdlePrefetch(navLinks.map((link) => link.href).filter((href) => href !== pathname));
 
   // Pick the single longest-matching href instead of testing each link in
   // isolation — otherwise a parent route like "/parent-portal" (Dashboard)

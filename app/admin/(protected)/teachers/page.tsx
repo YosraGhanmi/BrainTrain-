@@ -1,4 +1,5 @@
-import { X } from 'lucide-react';
+import Link from 'next/link';
+import { X, AlertTriangle } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import {
@@ -205,7 +206,19 @@ export default async function AdminTeachersPage({
                     </form>
                   </div>
                 </td>
-                <td className="px-5 py-4 text-stone align-top">{t.teacher?.sessions.length ?? 0}</td>
+                <td className="px-5 py-4 text-stone align-top">
+                  {t.teacher?.sessions.length ?? 0}
+                  {(t.teacher?.courseSlugs.length ?? 0) > 0 && (t.teacher?.sessions.length ?? 0) === 0 ? (
+                    <Link
+                      href="/admin/sessions"
+                      title="Listing a course here doesn't put them on any group — assign them as the teacher on a specific group in Course sessions."
+                      className="mt-1 flex w-fit items-center gap-1 text-[11px] font-semibold text-amber-600 hover:underline"
+                    >
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      No group assigned
+                    </Link>
+                  ) : null}
+                </td>
                 <td className="px-5 py-4 align-top">
                   <div className="flex items-center justify-end gap-2">
                     <RegenerateCodeButton action={regenerateTeacherSecretCode.bind(null, t.id)} />

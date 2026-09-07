@@ -255,6 +255,44 @@ export async function deleteNews(id: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Calendar events — admin-pinned dates shown on the parent-portal schedule
+// ---------------------------------------------------------------------------
+
+export async function addCalendarEvent(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const label = String(formData.get('label') ?? '').trim();
+  const date = String(formData.get('date') ?? '').trim();
+  const color = String(formData.get('color') ?? '').trim() || '#3d7fff';
+  if (!label || !date) redirect('/admin/calendar?error=1');
+
+  const targetAgeGroups = formData.getAll('targetAgeGroups').map(String);
+  const targetCourses = formData.getAll('targetCourses').map(String);
+
+  const content = readContent();
+  content.calendarEvents.unshift({
+    id: crypto.randomUUID(),
+    label,
+    date,
+    color,
+    createdAt: new Date().toISOString(),
+    targetAgeGroups,
+    targetCourses,
+  });
+  writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/calendar?saved=1');
+}
+
+export async function deleteCalendarEvent(id: string): Promise<void> {
+  await requireAdmin();
+  const content = readContent();
+  content.calendarEvents = content.calendarEvents.filter((e) => e.id !== id);
+  writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/calendar?saved=1');
+}
+
+// ---------------------------------------------------------------------------
 // Timeline
 // ---------------------------------------------------------------------------
 

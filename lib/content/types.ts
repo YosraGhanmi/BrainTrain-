@@ -66,6 +66,21 @@ export type NewsPost = {
   targetCourses: string[];
 };
 
+// Admin-pinned calendar dates ("school closed", "trophy ceremony", ...) shown
+// in every matching parent's schedule calendar alongside their child's
+// course sessions. Same targeting convention as NewsPost: empty array = no
+// filter on that dimension (visible to everyone); non-empty = only children
+// matching one of the listed ageGroupSlug / courseSlug values see it.
+export type CalendarEvent = {
+  id: string;
+  label: string;
+  date: string; // ISO date, "YYYY-MM-DD"
+  color: string;
+  createdAt: string;
+  targetAgeGroups: string[];
+  targetCourses: string[];
+};
+
 export type SiteContent = {
   sponsors: string[];
   stats: StatEntry[];
@@ -76,4 +91,5 @@ export type SiteContent = {
   courses: CourseEntry[];
   ageGroups: AgeGroupEntry[];
   news: NewsPost[];
+  calendarEvents: CalendarEvent[];
 };
