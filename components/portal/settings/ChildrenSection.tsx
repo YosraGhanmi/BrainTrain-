@@ -41,8 +41,8 @@ export default function ChildrenSection({
   }
 
   return (
-    <div className="flex gap-6">
-      <div className="w-56 shrink-0 space-y-1">
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex gap-2 overflow-x-auto pb-2 lg:w-56 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:space-y-1 lg:pb-0">
         {kids.map((child) => {
           const isActive = selected?.id === child.id;
           const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
@@ -50,7 +50,7 @@ export default function ChildrenSection({
             <Link
               key={child.id}
               href={`/parent-portal/account?tab=children&child=${child.id}`}
-              className={`block rounded-xl px-4 py-3 transition ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
+              className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-3 transition lg:block lg:w-full lg:whitespace-normal ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
             >
               <p className="text-sm font-semibold text-ink">{child.fullName}</p>
               <p className="text-xs text-stone">{ageGroup.label.en}</p>
@@ -59,7 +59,7 @@ export default function ChildrenSection({
         })}
         <Link
           href="/parent-portal/children/new"
-          className="block rounded-xl px-4 py-3 text-sm font-semibold text-accent transition hover:bg-slate-50"
+          className="shrink-0 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold text-accent transition hover:bg-slate-50 lg:block lg:w-full lg:whitespace-normal"
         >
           + Add a child
         </Link>
@@ -67,7 +67,7 @@ export default function ChildrenSection({
 
       {selected ? (
         <div className="min-w-0 flex-1 space-y-6">
-          <section className="rounded-2xl border border-ink/10 bg-white p-8 shadow-soft">
+          <section className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
             <h2 className="font-display text-lg font-bold text-ink">{selected.fullName}</h2>
             <form action={editChild} className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <input type="hidden" name="locale" value={locale} />
@@ -128,7 +128,7 @@ export default function ChildrenSection({
             </form>
           </section>
 
-          <section className="rounded-2xl border border-ink/10 bg-white p-8 shadow-soft">
+          <section className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
               <BookOpen className="h-5 w-5 text-accent" />
               Courses

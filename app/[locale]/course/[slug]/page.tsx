@@ -112,7 +112,7 @@ export default async function CourseDetailPage({
               </div>
             </div>
 
-            <div className="mb-[50px] max-w-md translate-x-[50px] justify-self-end">
+            <div className="max-w-md justify-self-center lg:mb-[50px] lg:translate-x-[50px] lg:justify-self-end">
               <CourseRobotShowcase description={course.description} locale={params.locale} />
             </div>
           </div>

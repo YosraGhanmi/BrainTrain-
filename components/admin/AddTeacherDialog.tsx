@@ -39,7 +39,7 @@ export default function AddTeacherDialog({
       {open ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4 py-8">
           <div className="absolute inset-0" onClick={() => setOpen(false)} />
-          <div className="relative w-full max-w-2xl rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
+          <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-ink/10 bg-white p-4 shadow-soft sm:p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-bold text-ink">Add teacher</h2>
               <button
@@ -51,7 +51,7 @@ export default function AddTeacherDialog({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-5">{children}</div>
+            <div className="mt-5 overflow-y-auto">{children}</div>
           </div>
         </div>
       ) : null}

@@ -62,10 +62,10 @@ export default function NewsCard({ items }: { items: FeedItem[] }) {
           visible.map((item) => {
             const row = (
               <div className="flex items-center gap-4 py-3">
-                <span className="w-24 shrink-0 text-xs text-stone">
+                <span className="w-16 shrink-0 text-xs text-stone sm:w-24">
                   {new Date(item.date).toLocaleDateString()}
                 </span>
-                <p className={`text-sm font-semibold ${TYPE_STYLES[item.type]}`}>{item.title}</p>
+                <p className={`min-w-0 flex-1 text-sm font-semibold ${TYPE_STYLES[item.type]}`}>{item.title}</p>
               </div>
             );
             return item.href ? (

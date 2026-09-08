@@ -14,7 +14,7 @@ export default function SecuritySection({
 }) {
   return (
     <div className="space-y-8">
-      <section className="rounded-2xl border border-ink/10 bg-white p-8 shadow-soft">
+      <section className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
         <h2 className="font-display text-lg font-bold text-ink">Password</h2>
         <p className="mt-1 text-sm text-stone">Changing your password signs you out everywhere else.</p>
         <form action={changePassword} className="mt-5 max-w-sm space-y-4">
@@ -37,7 +37,7 @@ export default function SecuritySection({
         </form>
       </section>
 
-      <section className="rounded-2xl border border-ink/10 bg-white p-8 shadow-soft">
+      <section className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
         <div className="flex items-start gap-4">
           <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${twoFactorEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-stone'}`}>
             {twoFactorEnabled ? <ShieldCheck className="h-5 w-5" /> : <ShieldOff className="h-5 w-5" />}

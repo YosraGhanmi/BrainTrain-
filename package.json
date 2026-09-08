@@ -10,7 +10,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -36,6 +38,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.14.2",
     "@types/react": "^18.2.48",

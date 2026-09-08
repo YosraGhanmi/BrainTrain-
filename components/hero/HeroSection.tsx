@@ -97,7 +97,7 @@ export default function HeroSection() {
               font={{
                 fontFamily: 'var(--font-comfortaa)',
                 fontWeight: 700,
-                fontSize: 120,
+                fontSize: 'clamp(2.75rem, 13vw, 7.5rem)',
                 lineHeight: '1.1',
                 letterSpacing: '-0.08em',
                 textAlign: 'left',
@@ -121,7 +121,7 @@ export default function HeroSection() {
           </div>
         </div>
 
-        <div className="relative h-[520px] w-full max-w-3xl lg:h-[800px]">
+        <div className="relative h-[300px] w-full max-w-3xl xs:h-[360px] sm:h-[440px] lg:h-[800px]">
           <div className="absolute inset-0 overflow-hidden rounded-[2rem]">
             <HeroScene />
           </div>

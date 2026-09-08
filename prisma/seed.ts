@@ -1,6 +1,6 @@
 import { PrismaClient, PlanType } from '@prisma/client';
 import { readContent } from '../lib/content/store';
-import { SCHOOL_TIME_SLOTS, DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM } from '../lib/scheduling/slots';
+import { DEFAULT_TIME_SLOTS, DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM } from '../lib/scheduling/slots';
 
 const prisma = new PrismaClient();
 
@@ -27,6 +27,17 @@ async function main() {
   }
   console.log('Seeded default age-group pricing rules.');
 
+  // The named time slots (G1, G2, ...) course sessions are picked from —
+  // editable afterwards from /admin/time-slots.
+  for (const slot of DEFAULT_TIME_SLOTS) {
+    await prisma.timeSlot.upsert({
+      where: { label: slot.label },
+      update: { dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime },
+      create: { label: slot.label, dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime },
+    });
+  }
+  console.log(`Seeded ${DEFAULT_TIME_SLOTS.length} time slot(s).`);
+
   // Every course opens with all 10 of the school's standard groups (same
   // fixed timetable, 12-seat capacity, 15 Sep – 15 Jun term for every
   // course) — admins can delete/edit individual groups afterwards from
@@ -41,7 +52,7 @@ async function main() {
 
   let created = 0;
   for (const course of courses) {
-    for (const slot of SCHOOL_TIME_SLOTS) {
+    for (const slot of DEFAULT_TIME_SLOTS) {
       const key = existingKey({ courseSlug: course.slug, dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime });
       if (existingKeys.has(key)) continue;
 

@@ -55,7 +55,7 @@ export default function PersonalInfoSection({
   backupEmail: string | null;
 }) {
   return (
-    <div className="rounded-2xl border border-ink/10 bg-white p-8 shadow-soft">
+    <div className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
       <h2 className="font-display text-lg font-bold text-ink">Contact information</h2>
       <p className="mt-1 text-sm text-stone">Manage the phone numbers and backup email on your account.</p>
 

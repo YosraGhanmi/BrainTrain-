@@ -64,6 +64,10 @@ enum SmsPurpose {
   ENROLLMENT_APPROVED
 }
 
+enum NotificationType {
+  EXPENSE_ADDED
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -356,6 +360,65 @@ model TeacherNote {
   @@index([childId])
   @@index([teacherId])
   @@map("teacher_notes")
+}
+
+// A secretariat expense (rent, supplies, ...) logged for bookkeeping — shown
+// as a running total on the admin dashboard, with the full ledger on
+// /admin/dispenses. createdByName/createdByRole are plain text rather than a
+// A named weekly time slot ("G1", "G2", ...) an admin can create/edit from
+// /admin/time-slots — the school's shared weekly timetable that every
+// course's groups (CourseSession) pick from. CourseSession stores its own
+// dayOfWeek/startTime/endTime rather than a FK here, so editing or deleting
+// a slot only changes what that label offers going forward; it never
+// retroactively changes a session created from the old definition (that
+// session's day/time just stops matching any label and falls back to
+// showing its raw day/time instead).
+model TimeSlot {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("time_slots")
+}
+
+// User relation because the env-configured Admin login has no User row to
+// point at (see AdminSessionInfo in lib/admin/guard.ts).
+model Expense {
+  id            String   @id @default(cuid())
+  label         String
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("TND")
+  category      String?
+  note          String?
+  date          DateTime @default(now())
+  createdByName String
+  createdByRole String
+  createdAt     DateTime @default(now())
+
+  @@index([date])
+  @@map("expenses")
+}
+
+// A lightweight admin-facing notification feed, surfaced by the bell in the
+// admin top bar. Pending-parent-approval notices are NOT stored here — they're
+// derived live from Parent.status so they disappear automatically once
+// approved/rejected instead of going stale; this table only holds events with
+// no such natural resolution (e.g. a logged expense).
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([readAt])
+  @@map("notifications")
 }
 
 model SMSNotification {

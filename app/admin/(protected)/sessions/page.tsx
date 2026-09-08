@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertCourseSession, deleteCourseSession } from '@/lib/admin/portal-actions';
-import { SCHOOL_TIME_SLOTS, findSlotLabel } from '@/lib/scheduling/slots';
+import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 
 export const dynamic = 'force-dynamic';
@@ -11,21 +11,27 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 export default async function AdminSessionsPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
   await requireAdmin();
-  const [sessions, teachers, content] = await Promise.all([
+  const [sessions, teachers, content, timeSlots] = await Promise.all([
     prisma.courseSession.findMany({
       include: { teacher: { include: { user: true } }, _count: { select: { enrollments: true } } },
       orderBy: { term: 'desc' },
     }),
     prisma.user.findMany({ where: { role: 'TEACHER' }, include: { teacher: true } }),
     Promise.resolve(readContent()),
+    listTimeSlots(),
   ]);
 
   return (
     <div>
       <h1 className="font-display text-3xl font-semibold text-ink">Course sessions</h1>
       <p className="mt-2 max-w-2xl text-sm text-stone">
-        Every group runs on the school's fixed weekly timetable, seats 12 children, and follows the same school year
-        (15 Sep – 15 Jun) — just pick the course, the slot, and who's teaching it.
+        Every group runs on the school's weekly timetable, seats 12 children, and follows the same school year
+        (15 Sep – 15 Jun) — just pick the course, the slot, and who's teaching it. Manage what each slot's day/time
+        actually is on the{' '}
+        <a href="/admin/time-slots" className="underline">
+          Time slots
+        </a>{' '}
+        page.
       </p>
 
       {searchParams.error === 'teacherConflict' ? (
@@ -54,12 +60,12 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
             </option>
           ))}
         </select>
-        <select name="slotIndex" required defaultValue="" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
+        <select name="timeSlotId" required defaultValue="" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
           <option value="" disabled>
             Time slot
           </option>
-          {SCHOOL_TIME_SLOTS.map((slot, i) => (
-            <option key={slot.label} value={i}>
+          {timeSlots.map((slot) => (
+            <option key={slot.id} value={slot.id}>
               {slot.label} · {DAYS[slot.dayOfWeek]} {slot.startTime}–{slot.endTime}
             </option>
           ))}
@@ -85,7 +91,7 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
           <tbody>
             {sessions.map((s) => {
               const course = content.courses.find((c) => c.slug === s.courseSlug);
-              const slotLabel = findSlotLabel(s.dayOfWeek, s.startTime, s.endTime);
+              const slotLabel = findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime);
               return (
                 <tr key={s.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-5 py-4 font-semibold text-ink">{course?.title.en ?? s.courseSlug}</td>

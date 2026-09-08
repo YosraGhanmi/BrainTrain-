@@ -48,7 +48,7 @@ export default async function CoursesPage({ params }: { params: { locale: AppLoc
       <Navbar />
       <main className="flex-1 px-6 pb-24 pt-32 md:px-10 lg:px-16">
         <div className="mx-auto max-w-6xl">
-          <h1 className="whitespace-nowrap font-display text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-3xl lg:text-4xl">
+          <h1 className="font-display text-2xl font-semibold leading-tight tracking-tight text-ink sm:whitespace-nowrap sm:text-3xl lg:text-4xl">
             {t('pickAgeGroup')}
           </h1>
 

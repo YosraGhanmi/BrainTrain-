@@ -71,7 +71,7 @@ export default async function TeacherCalendarPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-bold text-ink">
           {MONTH_NAMES[month]} {year}
         </h1>
@@ -116,62 +116,64 @@ export default async function TeacherCalendarPage({
         </div>
       )}
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-soft">
-        <div className="grid grid-cols-7 border-b border-ink/10 bg-slate-50">
-          {WEEKDAYS.map((d) => (
-            <div key={d} className="px-2 py-2.5 text-center text-xs font-bold uppercase tracking-wide text-stone">
-              {d}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7">
-          {cells.map((day, i) => {
-            const dayOfWeek = i % 7;
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const daySessions = day ? byDayOfWeek.get(dayOfWeek) ?? [] : [];
-            const isToday = isCurrentMonth && day === today.getDate();
-            return (
-              <div
-                key={i}
-                className={`min-h-[7rem] border-b border-r border-ink/5 p-2 transition-colors [&:nth-child(7n)]:border-r-0 ${
-                  !day ? 'bg-slate-50/40' : isToday ? 'bg-accent/[0.04]' : isWeekend ? 'bg-slate-50/60' : 'bg-white'
-                }`}
-              >
-                {day ? (
-                  <>
-                    <span
-                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition ${
-                        isToday ? 'bg-accent text-white shadow-[0_4px_10px_-2px_rgba(61,127,255,0.6)]' : 'text-ink/70'
-                      }`}
-                    >
-                      {day}
-                    </span>
-
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {daySessions.map((s) => {
-                        const course = getCourseEntryOrThrow(s.courseSlug);
-                        const Icon = getIcon(course.icon);
-                        return (
-                          <Link
-                            key={s.id}
-                            href={`/teacher/sessions/${s.id}`}
-                            className="group flex max-w-[9rem] items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md"
-                            style={{ backgroundColor: `${course.color}1a`, color: course.color }}
-                            title={`${course.title.en} · ${s.startTime}–${s.endTime} · ${s.location} · ${s._count.enrollments} students`}
-                          >
-                            <Icon className="h-3 w-3 shrink-0 transition group-hover:scale-110" strokeWidth={2.5} />
-                            <span className="min-w-0 truncate">{course.title.en}</span>
-                            <span className="shrink-0 opacity-70">{s.startTime}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : null}
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-soft">
+        <div className="min-w-[560px]">
+          <div className="grid grid-cols-7 border-b border-ink/10 bg-slate-50">
+            {WEEKDAYS.map((d) => (
+              <div key={d} className="px-2 py-2.5 text-center text-xs font-bold uppercase tracking-wide text-stone">
+                {d}
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7">
+            {cells.map((day, i) => {
+              const dayOfWeek = i % 7;
+              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+              const daySessions = day ? byDayOfWeek.get(dayOfWeek) ?? [] : [];
+              const isToday = isCurrentMonth && day === today.getDate();
+              return (
+                <div
+                  key={i}
+                  className={`min-h-[5.5rem] border-b border-r border-ink/5 p-2 transition-colors [&:nth-child(7n)]:border-r-0 sm:min-h-[7rem] ${
+                    !day ? 'bg-slate-50/40' : isToday ? 'bg-accent/[0.04]' : isWeekend ? 'bg-slate-50/60' : 'bg-white'
+                  }`}
+                >
+                  {day ? (
+                    <>
+                      <span
+                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition ${
+                          isToday ? 'bg-accent text-white shadow-[0_4px_10px_-2px_rgba(61,127,255,0.6)]' : 'text-ink/70'
+                        }`}
+                      >
+                        {day}
+                      </span>
+
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {daySessions.map((s) => {
+                          const course = getCourseEntryOrThrow(s.courseSlug);
+                          const Icon = getIcon(course.icon);
+                          return (
+                            <Link
+                              key={s.id}
+                              href={`/teacher/sessions/${s.id}`}
+                              className="group flex max-w-[8rem] items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md"
+                              style={{ backgroundColor: `${course.color}1a`, color: course.color }}
+                              title={`${course.title.en} · ${s.startTime}–${s.endTime} · ${s.location} · ${s._count.enrollments} students`}
+                            >
+                              <Icon className="h-3 w-3 shrink-0 transition group-hover:scale-110" strokeWidth={2.5} />
+                              <span className="min-w-0 truncate">{course.title.en}</span>
+                              <span className="shrink-0 opacity-70">{s.startTime}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -182,7 +184,7 @@ export default async function TeacherCalendarPage({
             .map((s) => {
               const course = getCourseEntryOrThrow(s.courseSlug);
               return (
-                <div key={s.id} className="flex items-center gap-3 rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm">
+                <div key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm">
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: course.color }}
@@ -193,7 +195,7 @@ export default async function TeacherCalendarPage({
                     {s.startTime}–{s.endTime}
                   </span>
                   <span className="font-semibold text-ink">{course.title.en}</span>
-                  <span className="ml-auto flex items-center gap-1.5 text-xs text-stone">
+                  <span className="flex items-center gap-1.5 text-xs text-stone sm:ml-auto">
                     <MapPin className="h-3.5 w-3.5" />
                     {s.location}
                   </span>

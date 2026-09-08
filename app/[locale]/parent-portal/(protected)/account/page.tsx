@@ -34,7 +34,7 @@ export default async function AccountPage({
         <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">Please check the form and try again.</p>
       ) : null}
 
-      <div className="mt-8 flex gap-8">
+      <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:gap-8">
         <SettingsTabs active={tab} />
         <div className="min-w-0 flex-1">
           {tab === 'personal' ? (

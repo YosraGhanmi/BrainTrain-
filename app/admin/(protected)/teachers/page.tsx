@@ -87,7 +87,7 @@ export default async function AdminTeachersPage({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl font-semibold text-ink">Teachers</h1>
         <AddTeacherDialog defaultOpen={Boolean(searchParams.error)} closeKey={searchParams.code}>
           <form action={createTeacher} className="grid grid-cols-1 gap-4 sm:grid-cols-2">

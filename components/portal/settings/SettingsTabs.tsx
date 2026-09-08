@@ -11,14 +11,14 @@ export type SettingsTab = (typeof TABS)[number]['key'];
 
 export default function SettingsTabs({ active }: { active: SettingsTab }) {
   return (
-    <nav className="w-72 shrink-0 space-y-1 border-r border-ink/10 pr-6">
+    <nav className="flex gap-2 overflow-x-auto pb-2 lg:w-72 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:border-r lg:border-ink/10 lg:pb-0 lg:pr-6">
       {TABS.map(({ key, label, icon: Icon }) => {
         const isActive = key === active;
         return (
           <Link
             key={key}
             href={`/parent-portal/account?tab=${key}`}
-            className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+            className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold transition lg:w-full lg:gap-3 lg:whitespace-normal ${
               isActive ? 'bg-slate-100 text-ink' : 'text-stone hover:bg-slate-50 hover:text-ink'
             }`}
           >

@@ -283,14 +283,14 @@ export default function CoursesManager({
 
       {openCourse ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-3 sm:p-4"
           onClick={() => setOpenKey(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-8 shadow-2xl"
+            className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-8"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-start justify-between gap-3">
               <h3 className="font-display text-lg font-semibold text-ink">
                 {isNew ? 'New course' : openCourse.title.en || 'Untitled course'}
               </h3>
@@ -298,7 +298,7 @@ export default function CoursesManager({
                 type="button"
                 onClick={() => setOpenKey(null)}
                 aria-label="Close"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-stone transition hover:bg-slate-100 hover:text-ink"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone transition hover:bg-slate-100 hover:text-ink"
               >
                 <X className="h-4 w-4" />
               </button>

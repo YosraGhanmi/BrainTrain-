@@ -48,13 +48,13 @@ export default function QuickStats({ quickStats }: { quickStats: { value: number
       <div className="mx-auto max-w-5xl text-center">
         <h2 className="text-4xl font-display font-bold text-ink sm:text-5xl">{t('heading')}</h2>
 
-        <div className="mt-16 grid grid-cols-3 gap-8">
+        <div className="mt-16 grid grid-cols-3 gap-3 xs:gap-5 sm:gap-8">
           {quickStats.map((stat, index) => (
             <div key={stat.label.en}>
-              <p className="font-display text-7xl font-extrabold leading-none text-[#0f2d81] sm:text-8xl">
+              <p className="font-display text-4xl font-extrabold leading-none text-[#0f2d81] xs:text-5xl sm:text-7xl lg:text-8xl">
                 {counts[index]}
               </p>
-              <p className="mt-4 text-lg font-bold text-ink sm:text-xl">{stat.label[locale] || stat.label.en}</p>
+              <p className="mt-4 text-sm font-bold text-ink xs:text-base sm:text-xl">{stat.label[locale] || stat.label.en}</p>
             </div>
           ))}
         </div>

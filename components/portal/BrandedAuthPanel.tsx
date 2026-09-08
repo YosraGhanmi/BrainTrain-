@@ -41,16 +41,16 @@ export default function BrandedAuthPanel({
 
       <Link
         href={backHref}
-        className="absolute left-8 top-8 z-30 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-stone transition hover:text-ink sm:left-16"
+        className="absolute left-4 top-4 z-30 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-stone transition hover:text-ink xs:left-6 xs:top-6 sm:left-16 sm:top-8 sm:text-sm"
       >
         <ArrowLeft className="h-4 w-4" />
         {backLabel}
       </Link>
 
-      <div className="relative z-20 flex w-full items-center px-8 py-16 sm:px-16 lg:w-1/2 lg:pl-24">
+      <div className="relative z-20 flex w-full items-center px-5 py-20 xs:px-8 sm:px-16 sm:py-16 lg:w-1/2 lg:pl-24">
         <div className="w-full max-w-md">
           <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">{eyebrow}</span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-6xl font-bold text-ink">{title}</h1>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">{title}</h1>
           {children}
         </div>
       </div>

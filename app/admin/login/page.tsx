@@ -58,7 +58,7 @@ export default function AdminLoginPage({
       </Link>
 
       {/* The form, above both background layers. */}
-      <div className="relative z-20 flex w-full items-center px-8 py-16 sm:px-16 lg:w-1/2 lg:pl-24">
+      <div className="relative z-20 flex w-full items-center px-5 py-16 xs:px-8 sm:px-16 lg:w-1/2 lg:pl-24">
         <div className="w-full max-w-md">
           {role ? (
             <Link
@@ -72,7 +72,7 @@ export default function AdminLoginPage({
           <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">
             {role ? ROLE_COPY[role].accent : 'BrainTrain Staff'}
           </span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-6xl font-bold text-ink">
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-5xl font-bold text-ink sm:text-6xl">
             Sign in
           </h1>
 

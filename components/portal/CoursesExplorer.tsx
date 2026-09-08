@@ -47,9 +47,9 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
 
   return (
     <div>
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
         <div
-          className="relative"
+          className="relative w-full sm:w-auto"
           onBlur={(e) => {
             if (!e.currentTarget.contains(e.relatedTarget as Node)) setFilterOpen(false);
           }}
@@ -57,10 +57,10 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
           <button
             type="button"
             onClick={() => setFilterOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full border border-ink/15 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-slate-50"
+            className="flex w-full items-center justify-between gap-2 rounded-full border border-ink/15 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-slate-50 sm:w-auto sm:justify-start"
           >
             {currentFilter.label}
-            <ChevronDown className="h-3.5 w-3.5 text-stone" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-stone" />
           </button>
           {filterOpen ? (
             <ul className="absolute right-0 z-20 mt-2 w-44 overflow-hidden rounded-xl border border-ink/10 bg-white py-1.5 shadow-soft">
@@ -84,7 +84,7 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
           ) : null}
         </div>
 
-        <div className="relative w-full max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone" />
           <input
             value={query}

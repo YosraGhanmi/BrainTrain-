@@ -112,8 +112,8 @@ export default async function ParentSchedulePage({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-ink">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">
           {MONTH_NAMES[month]} {year}
         </h1>
         <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export default async function ParentSchedulePage({
             return (
               <div
                 key={i}
-                className={`min-h-[7rem] border-b border-r border-ink/5 p-2 transition-colors [&:nth-child(7n)]:border-r-0 ${
+                className={`min-h-[5rem] min-w-0 border-b border-r border-ink/5 p-1.5 transition-colors sm:min-h-[7rem] sm:p-2 [&:nth-child(7n)]:border-r-0 ${
                   !day ? 'bg-slate-50/40' : isToday ? 'bg-accent/[0.04]' : isWeekend ? 'bg-slate-50/60' : 'bg-white'
                 }`}
               >
@@ -194,12 +194,12 @@ export default async function ParentSchedulePage({
                       {pinnedEvents.map((event) => (
                         <div
                           key={event.id}
-                          className="flex items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none"
+                          className="flex max-w-full items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none"
                           style={{ backgroundColor: `${event.color}1f`, color: event.color }}
                           title={event.label}
                         >
                           <Pin className="h-3 w-3 shrink-0" strokeWidth={2.5} />
-                          <span className="max-w-[4.5rem] truncate">{event.label}</span>
+                          <span className="max-w-[3.5rem] truncate sm:max-w-[4.5rem]">{event.label}</span>
                         </div>
                       ))}
                       {sessionEvents.map((e) => {
@@ -209,7 +209,7 @@ export default async function ParentSchedulePage({
                           <Link
                             key={e.id}
                             href={`/parent-portal/courses/${course.slug}`}
-                            className="group flex max-w-[9rem] items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md"
+                            className="group flex max-w-full items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md sm:max-w-[9rem]"
                             style={{ backgroundColor: `${course.color}1a`, color: course.color }}
                             title={`${course.title.en} · ${e.courseSession.startTime}–${e.courseSession.endTime} · ${e.courseSession.location}`}
                           >

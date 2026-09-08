@@ -121,12 +121,12 @@ export default async function EnrolledCoursePage({
             </p>
 
             <div className="mt-6 w-full rounded-2xl bg-white/70 p-4 text-left text-sm text-ink/80 shadow-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                 <span className="font-semibold text-ink">{course.title.en}</span>
                 <span>{DAYS[session.dayOfWeek]} · {session.startTime}–{session.endTime}</span>
               </div>
               {pendingPayment ? (
-                <div className="mt-2 flex items-center justify-between border-t border-ink/5 pt-2 text-ink/70">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-ink/5 pt-2 text-ink/70">
                   <span>{pendingPayment.paymentPlan.method === 'CASH' ? 'Cash' : pendingPayment.paymentPlan.method === 'CHEQUE' ? 'Cheque' : 'Card'} payment</span>
                   <span className="font-semibold text-ink">{Number(pendingPayment.amount)} {pendingPayment.currency}</span>
                 </div>
@@ -206,7 +206,7 @@ export default async function EnrolledCoursePage({
             <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${STATUS_STYLES[enrollment.status]}`}>
               {enrollment.status}
             </span>
-            <h1 className="mt-4 font-display text-4xl font-extrabold text-ink sm:text-5xl">{course.title.en}</h1>
+            <h1 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl lg:text-5xl">{course.title.en}</h1>
             <p className="mt-3 text-base text-ink/70">{tagline}</p>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-ink/70">

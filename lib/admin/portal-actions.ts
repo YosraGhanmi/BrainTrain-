@@ -10,7 +10,7 @@ import { revokeAllSessions } from '@/lib/portal-auth/session';
 import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
 import { sendEmail } from '@/lib/email/send';
 import { sendSms } from '@/lib/sms/send';
-import { SCHOOL_TIME_SLOTS, DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM, sessionsConflict } from '@/lib/scheduling/slots';
+import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM, sessionsConflict } from '@/lib/scheduling/slots';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { Prisma } from '@prisma/client';
 import type { PlanType, EnrollmentStatus, PaymentStatus } from '@prisma/client';
@@ -218,8 +218,8 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
   const courseSlug = field(formData, 'courseSlug');
   const teacherId = field(formData, 'teacherId');
   const location = field(formData, 'location');
-  const slotIndex = Number(formData.get('slotIndex'));
-  const slot = SCHOOL_TIME_SLOTS[slotIndex];
+  const timeSlotId = field(formData, 'timeSlotId');
+  const slot = timeSlotId ? await prisma.timeSlot.findUnique({ where: { id: timeSlotId } }) : null;
 
   if (!courseSlug || !location || !slot) {
     redirect('/admin/sessions?error=1');
@@ -415,4 +415,20 @@ export async function clearCoursePricingOverride(courseSlug: string): Promise<vo
   await requireAdmin();
   await prisma.pricingRule.deleteMany({ where: { courseSlug } });
   redirect('/admin/pricing?saved=1');
+}
+
+// ---------------------------------------------------------------------------
+// Notifications (bell)
+// ---------------------------------------------------------------------------
+
+export async function markNotificationRead(id: string): Promise<void> {
+  await requireAdmin();
+  await prisma.notification.update({ where: { id }, data: { readAt: new Date() } });
+  revalidatePath('/admin');
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await requireAdmin();
+  await prisma.notification.updateMany({ where: { readAt: null }, data: { readAt: new Date() } });
+  revalidatePath('/admin');
 }

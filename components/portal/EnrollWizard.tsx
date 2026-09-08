@@ -65,10 +65,10 @@ export default function EnrollWizard({
         <input type="hidden" name="planType" value={planType} />
         <input type="hidden" name="paymentMethod" value={method} />
 
-        <div className="flex items-center">
+        <div className="flex items-center overflow-x-auto">
           {STEPS.map((s, i) => (
-            <div key={s.n} className="flex items-center">
-              <div className="flex items-center gap-2">
+            <div key={s.n} className="flex shrink-0 items-center">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     step === s.n ? 'bg-ink text-white' : step > s.n ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-stone'
@@ -76,17 +76,17 @@ export default function EnrollWizard({
                 >
                   {s.n}
                 </span>
-                <span className={`text-xs font-bold uppercase tracking-wide ${step === s.n ? 'text-ink' : 'text-stone'}`}>
+                <span className={`hidden text-xs font-bold uppercase tracking-wide xs:inline ${step === s.n ? 'text-ink' : 'text-stone'}`}>
                   {s.label}
                 </span>
               </div>
-              {i < STEPS.length - 1 ? <span className="mx-3 h-px w-8 bg-ink/10" /> : null}
+              {i < STEPS.length - 1 ? <span className="mx-2 h-px w-5 shrink-0 bg-ink/10 sm:mx-3 sm:w-8" /> : null}
             </div>
           ))}
         </div>
 
         {step === 1 ? (
-          <div className="mt-5 grid grid-cols-2 gap-4 rounded-2xl border border-[#0b1a3a]/20 bg-[#0b1a3a] p-6 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl border border-[#0b1a3a]/20 bg-[#0b1a3a] p-4 sm:gap-4 sm:p-6 sm:grid-cols-3 lg:grid-cols-4">
             {dayNumbers.map((day) => (
               <div key={day}>
                 <h3 className="text-center text-sm font-bold uppercase tracking-wide text-white">{dayNames[day]}</h3>

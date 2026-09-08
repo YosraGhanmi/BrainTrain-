@@ -19,7 +19,7 @@ export default async function AddChildPage({
     <div className="mx-auto max-w-xl">
       <h1 className="font-display text-3xl font-bold text-ink">Add a child</h1>
 
-      <form action={addChild} className="mt-8 space-y-5 rounded-2xl border border-ink/10 bg-white p-8 shadow-soft">
+      <form action={addChild} className="mt-8 space-y-5 rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
         <input type="hidden" name="locale" value={params.locale} />
 
         <div className="space-y-1.5">

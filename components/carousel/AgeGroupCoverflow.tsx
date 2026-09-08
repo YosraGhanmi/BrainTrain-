@@ -4,7 +4,7 @@
 // stepping is always a single-slat move driven by one rAF loop.
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import {
   motion,
@@ -48,6 +48,24 @@ function xForRel(rel: number, s: Sizing, gap: number): number {
 
 function blendForRel(rel: number): number {
   return Math.min(Math.abs(rel), 1);
+}
+
+function useResponsiveSizing(): Sizing {
+  const [width, setWidth] = useState<number>(() => (typeof window !== 'undefined' ? window.innerWidth : 1280));
+
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  return useMemo(() => {
+    if (width < 420) return { activeWidth: 220, activeHeight: 250, restWidth: 54, restHeight: 160 };
+    if (width < 640) return { activeWidth: 280, activeHeight: 280, restWidth: 72, restHeight: 190 };
+    if (width < 1024) return { activeWidth: 420, activeHeight: 320, restWidth: 120, restHeight: 220 };
+    return { activeWidth: 560, activeHeight: 360, restWidth: 160, restHeight: 240 };
+  }, [width]);
 }
 
 function Card({
@@ -135,10 +153,7 @@ export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCa
   const count = Math.max(1, groups.length);
   const prefersReducedMotion = useReducedMotion();
 
-  const sizing: Sizing = useMemo(
-    () => ({ activeWidth: 560, activeHeight: 360, restWidth: 160, restHeight: 240 }),
-    []
-  );
+  const sizing = useResponsiveSizing();
 
   const pos = useMotionValue(0);
   const targetRef = useRef(0);
@@ -207,7 +222,7 @@ export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCa
   }, []);
 
   return (
-    <div className="relative h-[440px] w-full select-none overflow-hidden sm:h-[480px]">
+    <div className="relative h-[320px] w-full select-none overflow-hidden xs:h-[360px] sm:h-[480px]">
       <div className="absolute inset-0" style={{ isolation: 'isolate' }}>
         {groups.map((group, i) => (
           <Card key={group.slug} group={group} index={i} pos={pos} count={count} sizing={sizing} onSelect={goTo} />

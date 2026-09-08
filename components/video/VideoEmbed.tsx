@@ -45,7 +45,7 @@ export default function VideoEmbed({ url, title, className }: Props) {
   const embedSrc = url ? toEmbedSrc(url) : null;
 
   return (
-    <div className={`relative h-full min-h-[520px] w-full overflow-hidden rounded-3xl bg-[#0b1a3a] ${className ?? ''}`}>
+    <div className={`relative h-full min-h-[240px] w-full overflow-hidden rounded-3xl bg-[#0b1a3a] sm:min-h-[360px] lg:min-h-[520px] ${className ?? ''}`}>
       {embedSrc ? (
         <iframe
           src={embedSrc}

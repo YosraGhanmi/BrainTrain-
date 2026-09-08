@@ -1,8 +1,31 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import RoundCarousel from '@/components/carousel/RoundCarousel';
 
+function useResponsiveCarouselSize() {
+  const [size, setSize] = useState(520);
+
+  useEffect(() => {
+    const update = () => {
+      const width = window.innerWidth;
+      if (width < 420) setSize(190);
+      else if (width < 640) setSize(260);
+      else if (width < 1024) setSize(360);
+      else setSize(520);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  return size;
+}
+
 export default function StatsSection({ achievementsImages }: { achievementsImages: string[] }) {
   const t = useTranslations('achievements');
+  const carouselSize = useResponsiveCarouselSize();
 
   return (
     <section id="stats" className="relative overflow-hidden px-6 py-28 md:px-10 lg:px-16">
@@ -21,12 +44,12 @@ export default function StatsSection({ achievementsImages }: { achievementsImage
         </div>
       </div>
 
-      <div className="relative left-1/2 mt-16 h-[600px] w-screen -translate-x-1/2">
+      <div className="relative left-1/2 mt-16 h-[280px] w-screen -translate-x-1/2 xs:h-[360px] sm:h-[460px] lg:h-[600px]">
         <RoundCarousel
           images={achievementsImages.map((src) => ({ src }))}
           background="transparent"
-          imageWidth={520}
-          imageHeight={520}
+          imageWidth={carouselSize}
+          imageHeight={carouselSize}
           speed={0.5}
         />
       </div>

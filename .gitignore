@@ -78,6 +78,10 @@ web_modules/
 .next
 out
 
+# Playwright
+/playwright-report
+/test-results
+
 # Admin-editable site content (seeded from lib/content/store.ts on first run)
 /data/content.json
 

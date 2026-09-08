@@ -38,7 +38,7 @@ function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: numbe
 
         <form action={upsertTimelineEntry} className="space-y-3 border-t border-ink/10 p-6">
           <input type="hidden" name="index" value={index} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               name="date_en"
               defaultValue={entry.date.en}

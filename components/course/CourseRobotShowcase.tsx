@@ -39,7 +39,7 @@ export default function CourseRobotShowcase({ description, locale }: { descripti
   };
 
   return (
-    <div className="relative h-full min-h-[520px] w-full">
+    <div className="relative h-full min-h-[320px] w-full sm:min-h-[420px] lg:min-h-[520px]">
       <CourseRobotModel />
 
       {supported ? (

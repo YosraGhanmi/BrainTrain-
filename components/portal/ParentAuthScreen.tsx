@@ -99,7 +99,7 @@ export default function ParentAuthScreen({
     <div className="relative isolate min-h-screen w-full overflow-hidden bg-white">
       <Link
         href="/"
-        className="absolute left-6 top-6 z-30 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone transition hover:text-ink"
+        className="absolute left-4 top-4 z-30 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone transition hover:text-ink xs:left-6 xs:top-6"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to website
@@ -108,12 +108,12 @@ export default function ParentAuthScreen({
       {/* Login form — pinned to the left half, never moves */}
       <div
         ref={loginPanelRef}
-        className="absolute inset-y-0 left-0 z-20 flex w-full items-center px-8 py-16 sm:px-16 lg:w-1/2 lg:pl-24"
+        className="absolute inset-y-0 left-0 z-20 flex w-full items-center px-5 py-20 xs:px-8 sm:px-16 sm:py-16 lg:w-1/2 lg:pl-24"
         style={{ opacity: loginActive ? 1 : 0, pointerEvents: loginActive ? 'auto' : 'none' }}
       >
         <div className="w-full max-w-md">
           <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">BrainTrain Parent</span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-6xl font-bold text-ink">Sign in</h1>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">Sign in</h1>
 
           <form action={loginParent} className="mt-12 space-y-7">
             <input type="hidden" name="locale" value={locale} />
@@ -191,12 +191,12 @@ export default function ParentAuthScreen({
       {/* Sign-up form — pinned to the right half, never moves */}
       <div
         ref={signupPanelRef}
-        className="absolute inset-y-0 right-0 z-20 flex w-full items-center px-8 py-16 sm:px-16 lg:w-1/2 lg:pr-24"
+        className="absolute inset-y-0 right-0 z-20 flex w-full items-center px-5 py-20 xs:px-8 sm:px-16 sm:py-16 lg:w-1/2 lg:pr-24"
         style={{ opacity: loginActive ? 0 : 1, pointerEvents: loginActive ? 'none' : 'auto' }}
       >
         <div className="ml-auto w-full max-w-md">
           <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">BrainTrain Parent</span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-6xl font-bold text-ink">Sign up</h1>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">Sign up</h1>
 
           <form action={registerParent} className="mt-10 space-y-5">
             <input type="hidden" name="locale" value={locale} />

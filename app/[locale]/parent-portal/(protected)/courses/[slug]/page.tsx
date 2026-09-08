@@ -11,7 +11,8 @@ import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { resolvePrice } from '@/lib/pricing/compute';
 import { enrollChild } from '@/lib/enrollment/actions';
-import { findSlotLabel, sessionsConflict } from '@/lib/scheduling/slots';
+import { sessionsConflict } from '@/lib/scheduling/slots';
+import { findSlotLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CurriculumTimeline from '@/components/course/CurriculumTimeline';
 import EnrollWizard from '@/components/portal/EnrollWizard';
@@ -78,11 +79,14 @@ export default async function CourseDetailPage({
     points: phase.points.map((point) => point[params.locale] || point.en),
   }));
 
-  const sessions = await prisma.courseSession.findMany({
-    where: { courseSlug: params.slug },
-    include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
-    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-  });
+  const [sessions, timeSlots] = await Promise.all([
+    prisma.courseSession.findMany({
+      where: { courseSlug: params.slug },
+      include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    }),
+    listTimeSlots(),
+  ]);
 
   const enrolledSessionIds = new Set(
     (
@@ -106,7 +110,7 @@ export default async function CourseDetailPage({
     );
     return {
       id: s.id,
-      label: findSlotLabel(s.dayOfWeek, s.startTime, s.endTime) ?? `G${i + 1}`,
+      label: findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime) ?? `G${i + 1}`,
       dayOfWeek: s.dayOfWeek,
       startTime: s.startTime,
       endTime: s.endTime,

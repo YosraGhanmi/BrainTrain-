@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
-import { findSlotLabel } from '@/lib/scheduling/slots';
+import { findSlotLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -13,11 +13,14 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 export default async function TeacherDashboardPage({ params }: { params: { locale: AppLocale } }) {
   const teacher = await requireTeacher(params.locale);
-  const sessions = await prisma.courseSession.findMany({
-    where: { teacherId: teacher.teacherId },
-    include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
-    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-  });
+  const [sessions, timeSlots] = await Promise.all([
+    prisma.courseSession.findMany({
+      where: { teacherId: teacher.teacherId },
+      include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    }),
+    listTimeSlots(),
+  ]);
 
   return (
     <div>
@@ -47,7 +50,7 @@ export default async function TeacherDashboardPage({ params }: { params: { local
           {sessions.map((session) => {
             const course = getCourseEntryOrThrow(session.courseSlug);
             const Icon = getIcon(course.icon);
-            const groupLabel = findSlotLabel(session.dayOfWeek, session.startTime, session.endTime);
+            const groupLabel = findSlotLabel(timeSlots, session.dayOfWeek, session.startTime, session.endTime);
             return (
               <Link
                 key={session.id}
