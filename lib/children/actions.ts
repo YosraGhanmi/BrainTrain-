@@ -25,6 +25,7 @@ export async function addChild(formData: FormData): Promise<void> {
   const fullName = field(formData, 'fullName');
   const dateOfBirthRaw = field(formData, 'dateOfBirth');
   const ageGroupSlug = field(formData, 'ageGroupSlug');
+  const institution = field(formData, 'institution');
   const specialNeeds = field(formData, 'specialNeeds');
 
   const dateOfBirth = new Date(dateOfBirthRaw);
@@ -42,6 +43,7 @@ export async function addChild(formData: FormData): Promise<void> {
       fullName,
       dateOfBirth,
       ageGroupSlug,
+      institution: institution || null,
       specialNeeds: specialNeeds || null,
     },
   });
@@ -57,6 +59,7 @@ export async function editChild(formData: FormData): Promise<void> {
   const fullName = field(formData, 'fullName');
   const dateOfBirthRaw = field(formData, 'dateOfBirth');
   const ageGroupSlug = field(formData, 'ageGroupSlug');
+  const institution = field(formData, 'institution');
   const specialNeeds = field(formData, 'specialNeeds');
 
   const child = await prisma.child.findUnique({ where: { id: childId } });
@@ -72,7 +75,7 @@ export async function editChild(formData: FormData): Promise<void> {
 
   await prisma.child.update({
     where: { id: childId },
-    data: { fullName, dateOfBirth, ageGroupSlug, specialNeeds: specialNeeds || null },
+    data: { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null },
   });
 
   revalidatePath(`/${locale === 'fr' ? 'fr/' : ''}parent-portal/children/${childId}`);

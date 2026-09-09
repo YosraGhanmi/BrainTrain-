@@ -45,6 +45,11 @@ export default async function AddChildPage({
         </div>
 
         <div className="space-y-1.5">
+          <label className="text-sm font-semibold text-stone">Institution / school (optional)</label>
+          <input name="institution" className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 outline-none focus:border-accent" />
+        </div>
+
+        <div className="space-y-1.5">
           <label className="text-sm font-semibold text-stone">Disabilities / special accommodations (optional)</label>
           <textarea
             name="specialNeeds"

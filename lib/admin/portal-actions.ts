@@ -10,6 +10,8 @@ import { revokeAllSessions } from '@/lib/portal-auth/session';
 import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
 import { sendEmail } from '@/lib/email/send';
 import { sendSms } from '@/lib/sms/send';
+import { absoluteUrl } from '@/lib/seo';
+import { routing } from '@/i18n/routing';
 import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM, sessionsConflict } from '@/lib/scheduling/slots';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { Prisma } from '@prisma/client';
@@ -183,10 +185,11 @@ export async function approveParent(userId: string): Promise<void> {
     where: { id: userId },
     data: { parent: { update: { status: 'APPROVED' } } },
   });
+  const loginUrl = absoluteUrl(routing.defaultLocale, '/parent-portal/login');
   await sendEmail({
     to: user.email,
-    subject: 'Your BrainTrain account has been approved',
-    text: 'Your account is accepted, you can log in now.',
+    subject: 'Welcome to the BrainTrain family!',
+    text: `Hello ${user.fullName}, welcome to the BrainTrain family! Your account is ready now. Sign in here: ${loginUrl}`,
   }).catch(() => undefined);
   redirect('/admin/parents?saved=1');
 }

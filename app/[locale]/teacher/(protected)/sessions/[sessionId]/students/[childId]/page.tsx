@@ -5,7 +5,9 @@ import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow, getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
 import { addTeacherNote, awardBadge } from '@/lib/teacher/actions';
-import { BADGE_STICKERS } from '@/lib/badges/stickers';
+import { rotateHue } from '@/lib/color';
+import StudentNotesPanel from '@/components/portal/teacher/StudentNotesPanel';
+import StudentBadgesPanel from '@/components/portal/teacher/StudentBadgesPanel';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -33,13 +35,7 @@ export default async function TeacherStudentProfilePage({
 
   const enrollment = await prisma.enrollment.findUnique({
     where: { childId_courseSessionId: { childId: params.childId, courseSessionId: session.id } },
-    include: {
-      child: {
-        include: {
-          badges: { orderBy: { awardedAt: 'desc' } },
-        },
-      },
-    },
+    include: { child: true },
   });
   if (!enrollment || !['PENDING', 'ACTIVE'].includes(enrollment.status)) notFound();
   const child = enrollment.child;
@@ -50,141 +46,83 @@ export default async function TeacherStudentProfilePage({
     orderBy: { createdAt: 'desc' },
   });
 
+  // Only badges this teacher personally awarded this child — not every
+  // teacher's badges across every course the child is enrolled in.
+  const badges = await prisma.badge.findMany({
+    where: { childId: child.id, teacherId: teacher.teacherId },
+    orderBy: { awardedAt: 'desc' },
+  });
+
   const returnTo = `/teacher/sessions/${session.id}/students/${child.id}`;
+  const baseColor = child.photoColor ?? course.color;
+  const bannerBackground = `linear-gradient(to right, ${rotateHue(baseColor, -25)}, ${baseColor}, ${rotateHue(baseColor, 35)})`;
 
   return (
-    <div>
-      <Link
-        href={`/teacher/sessions/${session.id}`}
-        className="inline-flex items-center gap-2 text-sm font-semibold text-stone transition hover:text-ink"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to {course.title.en} roster
-      </Link>
+    <div className="overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-soft">
+      <div className="relative pb-12 pt-5" style={{ background: bannerBackground }}>
+        <div className="px-6">
+          <Link
+            href={`/teacher/sessions/${session.id}`}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white/90 transition hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to {course.title.en} roster
+          </Link>
+        </div>
 
-      <div className="mt-4 flex items-center gap-4">
+        <div className="mt-4 flex items-center justify-between px-6">
+          <p className="text-sm font-semibold text-white/90">
+            {course.title.en} <span className="text-white/60">·</span> {session.term}
+          </p>
+          <p className="text-sm font-semibold text-white/90">{ageGroup.label.en}</p>
+        </div>
+      </div>
+
+      <div className="relative z-10 -mt-8 flex flex-col items-center">
         {child.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={child.photoUrl} alt="" className="h-16 w-16 rounded-full object-cover" />
+          <img
+            src={child.photoUrl}
+            alt=""
+            className="h-20 w-20 rounded-full border-4 border-white object-cover shadow-soft"
+          />
         ) : (
           <span
-            className="flex h-16 w-16 items-center justify-center rounded-full text-lg font-bold text-white"
-            style={{ backgroundColor: child.photoColor ?? course.color }}
+            className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white text-xl font-bold text-white shadow-soft"
+            style={{ backgroundColor: baseColor }}
           >
             {initials(child.fullName)}
           </span>
         )}
-        <div>
-          <h1 className="font-display text-2xl font-bold text-ink">{child.fullName}</h1>
-          <p className="text-sm text-stone">
-            {ageGroup.label.en} · {course.title.en}
-          </p>
-        </div>
+        <h1 className="mt-2 font-display text-xl font-bold text-ink">{child.fullName}</h1>
       </div>
 
-      {searchParams.saved ? <p className="mt-4 text-sm font-semibold text-emerald-600">Remark added.</p> : null}
-      {searchParams.error ? <p className="mt-4 text-sm font-semibold text-red-600">Please enter a remark.</p> : null}
-      {searchParams.badgeSaved ? <p className="mt-4 text-sm font-semibold text-emerald-600">Badge awarded.</p> : null}
-      {searchParams.badgeError ? <p className="mt-4 text-sm font-semibold text-red-600">Please enter a badge title.</p> : null}
+      {searchParams.saved ? <p className="mt-3 text-center text-sm font-semibold text-emerald-600">Remark added.</p> : null}
+      {searchParams.error ? <p className="mt-3 text-center text-sm font-semibold text-red-600">Please enter a remark.</p> : null}
+      {searchParams.badgeSaved ? <p className="mt-3 text-center text-sm font-semibold text-emerald-600">Badge awarded.</p> : null}
+      {searchParams.badgeError ? <p className="mt-3 text-center text-sm font-semibold text-red-600">Please enter a badge title.</p> : null}
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
-          <h2 className="font-display text-lg font-bold text-ink">Badges</h2>
-          {child.badges.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {child.badges.map((badge) => (
-                <span
-                  key={badge.id}
-                  title={badge.note ?? undefined}
-                  className="flex items-center gap-1.5 rounded-full bg-amber-50 py-1 pl-1 pr-3 text-xs font-semibold text-amber-800"
-                >
-                  {badge.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={badge.imageUrl} alt="" className="h-5 w-5 rounded-full object-cover" />
-                  ) : (
-                    <span>{badge.emoji}</span>
-                  )}
-                  {badge.title}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-2 text-sm text-stone">No badges yet.</p>
-          )}
-
-          <form action={awardBadge} className="mt-5 space-y-3 border-t border-ink/10 pt-4">
-            <input type="hidden" name="locale" value={params.locale} />
-            <input type="hidden" name="childId" value={child.id} />
-            <input type="hidden" name="courseSessionId" value={session.id} />
-            <input type="hidden" name="returnTo" value={returnTo} />
-
-            <div className="flex flex-wrap gap-2">
-              {BADGE_STICKERS.map((sticker, i) => (
-                <label key={sticker.url} className="cursor-pointer">
-                  <input type="radio" name="imageUrl" value={sticker.url} defaultChecked={i === 0} required className="peer sr-only" />
-                  <span className="flex flex-col items-center gap-1 rounded-xl border-2 border-transparent p-1 peer-checked:border-accent">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={sticker.url} alt={sticker.label} className="h-12 w-12 rounded-full object-cover" />
-                    <span className="text-[0.6rem] font-semibold text-stone">{sticker.label}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-
-            <input
-              name="title"
-              required
-              placeholder="Badge title (e.g. Top Builder)"
-              className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
-            />
-            <input
-              name="note"
-              placeholder="Note (optional)"
-              className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-amber-600"
-            >
-              Award badge
-            </button>
-          </form>
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 lg:divide-x lg:divide-ink/10">
+        <div className="px-6 pb-6 lg:pr-6">
+          <StudentNotesPanel
+            notes={notes.map((note) => ({ id: note.id, content: note.content, createdAt: note.createdAt.toDateString() }))}
+            addNote={addTeacherNote}
+            locale={params.locale}
+            childId={child.id}
+            courseSessionId={session.id}
+            returnTo={returnTo}
+          />
         </div>
 
-        <div className="rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
-          <h2 className="font-display text-lg font-bold text-ink">Remarks</h2>
-          {notes.length > 0 ? (
-            <ul className="mt-3 space-y-2">
-              {notes.map((note) => (
-                <li key={note.id} className="rounded-xl bg-slate-50 p-3 text-sm text-ink">
-                  <p>{note.content}</p>
-                  <p className="mt-1 text-xs text-stone">{note.createdAt.toDateString()}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-stone">No remarks yet.</p>
-          )}
-
-          <form action={addTeacherNote} className="mt-5 space-y-3 border-t border-ink/10 pt-4">
-            <input type="hidden" name="locale" value={params.locale} />
-            <input type="hidden" name="childId" value={child.id} />
-            <input type="hidden" name="courseSessionId" value={session.id} />
-            <input type="hidden" name="returnTo" value={returnTo} />
-            <textarea
-              name="content"
-              required
-              rows={3}
-              placeholder="Add a remark for this student..."
-              className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
-            >
-              Add remark
-            </button>
-          </form>
+        <div className="px-6 pb-6 lg:pl-6">
+          <StudentBadgesPanel
+            badges={badges}
+            awardBadge={awardBadge}
+            locale={params.locale}
+            childId={child.id}
+            courseSessionId={session.id}
+            returnTo={returnTo}
+          />
         </div>
       </div>
     </div>

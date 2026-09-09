@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import PortalTopbar from '@/components/portal/PortalTopbar';
+import AdminBackground from '@/components/admin/AdminBackground';
 
 export default function PortalShellChrome({
   isLight,
@@ -67,14 +68,34 @@ export default function PortalShellChrome({
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col lg:h-screen lg:overflow-y-auto">
-        <PortalTopbar
-          fullName={fullName}
-          email={email}
-          settingsHref={settingsHref}
-          childSwitcher={childSwitcher}
-          onMenuClick={() => setMobileOpen(true)}
-        />
-        {children}
+        {isLight ? (
+          <div className="relative isolate flex flex-1 flex-col overflow-x-hidden bg-gradient-to-br from-[#bcd4ff] via-[#cddaff] to-[#a9c6ff]">
+            <div className="pointer-events-none fixed bottom-0 left-0 right-0 top-0 z-0 lg:left-64">
+              <AdminBackground />
+            </div>
+            <div className="relative z-20">
+              <PortalTopbar
+                fullName={fullName}
+                email={email}
+                settingsHref={settingsHref}
+                childSwitcher={childSwitcher}
+                onMenuClick={() => setMobileOpen(true)}
+              />
+            </div>
+            <div className="relative z-10 flex flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8 lg:py-10">{children}</div>
+          </div>
+        ) : (
+          <>
+            <PortalTopbar
+              fullName={fullName}
+              email={email}
+              settingsHref={settingsHref}
+              childSwitcher={childSwitcher}
+              onMenuClick={() => setMobileOpen(true)}
+            />
+            <div className="flex flex-1 flex-col overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8 lg:py-10">{children}</div>
+          </>
+        )}
       </main>
     </div>
   );

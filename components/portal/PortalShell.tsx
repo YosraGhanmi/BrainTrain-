@@ -6,7 +6,6 @@ import type { LucideIcon } from 'lucide-react';
 import PortalNavLinks from '@/components/portal/PortalNavLinks';
 import PortalShellChrome from '@/components/portal/PortalShellChrome';
 import TextMorph from '@/components/text/TextMorph';
-import AdminBackground from '@/components/admin/AdminBackground';
 
 export default function PortalShell({
   homeHref,
@@ -116,16 +115,7 @@ export default function PortalShell({
       settingsHref={settingsHref}
       childSwitcher={childSwitcher}
     >
-      {isLight ? (
-        <div className="relative isolate flex flex-1 flex-col overflow-x-hidden bg-gradient-to-br from-[#bcd4ff] via-[#cddaff] to-[#a9c6ff] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-          <div className="pointer-events-none fixed bottom-0 left-0 right-0 top-0 z-0 lg:left-64">
-            <AdminBackground />
-          </div>
-          <div className="relative z-10 flex flex-1 flex-col">{children}</div>
-        </div>
-      ) : (
-        <div className="flex flex-1 flex-col overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8 lg:py-10">{children}</div>
-      )}
+      {children}
     </PortalShellChrome>
   );
 }

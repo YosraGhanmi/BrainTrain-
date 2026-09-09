@@ -37,7 +37,7 @@ export default function PortalTopbar({
   const selectedChild = childSwitcher?.children.find((c) => c.id === childSwitcher.selectedChildId);
 
   return (
-    <div className="flex items-center justify-between gap-2 border-b border-ink/10 bg-white px-3 py-3 sm:gap-3 sm:px-4 lg:px-8 lg:py-4">
+    <div className="flex items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4 lg:px-8 lg:py-4">
       <button
         type="button"
         onClick={onMenuClick}

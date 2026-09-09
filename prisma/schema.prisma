@@ -182,6 +182,7 @@ model Child {
   fullName      String
   dateOfBirth   DateTime
   ageGroupSlug  String
+  institution   String?
   specialNeeds  String?
   // Parent-uploaded profile photo (public/children/...) and its extracted
   // average color (hex), used to tint the profile card's banner to match.

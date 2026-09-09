@@ -69,7 +69,7 @@ export async function registerParent(formData: FormData): Promise<void> {
     data: { fullName, email, phone, passwordHash, role: 'PARENT', parent: { create: {} } },
   });
 
-  redirect(localizedPath(locale, '/parent-portal/login?registered=pending'));
+  redirect(localizedPath(locale, '/parent-portal/pending'));
 }
 
 export async function loginParent(formData: FormData): Promise<void> {

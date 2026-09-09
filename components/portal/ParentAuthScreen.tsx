@@ -27,14 +27,12 @@ export default function ParentAuthScreen({
   loginError,
   loginSaved,
   registerError,
-  registered,
 }: {
   locale: AppLocale;
   initialMode: Mode;
   loginError?: string;
   loginSaved?: string;
   registerError?: string;
-  registered?: string;
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const animatingRef = useRef(false);
@@ -137,11 +135,7 @@ export default function ParentAuthScreen({
               <PasswordInput name="password" autoComplete="current-password" />
             </div>
 
-            {registered === 'pending' ? (
-              <p data-field className="text-sm font-semibold text-amber-700">
-                Account created! An admin needs to review it before you can log in — we&apos;ll email you once it&apos;s approved.
-              </p>
-            ) : loginSaved === 'reset' ? (
+            {loginSaved === 'reset' ? (
               <p data-field className="text-sm font-semibold text-emerald-600">
                 Password reset. Log in with your new password.
               </p>
