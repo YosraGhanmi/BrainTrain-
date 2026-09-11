@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ChevronRight, CalendarDays, MapPin, Users, Sparkles } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
+import { localized } from '@/lib/i18n/format';
 import { estimateCompletedSessions, percentFromCompleted } from '@/lib/progress';
 import StudentRoster, { type RosterStudent } from '@/components/portal/teacher/StudentRoster';
 import type { AppLocale } from '@/i18n/routing';
@@ -25,6 +27,9 @@ export default async function TeacherSessionRosterPage({
   params: { locale: AppLocale; sessionId: string };
 }) {
   const teacher = await requireTeacher(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.roster' });
+  const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
+  const DAYS = tc.raw('days') as string[];
   const session = await prisma.courseSession.findUnique({
     where: { id: params.sessionId },
     include: {
@@ -61,10 +66,10 @@ export default async function TeacherSessionRosterPage({
     <div>
       <div className="flex items-center gap-1.5 text-sm font-semibold text-stone">
         <Link href="/teacher" className="text-accent hover:underline">
-          My groups
+          {t('myGroups')}
         </Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-ink">{course.title.en}</span>
+        <span className="text-ink">{localized(course.title, params.locale)}</span>
       </div>
 
       <div className="relative mt-3 overflow-hidden rounded-3xl bg-gradient-to-br from-[#eef1ff] via-[#f3edfb] to-[#fdf0f5] p-6 sm:p-8">
@@ -82,11 +87,11 @@ export default async function TeacherSessionRosterPage({
             <Icon className="h-7 w-7" style={{ color: course.color }} strokeWidth={2} />
           </span>
           <div>
-            <h1 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">{course.title.en}</h1>
+            <h1 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">{localized(course.title, params.locale)}</h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-ink/60">
               <span className="flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4" />
-                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][session.dayOfWeek]} ·{' '}
+                {DAYS[session.dayOfWeek]} ·{' '}
                 {session.startTime}–{session.endTime}
               </span>
               <span className="flex items-center gap-1.5">
@@ -95,7 +100,7 @@ export default async function TeacherSessionRosterPage({
               </span>
               <span className="flex items-center gap-1.5">
                 <Users className="h-4 w-4" />
-                {students.length} students enrolled
+                {t('studentsEnrolled', { count: students.length })}
               </span>
             </div>
           </div>
@@ -104,7 +109,7 @@ export default async function TeacherSessionRosterPage({
 
       {students.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-ink/15 bg-white p-8 text-center text-stone">
-          No students enrolled in this group yet.
+          {t('noStudentsYet')}
         </p>
       ) : (
         <div className="mt-6">

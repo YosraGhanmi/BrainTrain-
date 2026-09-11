@@ -92,5 +92,400 @@
   "languageSwitcher": {
     "en": "EN",
     "fr": "FR"
+  },
+  "common": {
+    "days": ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
+    "daysShort": ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"],
+    "months": [
+      "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+      "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+    ]
+  },
+  "portalShell": {
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "addChild": "Ajouter un enfant",
+    "accountMenu": "Menu du compte",
+    "accountSettings": "Paramètres du compte",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "logOut": "Se déconnecter",
+    "backToWebsite": "Retour au site"
+  },
+  "parentPortal": {
+    "noChildren": "Aucun enfant pour le moment. Ajoutez un enfant pour commencer à l'inscrire à des cours.",
+    "paymentsPage": {
+      "title": "{name} : historique des paiements",
+      "paidNotice": "Paiement effectué. Merci ! Cela peut prendre un instant avant de s'afficher ci-dessous.",
+      "cancelledNotice": "Le paiement a été annulé."
+    },
+    "childrenSection": {
+      "none": "Vous n'avez pas encore ajouté d'enfant.",
+      "addChild": "Ajouter un enfant",
+      "fullName": "Nom complet",
+      "dateOfBirth": "Date de naissance",
+      "ageGroup": "Tranche d'âge",
+      "institution": "Établissement / école (facultatif)",
+      "specialNeeds": "Handicaps / aménagements particuliers (facultatif)",
+      "saveChanges": "Enregistrer les modifications",
+      "courses": "Cours",
+      "notEnrolled": "Pas encore inscrit à un cours.",
+      "status": {
+        "PENDING": "En attente",
+        "ACTIVE": "Actif",
+        "CANCELLED": "Annulé"
+      }
+    },
+    "security": {
+      "password": "Mot de passe",
+      "passwordHint": "Changer votre mot de passe vous déconnecte de tous les autres appareils.",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmNewPassword": "Confirmer le nouveau mot de passe",
+      "changePassword": "Changer le mot de passe",
+      "twoFactor": "Authentification à deux facteurs",
+      "twoFactorEnabled": "Activée : un code à 6 chiffres vous est envoyé par e-mail comme vérification supplémentaire.",
+      "twoFactorDisabled": "Ajoutez une couche de sécurité supplémentaire. Un code à 6 chiffres vous sera envoyé par e-mail pour confirmer vos connexions.",
+      "comingSoon": "Bientôt disponible. Pas encore requis à la connexion.",
+      "confirmToTurnOff": "Confirmez votre mot de passe pour désactiver",
+      "turnOff": "Désactiver",
+      "enterCode": "Entrez le code à 6 chiffres que nous vous avons envoyé",
+      "verifyAndEnable": "Vérifier et activer",
+      "activate": "Activer l'authentification à deux facteurs"
+    },
+    "personalInfo": {
+      "heading": "Coordonnées",
+      "subheading": "Gérez les numéros de téléphone et l'e-mail de secours de votre compte.",
+      "primaryPhone": "Numéro de téléphone principal",
+      "secondaryPhone": "Numéro de téléphone secondaire",
+      "backupEmail": "E-mail de secours",
+      "notSet": "Non défini",
+      "edit": "Modifier",
+      "save": "Enregistrer",
+      "delete": "Supprimer",
+      "addPhoneNumber": "Ajouter un numéro",
+      "addBackupEmail": "Ajouter un e-mail de secours",
+      "addSecondaryFirst": "Ajoutez d'abord un numéro secondaire",
+      "phonePlaceholder": "ex. +216 20 000 000"
+    },
+    "settingsTabs": {
+      "personal": "Informations personnelles",
+      "security": "Mot de passe et sécurité",
+      "children": "Enfants"
+    },
+    "account": {
+      "title": "Paramètres",
+      "saved": "Enregistré.",
+      "errors": {
+        "phoneTaken": "Ce numéro de téléphone est déjà utilisé.",
+        "noSecondary": "Ajoutez un numéro secondaire avant de supprimer votre numéro principal.",
+        "generic": "Veuillez vérifier le formulaire et réessayer."
+      }
+    },
+    "addChild": {
+      "title": "Ajouter un enfant",
+      "fullName": "Nom complet de l'enfant",
+      "dateOfBirth": "Date de naissance",
+      "ageGroup": "Tranche d'âge",
+      "selectAgeGroup": "Sélectionnez une tranche d'âge",
+      "institution": "Établissement / école (facultatif)",
+      "specialNeeds": "Handicaps / aménagements particuliers (facultatif)",
+      "specialNeedsPlaceholder": "Tout ce que nos enseignants devraient savoir pour mieux accompagner votre enfant",
+      "error": "Veuillez remplir tous les champs obligatoires.",
+      "submit": "Ajouter l'enfant"
+    },
+    "schedule": {
+      "previousMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "noActiveSessions": "Aucune séance active programmée pour le moment — le calendrier ci-dessous se remplira dès qu'une inscription sera activée."
+    },
+    "enrollWizard": {
+      "steps": { "group": "Groupe", "plan": "Formule", "method": "Paiement" },
+      "overlapsTitle": "Chevauche la séance de {course} de cet enfant",
+      "alreadyEnrolled": "Déjà inscrit",
+      "conflictsWith": "En conflit avec {course}",
+      "full": "Complet",
+      "seatsLeft": "{count} places restantes",
+      "back": "Retour",
+      "next": "Suivant",
+      "enroll": "S'inscrire"
+    },
+    "forgotPassword": {
+      "eyebrow": "Espace parent",
+      "title": "Réinitialiser votre mot de passe",
+      "body": "Entrez le numéro de téléphone de votre compte et nous vous enverrons un code de réinitialisation par SMS.",
+      "phoneNumber": "Numéro de téléphone",
+      "sendResetCode": "Envoyer le code",
+      "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "eyebrow": "Espace parent",
+      "title": "Entrez votre code de réinitialisation",
+      "body": "Nous avons envoyé un code à 6 chiffres par SMS au {phone}. Il expire dans 10 minutes.",
+      "yourPhone": "votre téléphone",
+      "resetCode": "Code de réinitialisation",
+      "newPassword": "Nouveau mot de passe",
+      "confirmNewPassword": "Confirmer le nouveau mot de passe",
+      "error": "Code invalide ou expiré, ou les mots de passe ne correspondent pas.",
+      "submit": "Réinitialiser le mot de passe"
+    },
+    "pending": {
+      "backToWebsite": "Retour au site",
+      "brand": "BrainTrain Parent",
+      "title": "Compte créé !",
+      "body1": "Merci pour votre inscription. Un administrateur doit examiner votre compte avant que vous puissiez vous connecter — cela ne prend généralement pas longtemps.",
+      "body2": "Nous vous enverrons un e-mail dès qu'il sera approuvé, avec un lien pour vous connecter.",
+      "backToSignIn": "Retour à la connexion"
+    },
+    "auth": {
+      "backToWebsite": "Retour au site",
+      "brand": "BrainTrain Parent",
+      "signIn": "Se connecter",
+      "signUp": "S'inscrire",
+      "email": "E-mail",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "fullName": "Nom complet",
+      "phoneNumber": "Numéro de téléphone",
+      "passwordReset": "Mot de passe réinitialisé. Connectez-vous avec votre nouveau mot de passe.",
+      "passwordChanged": "Mot de passe modifié. Connectez-vous avec votre nouveau mot de passe.",
+      "accountSuspended": "Ce compte a été suspendu. Contactez BrainTrain pour obtenir de l'aide.",
+      "accountPending": "Votre compte est toujours en attente d'approbation. Nous vous enverrons un e-mail une fois qu'il aura été examiné.",
+      "accountRejected": "Votre inscription n'a pas été approuvée. Veuillez contacter l'administration de BrainTrain.",
+      "incorrectCredentials": "E-mail ou mot de passe incorrect. Réessayez.",
+      "logIn": "Se connecter",
+      "forgotPassword": "Mot de passe oublié ?",
+      "createAccount": "Créer un compte",
+      "accountExists": "Un compte avec cet e-mail ou ce téléphone existe déjà.",
+      "checkForm": "Veuillez vérifier le formulaire (les mots de passe doivent correspondre, 8 caractères minimum).",
+      "createAccountButton": "Créer le compte",
+      "alreadyHaveAccount": "Vous avez déjà un compte ?",
+      "welcomeBack": "Content de vous",
+      "welcomeBackAccent": "revoir !",
+      "joinThe": "Rejoignez la",
+      "joinTheAccent": "famille BrainTrain",
+      "joinSubtext": "Créez votre compte pour ajouter vos enfants et les inscrire à des cours."
+    },
+    "courseEnrollment": {
+      "backToCourses": "Retour aux cours",
+      "pending": "En attente",
+      "checkingWithAdmin": "Vérification en cours avec l'administration",
+      "pendingBody": "L'inscription de {name} à <strong>{course}</strong> est en cours — un administrateur doit encore confirmer votre paiement avant que la place ne soit validée. Vous recevrez un SMS dès que ce sera approuvé, et le cours se débloquera ici même.",
+      "paymentMethod": "Paiement par {method}",
+      "methods": { "CASH": "Espèces", "CHEQUE": "Chèque", "CARD": "Carte" },
+      "backToDashboard": "Retour au tableau de bord",
+      "alreadyCancelled": "Cette inscription est déjà annulée.",
+      "coursePaid": "Cours payé",
+      "paymentOverdue": "Paiement en retard",
+      "paymentDue": "Paiement à effectuer",
+      "payNow": "Payer",
+      "nextSession": "Prochaine séance",
+      "location": "Lieu",
+      "teacher": "Enseignant",
+      "notYetAssigned": "Pas encore assigné",
+      "teacherUpdates": "Notes de l'enseignant",
+      "noUpdatesYet": "Aucune note pour le moment — votre enseignant publiera des notes ici après les cours.",
+      "myBadges": "Mes badges",
+      "viewAll": "Tout voir",
+      "showLess": "Afficher moins",
+      "firstBadgeWaiting": "Votre premier badge vous attend !",
+      "completeFirstChallenge": "Terminez votre premier défi pour le débloquer.",
+      "unlocked": "Débloqué",
+      "mystery": "Mystère",
+      "locked": "Verrouillé",
+      "unsubscribeConfirm": "Désinscrire cet enfant de ce cours ? Cette action est irréversible.",
+      "leaveCourse": "Quitter le cours",
+      "paymentConfirmed": "Paiement confirmé !",
+      "paymentConfirmedBody": "Votre paiement de {amount} {currency} pour {course} a été confirmé. Votre enfant est prêt !",
+      "greatThanks": "Merci, parfait !",
+      "status": {
+        "PENDING": "En attente",
+        "ACTIVE": "Actif",
+        "CANCELLED": "Annulé"
+      }
+    },
+    "courseDetail": {
+      "backToCourses": "Retour aux cours",
+      "startingFrom": "À partir de",
+      "perMonth": "/ mois",
+      "otherPlansHint": "Formules 3 mois et année complète disponibles lors de l'inscription.",
+      "enrollHeading": "Inscription : groupe, formule et paiement",
+      "noSessions": "Aucune séance n'est actuellement programmée pour ce cours.",
+      "plans": {
+        "monthly": { "label": "Mensuel", "hint": "Facturé chaque mois" },
+        "quarterly": { "label": "3 mois", "hint": "Facturé une fois pour 3 mois" },
+        "yearly": { "label": "Année complète", "hint": "Un seul paiement, du 15 sept. au 15 juin" }
+      },
+      "methods": {
+        "cash": "Espèces",
+        "card": "Carte",
+        "cheque": "Chèque"
+      },
+      "errors": {
+        "generic": "Une erreur est survenue. Veuillez réessayer.",
+        "plan": "Veuillez choisir une formule de paiement.",
+        "method": "Veuillez choisir un moyen de paiement.",
+        "session": "Veuillez choisir un groupe.",
+        "ineligible": "Ce cours n'est pas proposé pour la tranche d'âge de cet enfant.",
+        "capacity": "Ce groupe est complet. Veuillez en choisir un autre.",
+        "duplicate": "Cet enfant est déjà inscrit à ce groupe.",
+        "conflict": "Cet enfant a déjà un cours prévu le même jour à la même heure. Veuillez choisir un autre groupe."
+      }
+    },
+    "coursesExplorer": {
+      "filters": {
+        "all": "Tous les cours",
+        "enrolled": "Inscrit",
+        "notEnrolled": "Non inscrit"
+      },
+      "searchPlaceholder": "Rechercher un cours...",
+      "noMatch": "Aucun cours ne correspond.",
+      "status": {
+        "ACTIVE": "Actif",
+        "PENDING": "En attente"
+      },
+      "sessionsCount": "{count} séances",
+      "viewSessions": "Voir les séances",
+      "enroll": "S'inscrire"
+    },
+    "payments": {
+      "empty": "Aucun paiement pour le moment.",
+      "previousMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "current": "En cours",
+      "course": "Cours",
+      "plan": "Formule",
+      "amount": "Montant",
+      "due": "Échéance",
+      "status": "Statut",
+      "payNow": "Payer",
+      "statuses": {
+        "PENDING": "En attente",
+        "PAID": "Payé",
+        "OVERDUE": "En retard",
+        "FAILED": "Échoué"
+      }
+    },
+    "nav": {
+      "brand": "Espace parent",
+      "dashboard": "Tableau de bord",
+      "courses": "Cours",
+      "schedule": "Emploi du temps",
+      "payments": "Paiements",
+      "settings": "Paramètres"
+    },
+    "dashboard": {
+      "title": "Tableau de bord",
+      "addChild": "Ajouter un enfant",
+      "noChildrenYet": "Aucun enfant pour le moment. Ajoutez votre premier enfant pour commencer à l'inscrire à des cours.",
+      "paymentDue": "Paiement à effectuer : {course}",
+      "badgeEarned": "Nouveau badge obtenu : {badge}",
+      "noteAdded": "Un enseignant a ajouté une note. Consultez-la",
+      "news": {
+        "heading": "Actualités",
+        "empty": "Aucune actualité pour le moment.",
+        "previous": "Précédent",
+        "next": "Suivant",
+        "view": "Voir"
+      },
+      "badges": {
+        "heading": "Badges",
+        "empty": "Aucun badge obtenu pour le moment."
+      },
+      "teacherNotes": {
+        "heading": "Notes des enseignants",
+        "empty": "Aucune note pour le moment."
+      },
+      "profile": {
+        "notEnrolled": "Pas encore inscrit à un cours.",
+        "changePhoto": "Changer la photo"
+      }
+    }
+  },
+  "teacherPortal": {
+    "nav": {
+      "brand": "Espace enseignant",
+      "myGroups": "Mes groupes",
+      "calendar": "Calendrier"
+    },
+    "dashboard": {
+      "brand": "Espace enseignant",
+      "title": "Mes séances assignées",
+      "subtitle": "Voici vos prochaines séances et les détails des groupes.",
+      "noSessions": "Aucune séance assignée pour le moment. Revenez une fois qu'un administrateur vous en aura programmé une.",
+      "studentsCount": "{enrolled} / {capacity} élèves"
+    },
+    "studentProfile": {
+      "backToRoster": "Retour au groupe {course}",
+      "remarkAdded": "Remarque ajoutée.",
+      "enterRemark": "Veuillez saisir une remarque.",
+      "badgeAwarded": "Badge attribué.",
+      "enterBadgeTitle": "Veuillez saisir un titre de badge.",
+      "notes": "Notes",
+      "notePlaceholder": "Écrivez une note pour cet élève...",
+      "addNote": "Ajouter une note",
+      "noNotesYet": "Aucune note pour le moment.",
+      "badges": "Badges",
+      "awardNewBadge": "Attribuer un nouveau badge",
+      "noBadgesAwarded": "Aucun badge attribué pour le moment.",
+      "awardABadge": "Attribuer un badge",
+      "close": "Fermer",
+      "badgeTitlePlaceholder": "Titre du badge (ex. Meilleur bâtisseur)",
+      "notePlaceholderOptional": "Note (facultatif)",
+      "awardBadge": "Attribuer le badge"
+    },
+    "roster": {
+      "myGroups": "Mes groupes",
+      "studentsEnrolled": "{count} élèves inscrits",
+      "noStudentsYet": "Aucun élève inscrit dans ce groupe pour le moment.",
+      "noBadgesYet": "Aucun badge pour le moment",
+      "badgeCount": "{count, plural, one {# badge} other {# badges}}",
+      "students": "Élèves",
+      "active": "Actif",
+      "pending": "En attente",
+      "avgProgress": "Progression moy.",
+      "searchPlaceholder": "Rechercher un élève...",
+      "allStatus": "Tous les statuts",
+      "sortName": "Trier : Nom",
+      "sortProgress": "Trier : Progression",
+      "sortBadges": "Trier : Badges",
+      "gridView": "Vue grille",
+      "listView": "Vue liste",
+      "noMatch": "Aucun élève ne correspond à votre recherche.",
+      "age": "{age} ans",
+      "progress": "Progression"
+    },
+    "calendar": {
+      "previousMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "noGroups": "Aucun groupe assigné pour le moment — votre emploi du temps se remplira dès qu'un administrateur vous assignera une séance.",
+      "studentsCount": "{count} élèves"
+    },
+    "login": {
+      "eyebrow": "BrainTrain Enseignant",
+      "signIn": "Se connecter",
+      "returnToWebsite": "Retour au site",
+      "welcome": "Content de",
+      "welcomeAccent": "vous revoir, Enseignant !",
+      "tagline": "Vos classes, vos élèves, leur progression — tout au même endroit.",
+      "email": "E-mail",
+      "password": "Mot de passe",
+      "accountSuspended": "Ce compte a été suspendu. Contactez BrainTrain pour obtenir de l'aide.",
+      "incorrectCredentials": "E-mail ou mot de passe incorrect.",
+      "logIn": "Se connecter",
+      "accountsCreatedByStaff": "Les comptes enseignants sont créés par le personnel de BrainTrain."
+    },
+    "verify": {
+      "eyebrow": "BrainTrain Enseignant",
+      "title": "Entrez votre code",
+      "backToLogin": "Retour à la connexion",
+      "oneMore": "Encore une",
+      "stepToGo": "étape !",
+      "tagline": "Un code à 4 chiffres protège les notes et évaluations de vos élèves.",
+      "body": "Entrez le code secret à 4 chiffres que votre administrateur vous a donné avec votre mot de passe.",
+      "secretCode": "Code secret",
+      "incorrectCode": "Code incorrect. Réessayez.",
+      "confirm": "Confirmer"
+    }
   }
 }

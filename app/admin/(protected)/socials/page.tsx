@@ -1,10 +1,12 @@
 import { readContent } from '@/lib/content/store';
 import { updateSocials } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import SocialLinksEditor from '@/components/admin/SocialLinksEditor';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminSocialsPage() {
+export default async function AdminSocialsPage() {
+  await requireAdminOnly();
   const { socials } = readContent();
 
   return (

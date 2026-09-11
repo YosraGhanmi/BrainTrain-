@@ -72,7 +72,8 @@ export default async function AdminTeachersPage({
 }: {
   searchParams: { error?: string; courseError?: string; saved?: string; code?: string; email?: string };
 }) {
-  await requireAdmin();
+  const session = await requireAdmin();
+  const canEdit = session.kind === 'admin';
   const teachers = await prisma.user.findMany({
     where: { role: 'TEACHER' },
     include: { teacher: { include: { sessions: true } } },
@@ -184,26 +185,30 @@ export default async function AdminTeachersPage({
                           >
                             {course?.title.en ?? slug}
                             {ageGroupLabel ? <span className="text-stone">· {ageGroupLabel}</span> : null}
-                            <form action={removeTeacherCourse.bind(null, t.teacher!.id, slug)}>
-                              <button type="submit" aria-label="Remove course" className="rounded-full p-0.5 text-stone transition hover:bg-white hover:text-red-600">
-                                <X className="h-3 w-3" />
-                              </button>
-                            </form>
+                            {canEdit ? (
+                              <form action={removeTeacherCourse.bind(null, t.teacher!.id, slug)}>
+                                <button type="submit" aria-label="Remove course" className="rounded-full p-0.5 text-stone transition hover:bg-white hover:text-red-600">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </form>
+                            ) : null}
                           </span>
                         );
                       })
                     )}
-                    <form action={addTeacherCourse.bind(null, t.teacher!.id)} className="mt-1 flex items-center gap-1.5">
-                      <CourseSelect
-                        name="courseSlug"
-                        courses={courses.filter((c) => !(t.teacher?.courseSlugs ?? []).includes(c.slug))}
-                        ageGroups={ageGroups}
-                        className="rounded-lg border border-ink/10 bg-slate-50 px-2 py-1 text-xs outline-none focus:border-accent"
-                      />
-                      <button type="submit" className="rounded-lg border border-ink/10 px-2 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
-                        Add
-                      </button>
-                    </form>
+                    {canEdit ? (
+                      <form action={addTeacherCourse.bind(null, t.teacher!.id)} className="mt-1 flex items-center gap-1.5">
+                        <CourseSelect
+                          name="courseSlug"
+                          courses={courses.filter((c) => !(t.teacher?.courseSlugs ?? []).includes(c.slug))}
+                          ageGroups={ageGroups}
+                          className="rounded-lg border border-ink/10 bg-slate-50 px-2 py-1 text-xs outline-none focus:border-accent"
+                        />
+                        <button type="submit" className="rounded-lg border border-ink/10 px-2 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
+                          Add
+                        </button>
+                      </form>
+                    ) : null}
                   </div>
                 </td>
                 <td className="px-5 py-4 text-stone align-top">
@@ -220,11 +225,13 @@ export default async function AdminTeachersPage({
                   ) : null}
                 </td>
                 <td className="px-5 py-4 align-top">
-                  <div className="flex items-center justify-end gap-2">
-                    <RegenerateCodeButton action={regenerateTeacherSecretCode.bind(null, t.id)} />
-                    <FreezeToggleButton action={setTeacherFrozen.bind(null, t.id, !t.isFrozen)} isFrozen={t.isFrozen} />
-                    <DeleteIconButton action={deleteTeacher.bind(null, t.id)} />
-                  </div>
+                  {canEdit ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <RegenerateCodeButton action={regenerateTeacherSecretCode.bind(null, t.id)} />
+                      <FreezeToggleButton action={setTeacherFrozen.bind(null, t.id, !t.isFrozen)} isFrozen={t.isFrozen} />
+                      <DeleteIconButton action={deleteTeacher.bind(null, t.id)} />
+                    </div>
+                  ) : null}
                 </td>
               </tr>
             ))}

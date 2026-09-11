@@ -1,10 +1,12 @@
 import { readContent } from '@/lib/content/store';
 import { addNews, deleteNews } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminNewsPage({ searchParams }: { searchParams: { error?: string } }) {
+export default async function AdminNewsPage({ searchParams }: { searchParams: { error?: string } }) {
+  await requireAdminOnly();
   const { news, ageGroups, courses } = readContent();
 
   return (

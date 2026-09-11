@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { AppLocale } from '@/i18n/routing';
 
 type Note = {
@@ -6,7 +7,7 @@ type Note = {
   createdAt: string;
 };
 
-export default function StudentNotesPanel({
+export default async function StudentNotesPanel({
   notes,
   addNote,
   locale,
@@ -21,9 +22,10 @@ export default function StudentNotesPanel({
   courseSessionId: string;
   returnTo: string;
 }) {
+  const t = await getTranslations({ locale, namespace: 'teacherPortal.studentProfile' });
   return (
     <div>
-      <h2 className="font-display text-lg font-bold text-ink">Notes</h2>
+      <h2 className="font-display text-lg font-bold text-ink">{t('notes')}</h2>
 
       <form action={addNote} className="mt-4 space-y-3">
         <input type="hidden" name="locale" value={locale} />
@@ -34,14 +36,14 @@ export default function StudentNotesPanel({
           name="content"
           required
           rows={3}
-          placeholder="Write a note for this student..."
+          placeholder={t('notePlaceholder')}
           className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
         />
         <button
           type="submit"
           className="w-full rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
         >
-          Add note
+          {t('addNote')}
         </button>
       </form>
 
@@ -55,7 +57,7 @@ export default function StudentNotesPanel({
           ))}
         </ul>
       ) : (
-        <p className="mt-4 text-sm text-stone">No notes yet.</p>
+        <p className="mt-4 text-sm text-stone">{t('noNotesYet')}</p>
       )}
     </div>
   );

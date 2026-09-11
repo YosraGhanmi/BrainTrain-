@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { logoutPortal } from '@/lib/portal-auth/actions';
 import { LogOut, ArrowLeft } from 'lucide-react';
@@ -7,7 +8,7 @@ import PortalNavLinks from '@/components/portal/PortalNavLinks';
 import PortalShellChrome from '@/components/portal/PortalShellChrome';
 import TextMorph from '@/components/text/TextMorph';
 
-export default function PortalShell({
+export default async function PortalShell({
   homeHref,
   brandLabel,
   fullName,
@@ -30,6 +31,7 @@ export default function PortalShell({
   theme?: 'dark' | 'light';
   children: React.ReactNode;
 }) {
+  const t = await getTranslations('portalShell');
   const isLight = theme === 'light';
 
   const logoBlock = (
@@ -87,7 +89,7 @@ export default function PortalShell({
           }
         >
           <LogOut className="h-4 w-4" />
-          Log out
+          {t('logOut')}
         </button>
       </form>
       <Link
@@ -99,7 +101,7 @@ export default function PortalShell({
         }
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to website
+        {t('backToWebsite')}
       </Link>
     </div>
   );

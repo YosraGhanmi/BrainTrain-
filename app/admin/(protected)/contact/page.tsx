@@ -1,5 +1,6 @@
 import { readContent } from '@/lib/content/store';
 import { updateContact } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import { Mail, Phone, MapPin, Map } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -36,7 +37,8 @@ function Card({ icon: Icon, title, children }: { icon: LucideIcon; title: string
   );
 }
 
-export default function AdminContactPage() {
+export default async function AdminContactPage() {
+  await requireAdminOnly();
   const { contact } = readContent();
 
   return (

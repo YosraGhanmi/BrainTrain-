@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { prisma } from '@/lib/db/prisma';
 import { listAgeGroupEntries } from '@/lib/content/lookup';
@@ -19,19 +20,20 @@ export default async function AccountPage({
   searchParams: { tab?: string; child?: string; saved?: string; error?: string; verify2fa?: string };
 }) {
   const parent = await requireParent(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.account' });
   const tab: SettingsTab = TABS.includes(searchParams.tab as SettingsTab) ? (searchParams.tab as SettingsTab) : 'personal';
 
   return (
     <div className="w-full">
-      <h1 className="font-display text-3xl font-bold text-ink">Settings</h1>
+      <h1 className="font-display text-3xl font-bold text-ink">{t('title')}</h1>
 
-      {searchParams.saved ? <p className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Saved.</p> : null}
+      {searchParams.saved ? <p className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">{t('saved')}</p> : null}
       {searchParams.error === 'phone-taken' ? (
-        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">That phone number is already in use.</p>
+        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.phoneTaken')}</p>
       ) : searchParams.error === 'no-secondary' ? (
-        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">Add a secondary phone number before deleting your primary one.</p>
+        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.noSecondary')}</p>
       ) : searchParams.error ? (
-        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">Please check the form and try again.</p>
+        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.generic')}</p>
       ) : null}
 
       <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:gap-8">

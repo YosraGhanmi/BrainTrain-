@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Search, LayoutGrid, List, Users, CheckCircle2, Clock3, Award } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
 export type RosterStudent = {
@@ -18,11 +19,6 @@ export type RosterStudent = {
 const STATUS_STYLES: Record<RosterStudent['status'], string> = {
   ACTIVE: 'bg-emerald-100 text-emerald-700',
   PENDING: 'bg-amber-100 text-amber-700',
-};
-
-const STATUS_LABELS: Record<RosterStudent['status'], string> = {
-  ACTIVE: 'Active',
-  PENDING: 'Pending',
 };
 
 function initials(fullName: string): string {
@@ -80,7 +76,8 @@ function Avatar({ student, courseColor, size = 56 }: { student: RosterStudent; c
 }
 
 function BadgeRow({ badges }: { badges: RosterStudent['badges'] }) {
-  if (badges.length === 0) return <p className="text-xs text-stone/60">No badges yet</p>;
+  const t = useTranslations('teacherPortal.roster');
+  if (badges.length === 0) return <p className="text-xs text-stone/60">{t('noBadgesYet')}</p>;
   const visible = badges.slice(0, 3);
   return (
     <div className="flex items-center gap-1.5">
@@ -100,9 +97,7 @@ function BadgeRow({ badges }: { badges: RosterStudent['badges'] }) {
           </span>
         ))}
       </div>
-      <span className="text-xs font-semibold text-stone">
-        {badges.length} badge{badges.length > 1 ? 's' : ''}
-      </span>
+      <span className="text-xs font-semibold text-stone">{t('badgeCount', { count: badges.length })}</span>
     </div>
   );
 }
@@ -116,6 +111,7 @@ export default function StudentRoster({
   students: RosterStudent[];
   courseColor: string;
 }) {
+  const t = useTranslations('teacherPortal.roster');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'PENDING'>('ALL');
   const [sortBy, setSortBy] = useState<'NAME' | 'PROGRESS' | 'BADGES'>('NAME');
@@ -153,7 +149,7 @@ export default function StudentRoster({
           </span>
           <div>
             <p className="font-display text-xl font-extrabold text-ink">{stats.total}</p>
-            <p className="text-xs font-semibold text-stone">Students</p>
+            <p className="text-xs font-semibold text-stone">{t('students')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-ink/5 bg-white p-4 shadow-soft">
@@ -162,7 +158,7 @@ export default function StudentRoster({
           </span>
           <div>
             <p className="font-display text-xl font-extrabold text-ink">{stats.active}</p>
-            <p className="text-xs font-semibold text-stone">Active</p>
+            <p className="text-xs font-semibold text-stone">{t('active')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-ink/5 bg-white p-4 shadow-soft">
@@ -171,14 +167,14 @@ export default function StudentRoster({
           </span>
           <div>
             <p className="font-display text-xl font-extrabold text-ink">{stats.pending}</p>
-            <p className="text-xs font-semibold text-stone">Pending</p>
+            <p className="text-xs font-semibold text-stone">{t('pending')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-2xl border border-ink/5 bg-white p-4 shadow-soft">
           <ProgressRing percent={stats.avgProgress} color={courseColor} size={40} stroke={4} />
           <div>
             <p className="font-display text-xl font-extrabold text-ink">{stats.avgProgress}%</p>
-            <p className="text-xs font-semibold text-stone">Avg. Progress</p>
+            <p className="text-xs font-semibold text-stone">{t('avgProgress')}</p>
           </div>
         </div>
       </div>
@@ -191,7 +187,7 @@ export default function StudentRoster({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search students..."
+            placeholder={t('searchPlaceholder')}
             className="w-full rounded-full border border-ink/10 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-accent"
           />
         </div>
@@ -201,9 +197,9 @@ export default function StudentRoster({
           onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
           className="rounded-full border border-ink/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink outline-none focus:border-accent"
         >
-          <option value="ALL">All status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="PENDING">Pending</option>
+          <option value="ALL">{t('allStatus')}</option>
+          <option value="ACTIVE">{t('active')}</option>
+          <option value="PENDING">{t('pending')}</option>
         </select>
 
         <select
@@ -211,16 +207,16 @@ export default function StudentRoster({
           onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
           className="rounded-full border border-ink/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink outline-none focus:border-accent"
         >
-          <option value="NAME">Sort: Name</option>
-          <option value="PROGRESS">Sort: Progress</option>
-          <option value="BADGES">Sort: Badges</option>
+          <option value="NAME">{t('sortName')}</option>
+          <option value="PROGRESS">{t('sortProgress')}</option>
+          <option value="BADGES">{t('sortBadges')}</option>
         </select>
 
         <div className="flex items-center gap-1 rounded-full border border-ink/10 bg-white p-1">
           <button
             type="button"
             onClick={() => setView('grid')}
-            aria-label="Grid view"
+            aria-label={t('gridView')}
             className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
               view === 'grid' ? 'bg-accent text-white' : 'text-stone/60 hover:bg-slate-100'
             }`}
@@ -230,7 +226,7 @@ export default function StudentRoster({
           <button
             type="button"
             onClick={() => setView('list')}
-            aria-label="List view"
+            aria-label={t('listView')}
             className={`flex h-8 w-8 items-center justify-center rounded-full transition ${
               view === 'list' ? 'bg-accent text-white' : 'text-stone/60 hover:bg-slate-100'
             }`}
@@ -242,7 +238,7 @@ export default function StudentRoster({
 
       {visibleStudents.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-ink/15 bg-white p-8 text-center text-stone">
-          No students match your search.
+          {t('noMatch')}
         </p>
       ) : view === 'grid' ? (
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -256,10 +252,10 @@ export default function StudentRoster({
                 <Avatar student={student} courseColor={courseColor} size={48} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-display text-sm font-bold text-ink">{student.fullName}</p>
-                  <p className="text-xs text-stone">Age {student.age}</p>
+                  <p className="text-xs text-stone">{t('age', { age: student.age })}</p>
                   <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${STATUS_STYLES[student.status]}`}>
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                    {STATUS_LABELS[student.status]}
+                    {t(student.status === 'ACTIVE' ? 'active' : 'pending')}
                   </span>
                 </div>
               </div>
@@ -268,7 +264,7 @@ export default function StudentRoster({
                 <BadgeRow badges={student.badges} />
                 <div className="flex flex-col items-center gap-0.5">
                   <ProgressRing percent={student.progressPercent} color={courseColor} />
-                  <span className="text-[0.6rem] font-semibold text-stone">Progress</span>
+                  <span className="text-[0.6rem] font-semibold text-stone">{t('progress')}</span>
                 </div>
               </div>
             </Link>
@@ -285,10 +281,10 @@ export default function StudentRoster({
               <Avatar student={student} courseColor={courseColor} size={44} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display text-sm font-bold text-ink">{student.fullName}</p>
-                <p className="text-xs text-stone">Age {student.age}</p>
+                <p className="text-xs text-stone">{t('age', { age: student.age })}</p>
               </div>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${STATUS_STYLES[student.status]}`}>
-                {STATUS_LABELS[student.status]}
+                {t(student.status === 'ACTIVE' ? 'active' : 'pending')}
               </span>
               <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
                 <Award className="h-4 w-4 text-amber-500" />

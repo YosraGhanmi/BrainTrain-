@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { PlusCircle } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
@@ -5,6 +6,7 @@ import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
 import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { localized } from '@/lib/i18n/format';
 import NewsCard, { type FeedItem } from '@/components/portal/NewsCard';
 import TeacherNotesCard from '@/components/portal/TeacherNotesCard';
 import BadgesCard from '@/components/portal/BadgesCard';
@@ -15,6 +17,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ParentDashboardPage({ params }: { params: { locale: AppLocale } }) {
   const parent = await requireParent(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.dashboard' });
   const children = await prisma.child.findMany({
     where: { parentId: parent.parentId },
     orderBy: { createdAt: 'asc' },
@@ -26,17 +29,17 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     return (
       <div>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="font-display text-3xl font-bold text-ink">Dashboard</h1>
+          <h1 className="font-display text-3xl font-bold text-ink">{t('title')}</h1>
           <Link
             href="/parent-portal/children/new"
             className="flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
           >
             <PlusCircle className="h-4 w-4" />
-            Add a child
+            {t('addChild')}
           </Link>
         </div>
         <p className="mt-10 rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-          No children yet. Add your first child to start enrolling in courses.
+          {t('noChildrenYet')}
         </p>
       </div>
     );
@@ -70,7 +73,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
 
   const enrolledCourseSlugs = new Set(child.enrollments.map((e) => e.courseSession.courseSlug));
   const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
-  const courseTitles = [...enrolledCourseSlugs].map((slug) => getCourseEntryOrThrow(slug).title.en);
+  const courseTitles = [...enrolledCourseSlugs].map((slug) => localized(getCourseEntryOrThrow(slug).title, params.locale));
   const visibleNews = news.filter(
     (n) =>
       (n.targetAgeGroups.length === 0 || n.targetAgeGroups.includes(child.ageGroupSlug)) &&
@@ -87,21 +90,23 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     ...duePayments.map((p) => ({
       id: `pay-${p.id}`,
       type: 'reminder' as const,
-      title: `Payment due: ${getCourseEntryOrThrow(p.enrollment.courseSession.courseSlug).title.en}`,
+      title: t('paymentDue', { course: localized(getCourseEntryOrThrow(p.enrollment.courseSession.courseSlug).title, params.locale) }),
       date: p.dueDate.toISOString(),
       href: '/parent-portal/payments',
     })),
     ...child.badges.map((b) => ({
       id: `badge-${b.id}`,
       type: 'notification' as const,
-      title: `New badge earned: ${b.title}`,
+      title: t('badgeEarned', { badge: b.title }),
       date: b.awardedAt.toISOString(),
+      href: '/parent-portal#badges',
     })),
     ...child.notes.map((n) => ({
       id: `note-${n.id}`,
       type: 'notification' as const,
-      title: 'A teacher added a note. Check it now',
+      title: t('noteAdded'),
       date: n.createdAt.toISOString(),
+      href: '/parent-portal#teacher-notes',
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -109,7 +114,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-3 lg:[grid-template-rows:1fr]">
       <div className="flex flex-col gap-6 lg:col-span-2">
         <NewsCard items={feed} />
-        <TeacherNotesCard notes={child.notes} />
+        <TeacherNotesCard notes={child.notes} locale={params.locale} />
       </div>
       <div className="flex flex-col gap-6">
         <ChildProfileCard
@@ -118,7 +123,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
           fullName={child.fullName}
           photoUrl={child.photoUrl}
           photoColor={child.photoColor}
-          ageGroupLabel={ageGroup.label.en}
+          ageGroupLabel={localized(ageGroup.label, params.locale)}
           courseTitles={courseTitles}
         />
         <div className="flex-1">

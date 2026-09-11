@@ -1,5 +1,6 @@
 import { readContent } from '@/lib/content/store';
 import { upsertAgeGroup, deleteAgeGroup } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import type { AgeGroupEntry } from '@/lib/content/types';
 
@@ -89,7 +90,8 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
   );
 }
 
-export default function AdminAgeGroupsPage() {
+export default async function AdminAgeGroupsPage() {
+  await requireAdminOnly();
   const { ageGroups } = readContent();
   const blank: AgeGroupEntry = {
     slug: '',

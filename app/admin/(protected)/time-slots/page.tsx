@@ -1,4 +1,4 @@
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import { listTimeSlots } from '@/lib/scheduling/time-slots';
 import { upsertTimeSlot, deleteTimeSlot } from '@/lib/admin/time-slots-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
@@ -93,7 +93,7 @@ function TimeSlotForm({ slot, isNew }: { slot: TimeSlot; isNew: boolean }) {
 }
 
 export default async function AdminTimeSlotsPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
-  await requireAdmin();
+  await requireAdminOnly();
   const slots = await listTimeSlots();
 
   const blank: TimeSlot = {

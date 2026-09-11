@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function PasswordInput({
   name,
@@ -12,6 +13,7 @@ export default function PasswordInput({
   placeholder?: string;
   autoComplete?: string;
 }) {
+  const t = useTranslations('portalShell');
   const [visible, setVisible] = useState(false);
 
   return (
@@ -28,7 +30,7 @@ export default function PasswordInput({
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        aria-label={visible ? 'Hide password' : 'Show password'}
+        aria-label={visible ? t('hidePassword') : t('showPassword')}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-stone transition hover:text-ink"
       >
         {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

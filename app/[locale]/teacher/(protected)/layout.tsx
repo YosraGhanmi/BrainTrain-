@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import PortalShell from '@/components/portal/PortalShell';
 import { requireTeacher, localizedPath } from '@/lib/portal-auth/guard';
 import type { AppLocale } from '@/i18n/routing';
@@ -11,18 +12,19 @@ export default async function TeacherPortalLayout({
   params: { locale: AppLocale };
 }) {
   const teacher = await requireTeacher(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.nav' });
 
   return (
     <PortalShell
       homeHref="/teacher"
-      brandLabel="Teacher Portal"
+      brandLabel={t('brand')}
       fullName={teacher.fullName}
       email={teacher.email}
       loginHref={localizedPath(params.locale, '/teacher/login')}
       theme="light"
       navLinks={[
-        { label: 'My groups', href: '/teacher', icon: Users },
-        { label: 'Calendar', href: '/teacher/calendar', icon: CalendarDays },
+        { label: t('myGroups'), href: '/teacher', icon: Users },
+        { label: t('calendar'), href: '/teacher/calendar', icon: CalendarDays },
       ]}
     >
       {children}

@@ -13,9 +13,9 @@ const ROLE_COPY: Record<Role, { heading: string; accent: string; placeholder: st
     placeholder: 'admin@braintrain.tn',
   },
   secretary: {
-    heading: 'back, Secretary!',
-    accent: 'BrainTrain Secretariat',
-    placeholder: 'secretary@braintrain.tn',
+    heading: 'back, Reception!',
+    accent: 'BrainTrain Reception',
+    placeholder: 'reception@braintrain.tn',
   },
 };
 
@@ -101,7 +101,7 @@ export default function AdminLoginPage({
                   <ClipboardList className="h-5 w-5" />
                 </span>
                 <span>
-                  <span className="block font-display text-lg font-bold text-ink">Secretary</span>
+                  <span className="block font-display text-lg font-bold text-ink">Reception</span>
                   <span className="block text-sm text-stone">Parents, children &amp; day-to-day admin</span>
                 </span>
               </Link>

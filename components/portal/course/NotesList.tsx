@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { MoreHorizontal, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import InitialsAvatar from './InitialsAvatar';
 
 type Note = { id: string; content: string; createdAt: string };
 
 export default function NotesList({ notes, teacherName }: { notes: Note[]; teacherName: string | null }) {
+  const t = useTranslations('parentPortal.courseEnrollment');
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? notes : notes.slice(0, 2);
 
@@ -19,7 +21,7 @@ export default function NotesList({ notes, teacherName }: { notes: Note[]; teach
             onClick={() => setExpanded((v) => !v)}
             className="text-xs font-bold text-accent hover:underline"
           >
-            {expanded ? 'Show less' : 'View all'}
+            {expanded ? t('showLess') : t('viewAll')}
           </button>
         </div>
       ) : null}
@@ -36,7 +38,7 @@ export default function NotesList({ notes, teacherName }: { notes: Note[]; teach
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex flex-wrap items-baseline gap-x-2">
-                  <p className="font-bold text-ink">{teacherName ?? 'Teacher'}</p>
+                  <p className="font-bold text-ink">{teacherName ?? t('teacher')}</p>
                   <p className="text-xs text-stone">{note.createdAt}</p>
                 </div>
                 <MoreHorizontal className="h-4 w-4 shrink-0 text-stone/40" />

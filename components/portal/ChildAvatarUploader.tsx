@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { Camera } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import InitialsAvatar from './course/InitialsAvatar';
 
 export default function ChildAvatarUploader({ name, photoUrl }: { name: string; photoUrl: string | null }) {
+  const t = useTranslations('parentPortal.dashboard.profile');
   const [preview, setPreview] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -23,7 +25,7 @@ export default function ChildAvatarUploader({ name, photoUrl }: { name: string; 
 
       <label
         className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-ink text-white shadow-soft transition hover:bg-accent"
-        title="Change photo"
+        title={t('changePhoto')}
       >
         <Camera className="h-3.5 w-3.5" />
         <input

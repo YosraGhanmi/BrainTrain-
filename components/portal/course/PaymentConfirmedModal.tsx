@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { CheckCircle2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { acknowledgePaymentConfirmation } from '@/lib/payments/actions';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -18,6 +19,7 @@ export default function PaymentConfirmedModal({
   amount: number;
   currency: string;
 }) {
+  const t = useTranslations('parentPortal.courseEnrollment');
   const [dismissed, setDismissed] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -29,10 +31,8 @@ export default function PaymentConfirmedModal({
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
           <CheckCircle2 className="h-8 w-8 text-emerald-500" />
         </div>
-        <h2 className="mt-4 font-display text-xl font-bold text-ink">Payment confirmed!</h2>
-        <p className="mt-2 text-sm text-stone">
-          Your payment of {amount} {currency} for {courseTitle} has been confirmed. Your child is all set!
-        </p>
+        <h2 className="mt-4 font-display text-xl font-bold text-ink">{t('paymentConfirmed')}</h2>
+        <p className="mt-2 text-sm text-stone">{t('paymentConfirmedBody', { amount, currency, course: courseTitle })}</p>
         <button
           type="button"
           onClick={() => {
@@ -43,7 +43,7 @@ export default function PaymentConfirmedModal({
           }}
           className="mt-6 w-full rounded-full bg-ink py-3 text-sm font-bold text-white transition hover:bg-accent"
         >
-          Great, thanks!
+          {t('greatThanks')}
         </button>
       </div>
     </div>

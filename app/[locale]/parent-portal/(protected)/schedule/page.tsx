@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Pin } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
@@ -6,15 +7,10 @@ import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { readContent } from '@/lib/content/store';
 import { getIcon } from '@/lib/content/icons';
+import { localized } from '@/lib/i18n/format';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 function parseMonth(value: string | undefined): { year: number; month: number } {
   const match = value?.match(/^(\d{4})-(\d{2})$/);
@@ -35,6 +31,11 @@ export default async function ParentSchedulePage({
   searchParams: { month?: string };
 }) {
   const parent = await requireParent(params.locale);
+  const tp = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
+  const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.schedule' });
+  const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
+  const WEEKDAYS = tc.raw('daysShort') as string[];
+  const MONTH_NAMES = tc.raw('months') as string[];
   const children = await prisma.child.findMany({
     where: { parentId: parent.parentId },
     orderBy: { createdAt: 'asc' },
@@ -44,7 +45,7 @@ export default async function ParentSchedulePage({
   if (!selected) {
     return (
       <p className="rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-        No children yet. Add a child to start enrolling in courses.
+        {tp('noChildren')}
       </p>
     );
   }
@@ -120,14 +121,14 @@ export default async function ParentSchedulePage({
           <Link
             href={`/parent-portal/schedule?month=${monthParam(prevMonth.year, prevMonth.month)}`}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
-            aria-label="Previous month"
+            aria-label={t('previousMonth')}
           >
             <ChevronLeft className="h-4 w-4" />
           </Link>
           <Link
             href={`/parent-portal/schedule?month=${monthParam(nextMonth.year, nextMonth.month)}`}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
-            aria-label="Next month"
+            aria-label={t('nextMonth')}
           >
             <ChevronRight className="h-4 w-4" />
           </Link>
@@ -136,7 +137,7 @@ export default async function ParentSchedulePage({
 
       {!hasAny ? (
         <p className="mt-4 rounded-2xl border border-dashed border-ink/15 bg-white p-6 text-center text-stone">
-          No active sessions scheduled yet — the calendar below will fill in once an enrollment is activated.
+          {t('noActiveSessions')}
         </p>
       ) : (
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -150,7 +151,7 @@ export default async function ParentSchedulePage({
                 >
                   <Icon className="h-3 w-3" style={{ color: course.color }} strokeWidth={2.25} />
                 </span>
-                {course.title.en}
+                {localized(course.title, params.locale)}
               </div>
             );
           })}
@@ -211,10 +212,10 @@ export default async function ParentSchedulePage({
                             href={`/parent-portal/courses/${course.slug}`}
                             className="group flex max-w-full items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md sm:max-w-[9rem]"
                             style={{ backgroundColor: `${course.color}1a`, color: course.color }}
-                            title={`${course.title.en} · ${e.courseSession.startTime}–${e.courseSession.endTime} · ${e.courseSession.location}`}
+                            title={`${localized(course.title, params.locale)} · ${e.courseSession.startTime}–${e.courseSession.endTime} · ${e.courseSession.location}`}
                           >
                             <Icon className="h-3 w-3 shrink-0 transition group-hover:scale-110" strokeWidth={2.5} />
-                            <span className="min-w-0 truncate">{course.title.en}</span>
+                            <span className="min-w-0 truncate">{localized(course.title, params.locale)}</span>
                             <span className="shrink-0 opacity-70">{e.courseSession.startTime}</span>
                           </Link>
                         );

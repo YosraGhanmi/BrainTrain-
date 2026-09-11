@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { readContent, writeContent } from '@/lib/content/store';
 import { setMessageRead, deleteMessage as deleteMessageEntry } from '@/lib/messages/store';
 import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 import { destroyPortalSession } from '@/lib/portal-auth/session';
 import { prisma } from '@/lib/db/prisma';
 import type { TimelineEntry, LocalizedString } from '@/lib/content/types';
@@ -43,6 +43,9 @@ export async function login(formData: FormData): Promise<void> {
   if (!checkCredentials(email, password)) {
     redirect('/admin/login?role=admin&error=1');
   }
+  // Clear any leftover reception portal session from this browser so logging
+  // out of the admin account later doesn't fall back into that session.
+  await destroyPortalSession();
   cookies().set(SESSION_COOKIE_NAME, createSessionToken(), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -114,7 +117,7 @@ function uniqueSlug(base: string, taken: string[]): string {
 // ---------------------------------------------------------------------------
 
 export async function addSponsor(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const file = formData.get('logo') as File | null;
   if (!file) redirect('/admin/sponsors?error=1');
 
@@ -127,7 +130,7 @@ export async function addSponsor(formData: FormData): Promise<void> {
 }
 
 export async function deleteSponsor(src: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const content = readContent();
   content.sponsors = content.sponsors.filter((s) => s !== src);
   writeContent(content);
@@ -140,7 +143,7 @@ export async function deleteSponsor(src: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function updateStats(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const labelsEn = formData.getAll('label_en').map(String);
   const labelsFr = formData.getAll('label_fr').map(String);
   const values = formData.getAll('value').map((v) => Math.max(0, Math.round(Number(v)) || 0));
@@ -159,7 +162,7 @@ export async function updateStats(formData: FormData): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function updateContact(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const field = (name: string) => String(formData.get(name) ?? '').trim();
 
   const content = readContent();
@@ -179,7 +182,7 @@ export async function updateContact(formData: FormData): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function updateSocials(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const labels = formData.getAll('label').map(String);
   const hrefs = formData.getAll('href').map(String);
 
@@ -197,7 +200,7 @@ export async function updateSocials(formData: FormData): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function addAchievementImage(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const file = formData.get('image') as File | null;
   if (!file) redirect('/admin/achievements?error=1');
 
@@ -210,7 +213,7 @@ export async function addAchievementImage(formData: FormData): Promise<void> {
 }
 
 export async function deleteAchievementImage(src: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const content = readContent();
   content.achievementsImages = content.achievementsImages.filter((s) => s !== src);
   writeContent(content);
@@ -223,7 +226,7 @@ export async function deleteAchievementImage(src: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function addNews(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const title = String(formData.get('title') ?? '').trim();
   const body = String(formData.get('body') ?? '').trim();
   if (!title || !body) redirect('/admin/news?error=1');
@@ -246,7 +249,7 @@ export async function addNews(formData: FormData): Promise<void> {
 }
 
 export async function deleteNews(id: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const content = readContent();
   content.news = content.news.filter((n) => n.id !== id);
   writeContent(content);
@@ -297,7 +300,7 @@ export async function deleteCalendarEvent(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function upsertTimelineEntry(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const indexRaw = String(formData.get('index') ?? '-1');
   const index = Number.isFinite(Number(indexRaw)) ? Number(indexRaw) : -1;
 
@@ -322,7 +325,7 @@ export async function upsertTimelineEntry(formData: FormData): Promise<void> {
 }
 
 export async function deleteTimelineEntry(index: number): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const content = readContent();
   content.timeline.splice(index, 1);
   writeContent(content);
@@ -335,7 +338,7 @@ export async function deleteTimelineEntry(index: number): Promise<void> {
 // client component's drag-and-drop handler, not a <form>, so it revalidates
 // instead of redirecting — a redirect would fight the client's own state.
 export async function reorderTimeline(order: number[]): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const content = readContent();
   const reordered = order.map((i) => content.timeline[i]).filter((entry): entry is TimelineEntry => Boolean(entry));
   if (reordered.length !== content.timeline.length) return;
@@ -350,7 +353,7 @@ export async function reorderTimeline(order: number[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function upsertCourse(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const existingSlug = String(formData.get('existingSlug') ?? '').trim();
   const title = localizedField(formData, 'title');
   const description = localizedField(formData, 'description');
@@ -420,7 +423,7 @@ export async function upsertCourse(formData: FormData): Promise<void> {
 }
 
 export async function deleteCourse(slug: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const content = readContent();
   content.courses = content.courses.filter((c) => c.slug !== slug);
   writeContent(content);
@@ -434,7 +437,7 @@ export async function deleteCourse(slug: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function upsertAgeGroup(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const existingSlug = String(formData.get('existingSlug') ?? '').trim();
   const label = localizedField(formData, 'label');
   const description = localizedField(formData, 'description');
@@ -463,7 +466,7 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
 }
 
 export async function deleteAgeGroup(slug: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const content = readContent();
   const removedCourseSlugs = content.courses.filter((c) => c.ageGroupSlug === slug).map((c) => c.slug);
   content.ageGroups = content.ageGroups.filter((g) => g.slug !== slug);

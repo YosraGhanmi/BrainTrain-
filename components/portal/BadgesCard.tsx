@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import type { Badge } from '@prisma/client';
 
 // Placeholder circular styling until real badge artwork is uploaded — each
@@ -11,13 +12,14 @@ const PALETTE = [
   'bg-rose-50 ring-rose-300',
 ];
 
-export default function BadgesCard({ badges }: { badges: Badge[] }) {
+export default async function BadgesCard({ badges }: { badges: Badge[] }) {
+  const t = await getTranslations('parentPortal.dashboard.badges');
   return (
-    <div className="h-full rounded-3xl border border-ink/10 bg-white p-6 shadow-soft">
-      <h2 className="text-center text-base font-semibold text-ink">Badges</h2>
+    <div id="badges" className="h-full scroll-mt-6 rounded-3xl border border-ink/10 bg-white p-6 shadow-soft">
+      <h2 className="text-center text-base font-semibold text-ink">{t('heading')}</h2>
 
       {badges.length === 0 ? (
-        <p className="mt-10 text-center text-sm text-stone">No badges earned yet.</p>
+        <p className="mt-10 text-center text-sm text-stone">{t('empty')}</p>
       ) : (
         <div className="mt-8 grid grid-cols-3 gap-x-4 gap-y-6 justify-items-center">
           {badges.map((badge, i) => (

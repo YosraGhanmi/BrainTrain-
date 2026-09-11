@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertCourseSession, deleteCourseSession } from '@/lib/admin/portal-actions';
 import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default async function AdminSessionsPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
-  await requireAdmin();
+  await requireAdminOnly();
   const [sessions, teachers, content, timeSlots] = await Promise.all([
     prisma.courseSession.findMany({
       include: { teacher: { include: { user: true } }, _count: { select: { enrollments: true } } },

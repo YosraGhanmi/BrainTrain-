@@ -1,10 +1,12 @@
 import { readContent } from '@/lib/content/store';
 import { addSponsor, deleteSponsor } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminSponsorsPage({ searchParams }: { searchParams: { error?: string } }) {
+export default async function AdminSponsorsPage({ searchParams }: { searchParams: { error?: string } }) {
+  await requireAdminOnly();
   const { sponsors } = readContent();
 
   return (

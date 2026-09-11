@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import { createSecretary, deleteSecretary, setSecretaryFrozen } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
@@ -7,7 +7,7 @@ import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminSecretariesPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
-  await requireAdmin();
+  await requireAdminOnly();
   const secretaries = await prisma.user.findMany({
     where: { role: 'SECRETARY' },
     orderBy: { createdAt: 'desc' },
@@ -15,8 +15,8 @@ export default async function AdminSecretariesPage({ searchParams }: { searchPar
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold text-ink">Secretaries</h1>
-      <p className="mt-1 text-sm text-stone">Secretary accounts sign in through the same door as Admin, with a role picker.</p>
+      <h1 className="font-display text-3xl font-semibold text-ink">Reception</h1>
+      <p className="mt-1 text-sm text-stone">Reception accounts sign in through the same door as Admin, with a role picker.</p>
 
       {searchParams.error === 'exists' ? (
         <p className="mt-4 text-sm font-semibold text-red-600">A user with that email or phone already exists.</p>
@@ -32,7 +32,7 @@ export default async function AdminSecretariesPage({ searchParams }: { searchPar
         <input name="phone" type="tel" placeholder="Phone" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
         <input name="password" type="password" placeholder="Temporary password" required minLength={8} className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
         <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2 lg:col-span-4">
-          Create secretary account
+          Create reception account
         </button>
       </form>
 
@@ -50,7 +50,7 @@ export default async function AdminSecretariesPage({ searchParams }: { searchPar
             {secretaries.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-5 py-6 text-center text-stone">
-                  No secretary account yet.
+                  No reception account yet.
                 </td>
               </tr>
             ) : (

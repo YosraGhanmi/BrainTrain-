@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import PortalTopbar from '@/components/portal/PortalTopbar';
 import AdminBackground from '@/components/admin/AdminBackground';
 
@@ -26,6 +27,7 @@ export default function PortalShellChrome({
   childSwitcher?: { children: { id: string; fullName: string }[]; selectedChildId: string };
   children: React.ReactNode;
 }) {
+  const t = useTranslations('portalShell');
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -53,7 +55,7 @@ export default function PortalShellChrome({
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            aria-label="Close menu"
+            aria-label={t('closeMenu')}
             className={`ml-2 shrink-0 rounded-lg p-1.5 transition lg:hidden ${
               isLight ? 'text-ink/60 hover:bg-slate-100' : 'text-white/70 hover:bg-white/10'
             }`}

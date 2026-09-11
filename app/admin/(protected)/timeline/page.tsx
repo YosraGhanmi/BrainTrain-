@@ -1,5 +1,6 @@
 import { readContent } from '@/lib/content/store';
 import { upsertTimelineEntry, deleteTimelineEntry, reorderTimeline } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import TimelineDragList from '@/components/admin/TimelineDragList';
 import { CalendarDays, Image as ImageIcon, Facebook } from 'lucide-react';
@@ -105,7 +106,8 @@ function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: numbe
   );
 }
 
-export default function AdminTimelinePage() {
+export default async function AdminTimelinePage() {
+  await requireAdminOnly();
   const { timeline } = readContent();
   const blank: TimelineEntry = {
     date: { en: '', fr: '' },

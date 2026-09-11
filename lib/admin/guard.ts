@@ -29,3 +29,13 @@ export async function requireAdmin(): Promise<AdminSessionInfo> {
   if (!session) redirect('/admin/login');
   return session;
 }
+
+// For pages/actions restricted to the real Admin — website content, course
+// catalog, pricing, scheduling, and secretary-account management. Secretaries
+// get redirected/bounced back to the dashboard rather than a login page,
+// since they *are* authenticated, just not permitted here.
+export async function requireAdminOnly(): Promise<Extract<AdminSessionInfo, { kind: 'admin' }>> {
+  const session = await requireAdmin();
+  if (session.kind !== 'admin') redirect('/admin');
+  return session;
+}

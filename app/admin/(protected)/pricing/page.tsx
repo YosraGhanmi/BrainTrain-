@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertAgeGroupPricing, clearCoursePricingOverride } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
@@ -14,7 +14,7 @@ const PLAN_FIELDS: { type: PlanType; label: string }[] = [
 ];
 
 export default async function AdminPricingPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
-  await requireAdmin();
+  await requireAdminOnly();
   const [rules, content] = await Promise.all([prisma.pricingRule.findMany(), Promise.resolve(readContent())]);
 
   const ageGroupDefaults: Record<string, Partial<Record<PlanType, number>> & { currency: string }> = {};

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { BADGE_STICKERS } from '@/lib/badges/stickers';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -28,23 +29,24 @@ export default function StudentBadgesPanel({
   courseSessionId: string;
   returnTo: string;
 }) {
+  const t = useTranslations('teacherPortal.studentProfile');
   const [open, setOpen] = useState(false);
 
   return (
     <div>
-      <h2 className="font-display text-lg font-bold text-ink">Badges</h2>
+      <h2 className="font-display text-lg font-bold text-ink">{t('badges')}</h2>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-3">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Award a new badge"
+          aria-label={t('awardNewBadge')}
           className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-full border-2 border-dashed border-ink/20 text-ink/50 transition hover:border-ink/40 hover:text-ink"
         >
           <Plus className="h-5 w-5" />
         </button>
         {badges.length === 0 ? (
-          <p className="flex items-center text-sm text-stone">No badges awarded yet.</p>
+          <p className="flex items-center text-sm text-stone">{t('noBadgesAwarded')}</p>
         ) : (
           badges.map((badge) => (
             <div key={badge.id} title={badge.note ?? badge.title} className="flex w-14 shrink-0 flex-col items-center gap-1 text-center">
@@ -71,8 +73,8 @@ export default function StudentBadgesPanel({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-lg font-bold text-ink">Award a badge</h3>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="rounded-full p-1 text-stone hover:bg-slate-100">
+              <h3 className="font-display text-lg font-bold text-ink">{t('awardABadge')}</h3>
+              <button type="button" onClick={() => setOpen(false)} aria-label={t('close')} className="rounded-full p-1 text-stone hover:bg-slate-100">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -99,19 +101,19 @@ export default function StudentBadgesPanel({
               <input
                 name="title"
                 required
-                placeholder="Badge title (e.g. Top Builder)"
+                placeholder={t('badgeTitlePlaceholder')}
                 className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
               />
               <input
                 name="note"
-                placeholder="Note (optional)"
+                placeholder={t('notePlaceholderOptional')}
                 className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
               />
               <button
                 type="submit"
                 className="w-full rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-amber-600"
               >
-                Award badge
+                {t('awardBadge')}
               </button>
             </form>
           </div>

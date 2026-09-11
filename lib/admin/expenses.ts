@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db/prisma';
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -58,7 +58,7 @@ export async function createExpense(formData: FormData): Promise<void> {
 }
 
 export async function deleteExpense(id: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.expense.delete({ where: { id } });
   revalidatePath('/admin/dispenses');
   revalidatePath('/admin');

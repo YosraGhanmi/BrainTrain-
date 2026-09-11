@@ -1,10 +1,12 @@
 import { readContent } from '@/lib/content/store';
 import { updateStats } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import StatsEditor from '@/components/admin/StatsEditor';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminStatsPage() {
+export default async function AdminStatsPage() {
+  await requireAdminOnly();
   const { stats } = readContent();
 
   return (

@@ -1,18 +1,21 @@
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { CalendarDays, Clock, MapPin, Users, ChevronRight, Sparkles, BookOpen, PenTool, Bot } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
+import { localized } from '@/lib/i18n/format';
 import { findSlotLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 export default async function TeacherDashboardPage({ params }: { params: { locale: AppLocale } }) {
   const teacher = await requireTeacher(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.dashboard' });
+  const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
+  const DAYS = tc.raw('days') as string[];
   const [sessions, timeSlots] = await Promise.all([
     prisma.courseSession.findMany({
       where: { teacherId: teacher.teacherId },
@@ -35,15 +38,15 @@ export default async function TeacherDashboardPage({ params }: { params: { local
         </div>
 
         <div className="relative max-w-md">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Teacher Portal</p>
-          <h1 className="mt-2 font-display text-3xl font-extrabold text-ink sm:text-4xl">My assigned sessions</h1>
-          <p className="mt-2 text-sm text-ink/60">Here are your upcoming sessions and group details.</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">{t('brand')}</p>
+          <h1 className="mt-2 font-display text-3xl font-extrabold text-ink sm:text-4xl">{t('title')}</h1>
+          <p className="mt-2 text-sm text-ink/60">{t('subtitle')}</p>
         </div>
       </div>
 
       {sessions.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-ink/15 bg-white p-8 text-center text-stone">
-          No sessions assigned yet. Check back once the admin schedules one for you.
+          {t('noSessions')}
         </p>
       ) : (
         <div className="mt-6 space-y-4">
@@ -66,7 +69,7 @@ export default async function TeacherDashboardPage({ params }: { params: { local
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-base font-bold text-ink">{course.title.en}</h2>
+                    <h2 className="font-display text-base font-bold text-ink">{localized(course.title, params.locale)}</h2>
                     {groupLabel ? (
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-bold text-stone">
                         {groupLabel}
@@ -89,7 +92,7 @@ export default async function TeacherDashboardPage({ params }: { params: { local
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5 text-accent" />
-                      {session._count.enrollments} / {session.capacity} students
+                      {t('studentsCount', { enrolled: session._count.enrollments, capacity: session.capacity })}
                     </span>
                   </div>
                 </div>

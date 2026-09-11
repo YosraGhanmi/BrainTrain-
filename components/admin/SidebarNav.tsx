@@ -40,11 +40,21 @@ const customizationItems = [
   { label: 'Timeline', href: '/admin/timeline', icon: Milestone },
 ];
 
+// Restricted to the real Admin — not shown to, and not reachable by, a
+// Secretary session (see requireAdminOnly() gating each of these pages).
+const ADMIN_ONLY_HREFS = new Set([
+  '/admin/secretaries',
+  '/admin/sessions',
+  '/admin/time-slots',
+  '/admin/pricing',
+  '/admin/news',
+]);
+
 const portalItems = [
   { label: 'Parents', href: '/admin/parents', icon: UserSquare2 },
   { label: 'Children', href: '/admin/children', icon: Users },
   { label: 'Teachers', href: '/admin/teachers', icon: GraduationCap },
-  { label: 'Secretaries', href: '/admin/secretaries', icon: IdCard },
+  { label: 'Reception', href: '/admin/secretaries', icon: IdCard },
   { label: 'Course sessions', href: '/admin/sessions', icon: CalendarClock },
   { label: 'Time slots', href: '/admin/time-slots', icon: Clock4 },
   { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
@@ -56,17 +66,20 @@ const portalItems = [
 ];
 
 export default function SidebarNav({
+  role = 'admin',
   unreadMessages = 0,
   pendingEnrollments = 0,
   unreadExpenseNotices = 0,
 }: {
+  role?: 'admin' | 'secretary';
   unreadMessages?: number;
   pendingEnrollments?: number;
   unreadExpenseNotices?: number;
 }) {
   const pathname = usePathname();
+  const visiblePortalItems = role === 'secretary' ? portalItems.filter((item) => !ADMIN_ONLY_HREFS.has(item.href)) : portalItems;
   const isChildActive = customizationItems.some((item) => pathname?.startsWith(item.href));
-  const isPortalActive = portalItems.some((item) => pathname?.startsWith(item.href));
+  const isPortalActive = visiblePortalItems.some((item) => pathname?.startsWith(item.href));
   const [open, setOpen] = useState(true);
   const [portalOpen, setPortalOpen] = useState(true);
 
@@ -116,36 +129,40 @@ export default function SidebarNav({
         ) : null}
       </Link>
 
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`mt-6 flex w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-left text-[0.65rem] font-bold uppercase tracking-[0.15em] transition ${
-          isChildActive ? 'bg-accent2/10 text-accent2' : 'text-accent2/80 hover:bg-accent2/10 hover:text-accent2'
-        }`}
-      >
-        <span className="flex items-center gap-2">
-          <Settings2 className="h-3.5 w-3.5" />
-          Website customization
-        </span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+      {role === 'admin' ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className={`mt-6 flex w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-left text-[0.65rem] font-bold uppercase tracking-[0.15em] transition ${
+              isChildActive ? 'bg-accent2/10 text-accent2' : 'text-accent2/80 hover:bg-accent2/10 hover:text-accent2'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <Settings2 className="h-3.5 w-3.5" />
+              Website customization
+            </span>
+            <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
 
-      {open && (
-        <div className="mt-1 flex flex-col gap-1 border-l border-accent2/20 pl-2">
-          {customizationItems.map((item) => {
-            const active = pathname?.startsWith(item.href) ?? false;
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className={linkClass(active)}>
-                <span className={sectionIconClass(active, 'violet')}>
-                  <Icon className="h-4 w-4" />
-                </span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      )}
+          {open && (
+            <div className="mt-1 flex flex-col gap-1 border-l border-accent2/20 pl-2">
+              {customizationItems.map((item) => {
+                const active = pathname?.startsWith(item.href) ?? false;
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href} className={linkClass(active)}>
+                    <span className={sectionIconClass(active, 'violet')}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </>
+      ) : null}
 
       <button
         type="button"
@@ -163,7 +180,7 @@ export default function SidebarNav({
 
       {portalOpen && (
         <div className="mt-1 flex flex-col gap-1 border-l border-emerald-200 pl-2">
-          {portalItems.map((item) => {
+          {visiblePortalItems.map((item) => {
             const active = pathname?.startsWith(item.href) ?? false;
             const Icon = item.icon;
             const badge =

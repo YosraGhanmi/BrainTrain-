@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
@@ -6,6 +7,7 @@ import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow, getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
 import { addTeacherNote, awardBadge } from '@/lib/teacher/actions';
 import { rotateHue } from '@/lib/color';
+import { localized, formatDate } from '@/lib/i18n/format';
 import StudentNotesPanel from '@/components/portal/teacher/StudentNotesPanel';
 import StudentBadgesPanel from '@/components/portal/teacher/StudentBadgesPanel';
 import type { AppLocale } from '@/i18n/routing';
@@ -29,6 +31,7 @@ export default async function TeacherStudentProfilePage({
   searchParams: { error?: string; saved?: string; badgeError?: string; badgeSaved?: string };
 }) {
   const teacher = await requireTeacher(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.studentProfile' });
   const session = await prisma.courseSession.findUnique({ where: { id: params.sessionId } });
   if (!session || session.teacherId !== teacher.teacherId) notFound();
   const course = getCourseEntryOrThrow(session.courseSlug);
@@ -66,15 +69,15 @@ export default async function TeacherStudentProfilePage({
             className="inline-flex items-center gap-2 text-sm font-semibold text-white/90 transition hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to {course.title.en} roster
+            {t('backToRoster', { course: localized(course.title, params.locale) })}
           </Link>
         </div>
 
         <div className="mt-4 flex items-center justify-between px-6">
           <p className="text-sm font-semibold text-white/90">
-            {course.title.en} <span className="text-white/60">·</span> {session.term}
+            {localized(course.title, params.locale)} <span className="text-white/60">·</span> {session.term}
           </p>
-          <p className="text-sm font-semibold text-white/90">{ageGroup.label.en}</p>
+          <p className="text-sm font-semibold text-white/90">{localized(ageGroup.label, params.locale)}</p>
         </div>
       </div>
 
@@ -97,15 +100,15 @@ export default async function TeacherStudentProfilePage({
         <h1 className="mt-2 font-display text-xl font-bold text-ink">{child.fullName}</h1>
       </div>
 
-      {searchParams.saved ? <p className="mt-3 text-center text-sm font-semibold text-emerald-600">Remark added.</p> : null}
-      {searchParams.error ? <p className="mt-3 text-center text-sm font-semibold text-red-600">Please enter a remark.</p> : null}
-      {searchParams.badgeSaved ? <p className="mt-3 text-center text-sm font-semibold text-emerald-600">Badge awarded.</p> : null}
-      {searchParams.badgeError ? <p className="mt-3 text-center text-sm font-semibold text-red-600">Please enter a badge title.</p> : null}
+      {searchParams.saved ? <p className="mt-3 text-center text-sm font-semibold text-emerald-600">{t('remarkAdded')}</p> : null}
+      {searchParams.error ? <p className="mt-3 text-center text-sm font-semibold text-red-600">{t('enterRemark')}</p> : null}
+      {searchParams.badgeSaved ? <p className="mt-3 text-center text-sm font-semibold text-emerald-600">{t('badgeAwarded')}</p> : null}
+      {searchParams.badgeError ? <p className="mt-3 text-center text-sm font-semibold text-red-600">{t('enterBadgeTitle')}</p> : null}
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 lg:divide-x lg:divide-ink/10">
         <div className="px-6 pb-6 lg:pr-6">
           <StudentNotesPanel
-            notes={notes.map((note) => ({ id: note.id, content: note.content, createdAt: note.createdAt.toDateString() }))}
+            notes={notes.map((note) => ({ id: note.id, content: note.content, createdAt: formatDate(note.createdAt, params.locale) }))}
             addNote={addTeacherNote}
             locale={params.locale}
             childId={child.id}

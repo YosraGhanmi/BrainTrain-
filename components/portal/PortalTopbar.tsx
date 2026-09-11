@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import { ChevronDown, Globe, Menu, UserCircle, Users } from 'lucide-react';
 import { selectChild } from '@/lib/portal-auth/actions';
@@ -25,6 +25,7 @@ export default function PortalTopbar({
   childSwitcher?: { children: { id: string; fullName: string }[]; selectedChildId: string };
   onMenuClick?: () => void;
 }) {
+  const t = useTranslations('portalShell');
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function PortalTopbar({
       <button
         type="button"
         onClick={onMenuClick}
-        aria-label="Open menu"
+        aria-label={t('openMenu')}
         className="shrink-0 rounded-lg p-2 text-ink transition hover:bg-slate-100 lg:hidden"
       >
         <Menu className="h-5 w-5" />
@@ -93,7 +94,7 @@ export default function PortalTopbar({
                   onClick={() => setChildOpen(false)}
                   className="block px-4 py-2 text-sm font-semibold text-accent transition hover:bg-slate-50"
                 >
-                  + Add a child
+                  + {t('addChild')}
                 </Link>
               </li>
             </ul>
@@ -105,7 +106,7 @@ export default function PortalTopbar({
             className="flex min-w-0 items-center gap-2 rounded-full border border-ink/15 px-2 py-2 text-sm font-semibold text-ink transition hover:bg-slate-50 sm:px-4"
           >
             <Users className="h-4 w-4 shrink-0 text-accent" />
-            <span className="hidden sm:inline">Add a child</span>
+            <span className="hidden sm:inline">{t('addChild')}</span>
           </Link>
         )
       ) : (
@@ -157,7 +158,7 @@ export default function PortalTopbar({
         <button
           type="button"
           onClick={() => setProfileOpen((v) => !v)}
-          aria-label="Account menu"
+          aria-label={t('accountMenu')}
           className="flex items-center justify-center rounded-full transition hover:opacity-80"
         >
           <UserCircle className="h-9 w-9 text-accent" />
@@ -176,7 +177,7 @@ export default function PortalTopbar({
                   onClick={() => setProfileOpen(false)}
                   className="block px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-slate-50"
                 >
-                  Account settings
+                  {t('accountSettings')}
                 </Link>
               </>
             ) : null}

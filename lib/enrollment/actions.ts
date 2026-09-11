@@ -123,5 +123,5 @@ export async function unenrollChild(formData: FormData): Promise<void> {
     data: { status: 'CANCELLED' },
   });
 
-  redirect(localizedPath(locale, `/parent-portal/children/${childId}?unsubscribed=1`));
+  redirect(localizedPath(locale, '/parent-portal/courses?unsubscribed=1'));
 }

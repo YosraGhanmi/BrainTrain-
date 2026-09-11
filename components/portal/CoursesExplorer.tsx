@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import type { EnrollmentStatus } from '@prisma/client';
 
@@ -22,16 +23,17 @@ export type CourseInfo = {
 
 type Filter = 'enrolled' | 'all' | 'not-enrolled';
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'All courses' },
-  { key: 'enrolled', label: 'Enrolled' },
-  { key: 'not-enrolled', label: 'Not enrolled' },
-];
-
 export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) {
+  const t = useTranslations('parentPortal.coursesExplorer');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('enrolled');
   const [filterOpen, setFilterOpen] = useState(false);
+
+  const FILTERS: { key: Filter; label: string }[] = [
+    { key: 'all', label: t('filters.all') },
+    { key: 'enrolled', label: t('filters.enrolled') },
+    { key: 'not-enrolled', label: t('filters.notEnrolled') },
+  ];
 
   const currentFilter = FILTERS.find((f) => f.key === filter)!;
 
@@ -89,7 +91,7 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search courses..."
+            placeholder={t('searchPlaceholder')}
             className="w-full rounded-full border border-ink/10 bg-white py-2 pl-9 pr-4 text-sm outline-none focus:border-accent"
           />
         </div>
@@ -97,7 +99,7 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
 
       {filtered.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-ink/15 bg-white p-8 text-center text-stone">
-          No courses match.
+          {t('noMatch')}
         </p>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -115,17 +117,17 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
                 <span
                   className={`absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide shadow-sm ${STATUS_STYLES[course.status]}`}
                 >
-                  {course.status}
+                  {t(`status.${course.status}`)}
                 </span>
               ) : null}
 
               {course.media}
 
               <h3 className="mt-5 text-lg font-extrabold text-ink">{course.title}</h3>
-              <p className="mt-1 text-xs text-stone">{course.sessionsCount} sessions</p>
+              <p className="mt-1 text-xs text-stone">{t('sessionsCount', { count: course.sessionsCount })}</p>
 
               <span className="mt-4 block w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-white transition group-hover:opacity-90">
-                {course.status ? 'View sessions' : 'Enroll'}
+                {course.status ? t('viewSessions') : t('enroll')}
               </span>
             </Link>
           ))}

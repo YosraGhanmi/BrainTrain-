@@ -92,5 +92,400 @@
   "languageSwitcher": {
     "en": "EN",
     "fr": "FR"
+  },
+  "common": {
+    "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "daysShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "months": [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ]
+  },
+  "portalShell": {
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "addChild": "Add a child",
+    "accountMenu": "Account menu",
+    "accountSettings": "Account settings",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "logOut": "Log out",
+    "backToWebsite": "Back to website"
+  },
+  "parentPortal": {
+    "noChildren": "No children yet. Add a child to start enrolling in courses.",
+    "paymentsPage": {
+      "title": "{name}: Payment history",
+      "paidNotice": "Payment complete. Thank you! It may take a moment to reflect below.",
+      "cancelledNotice": "Checkout was cancelled."
+    },
+    "childrenSection": {
+      "none": "You haven't added any children yet.",
+      "addChild": "Add a child",
+      "fullName": "Full name",
+      "dateOfBirth": "Date of birth",
+      "ageGroup": "Age group",
+      "institution": "Institution / school (optional)",
+      "specialNeeds": "Disabilities / special accommodations (optional)",
+      "saveChanges": "Save changes",
+      "courses": "Courses",
+      "notEnrolled": "Not enrolled in any course yet.",
+      "status": {
+        "PENDING": "Pending",
+        "ACTIVE": "Active",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "security": {
+      "password": "Password",
+      "passwordHint": "Changing your password signs you out everywhere else.",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmNewPassword": "Confirm new password",
+      "changePassword": "Change password",
+      "twoFactor": "Two-factor authentication",
+      "twoFactorEnabled": "Enabled: a 6-digit code is emailed to you as an extra check.",
+      "twoFactorDisabled": "Add an extra layer of security. A 6-digit code will be emailed to you to confirm sign-ins.",
+      "comingSoon": "Coming soon. Not yet required at login.",
+      "confirmToTurnOff": "Confirm your password to turn this off",
+      "turnOff": "Turn off",
+      "enterCode": "Enter the 6-digit code we emailed you",
+      "verifyAndEnable": "Verify & enable",
+      "activate": "Activate two-factor authentication"
+    },
+    "personalInfo": {
+      "heading": "Contact information",
+      "subheading": "Manage the phone numbers and backup email on your account.",
+      "primaryPhone": "Primary phone number",
+      "secondaryPhone": "Secondary phone number",
+      "backupEmail": "Backup email",
+      "notSet": "Not set",
+      "edit": "Edit",
+      "save": "Save",
+      "delete": "Delete",
+      "addPhoneNumber": "Add phone number",
+      "addBackupEmail": "Add backup email",
+      "addSecondaryFirst": "Add a secondary phone number first",
+      "phonePlaceholder": "e.g. +216 20 000 000"
+    },
+    "settingsTabs": {
+      "personal": "Personal information",
+      "security": "Password & security",
+      "children": "Children"
+    },
+    "account": {
+      "title": "Settings",
+      "saved": "Saved.",
+      "errors": {
+        "phoneTaken": "That phone number is already in use.",
+        "noSecondary": "Add a secondary phone number before deleting your primary one.",
+        "generic": "Please check the form and try again."
+      }
+    },
+    "addChild": {
+      "title": "Add a child",
+      "fullName": "Child's full name",
+      "dateOfBirth": "Date of birth",
+      "ageGroup": "Age group",
+      "selectAgeGroup": "Select an age group",
+      "institution": "Institution / school (optional)",
+      "specialNeeds": "Disabilities / special accommodations (optional)",
+      "specialNeedsPlaceholder": "Anything our teachers should know to best support your child",
+      "error": "Please fill in all required fields.",
+      "submit": "Add child"
+    },
+    "schedule": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "noActiveSessions": "No active sessions scheduled yet — the calendar below will fill in once an enrollment is activated."
+    },
+    "enrollWizard": {
+      "steps": { "group": "Group", "plan": "Plan", "method": "Method" },
+      "overlapsTitle": "Overlaps with this child's {course} session",
+      "alreadyEnrolled": "Already enrolled",
+      "conflictsWith": "Conflicts with {course}",
+      "full": "Full",
+      "seatsLeft": "{count} seats left",
+      "back": "Back",
+      "next": "Next",
+      "enroll": "Enroll"
+    },
+    "forgotPassword": {
+      "eyebrow": "Parent Portal",
+      "title": "Reset your password",
+      "body": "Enter the phone number on your account and we'll text you a reset code.",
+      "phoneNumber": "Phone number",
+      "sendResetCode": "Send reset code",
+      "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "eyebrow": "Parent Portal",
+      "title": "Enter your reset code",
+      "body": "We sent a 6-digit code by SMS to {phone}. It expires in 10 minutes.",
+      "yourPhone": "your phone",
+      "resetCode": "Reset code",
+      "newPassword": "New password",
+      "confirmNewPassword": "Confirm new password",
+      "error": "Invalid or expired code, or passwords don't match.",
+      "submit": "Reset password"
+    },
+    "pending": {
+      "backToWebsite": "Back to website",
+      "brand": "BrainTrain Parent",
+      "title": "Account created!",
+      "body1": "Thanks for signing up. An admin needs to review your account before you can log in — this usually doesn't take long.",
+      "body2": "We'll email you as soon as it's approved, with a link to sign in.",
+      "backToSignIn": "Back to sign in"
+    },
+    "auth": {
+      "backToWebsite": "Back to website",
+      "brand": "BrainTrain Parent",
+      "signIn": "Sign in",
+      "signUp": "Sign up",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "fullName": "Full name",
+      "phoneNumber": "Phone number",
+      "passwordReset": "Password reset. Log in with your new password.",
+      "passwordChanged": "Password changed. Log in with your new password.",
+      "accountSuspended": "This account has been suspended. Contact BrainTrain for help.",
+      "accountPending": "Your account is still awaiting admin approval. We'll email you once it's reviewed.",
+      "accountRejected": "Your registration wasn't approved. Please see the BrainTrain admin.",
+      "incorrectCredentials": "Incorrect email or password. Try again.",
+      "logIn": "Log in",
+      "forgotPassword": "Forgot password?",
+      "createAccount": "Create an account",
+      "accountExists": "An account with that email or phone already exists.",
+      "checkForm": "Please check the form (passwords must match, 8+ characters).",
+      "createAccountButton": "Create account",
+      "alreadyHaveAccount": "Already have an account?",
+      "welcomeBack": "Welcome",
+      "welcomeBackAccent": "back!",
+      "joinThe": "Join the",
+      "joinTheAccent": "BrainTrain family",
+      "joinSubtext": "Create your account to add your children and enroll them in courses."
+    },
+    "courseEnrollment": {
+      "backToCourses": "Back to courses",
+      "pending": "Pending",
+      "checkingWithAdmin": "We're checking with Admin",
+      "pendingBody": "{name}'s enrollment in <strong>{course}</strong> is on its way — an admin just needs to confirm your payment before the seat is locked in. You'll get a text message the moment it's approved, and the course will unlock right here.",
+      "paymentMethod": "{method} payment",
+      "methods": { "CASH": "Cash", "CHEQUE": "Cheque", "CARD": "Card" },
+      "backToDashboard": "Back to dashboard",
+      "alreadyCancelled": "This enrollment is already cancelled.",
+      "coursePaid": "Course paid",
+      "paymentOverdue": "Payment overdue",
+      "paymentDue": "Payment due",
+      "payNow": "Pay now",
+      "nextSession": "Next session",
+      "location": "Location",
+      "teacher": "Teacher",
+      "notYetAssigned": "Not yet assigned",
+      "teacherUpdates": "Teacher updates",
+      "noUpdatesYet": "No updates yet — your teacher will post notes here after class.",
+      "myBadges": "My badges",
+      "viewAll": "View all",
+      "showLess": "Show less",
+      "firstBadgeWaiting": "Your first badge is waiting!",
+      "completeFirstChallenge": "Complete your first challenge to unlock it.",
+      "unlocked": "Unlocked",
+      "mystery": "Mystery",
+      "locked": "Locked",
+      "unsubscribeConfirm": "Unsubscribe this child from the course? This cannot be undone.",
+      "leaveCourse": "Leave course",
+      "paymentConfirmed": "Payment confirmed!",
+      "paymentConfirmedBody": "Your payment of {amount} {currency} for {course} has been confirmed. Your child is all set!",
+      "greatThanks": "Great, thanks!",
+      "status": {
+        "PENDING": "Pending",
+        "ACTIVE": "Active",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "courseDetail": {
+      "backToCourses": "Back to courses",
+      "startingFrom": "Starting from",
+      "perMonth": "/ month",
+      "otherPlansHint": "3 months and full-year plans available at enrollment.",
+      "enrollHeading": "Enroll: group, plan & payment",
+      "noSessions": "No sessions are currently scheduled for this course.",
+      "plans": {
+        "monthly": { "label": "Monthly", "hint": "Billed every month" },
+        "quarterly": { "label": "3 months", "hint": "Billed once for 3 months" },
+        "yearly": { "label": "Full year", "hint": "One payment, 15 Sep – 15 Jun" }
+      },
+      "methods": {
+        "cash": "Cash",
+        "card": "Card",
+        "cheque": "Cheque"
+      },
+      "errors": {
+        "generic": "Something went wrong. Please try again.",
+        "plan": "Please choose a payment plan.",
+        "method": "Please choose a payment method.",
+        "session": "Please pick a group.",
+        "ineligible": "That course isn't offered for this child's age group.",
+        "capacity": "That group is full. Please pick another.",
+        "duplicate": "This child is already enrolled in that group.",
+        "conflict": "This child is already scheduled for another class at that same day and time. Please pick a different group."
+      }
+    },
+    "coursesExplorer": {
+      "filters": {
+        "all": "All courses",
+        "enrolled": "Enrolled",
+        "notEnrolled": "Not enrolled"
+      },
+      "searchPlaceholder": "Search courses...",
+      "noMatch": "No courses match.",
+      "status": {
+        "ACTIVE": "Active",
+        "PENDING": "Pending"
+      },
+      "sessionsCount": "{count} sessions",
+      "viewSessions": "View sessions",
+      "enroll": "Enroll"
+    },
+    "payments": {
+      "empty": "No payments yet.",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "current": "Current",
+      "course": "Course",
+      "plan": "Plan",
+      "amount": "Amount",
+      "due": "Due",
+      "status": "Status",
+      "payNow": "Pay now",
+      "statuses": {
+        "PENDING": "Pending",
+        "PAID": "Paid",
+        "OVERDUE": "Overdue",
+        "FAILED": "Failed"
+      }
+    },
+    "nav": {
+      "brand": "Parent Portal",
+      "dashboard": "Dashboard",
+      "courses": "Courses",
+      "schedule": "Schedule",
+      "payments": "Payments",
+      "settings": "Settings"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "addChild": "Add a child",
+      "noChildrenYet": "No children yet. Add your first child to start enrolling in courses.",
+      "paymentDue": "Payment due: {course}",
+      "badgeEarned": "New badge earned: {badge}",
+      "noteAdded": "A teacher added a note. Check it now",
+      "news": {
+        "heading": "News",
+        "empty": "No news yet.",
+        "previous": "Previous",
+        "next": "Next",
+        "view": "View"
+      },
+      "badges": {
+        "heading": "Badges",
+        "empty": "No badges earned yet."
+      },
+      "teacherNotes": {
+        "heading": "Teacher notes",
+        "empty": "No notes yet."
+      },
+      "profile": {
+        "notEnrolled": "Not enrolled in any course yet.",
+        "changePhoto": "Change photo"
+      }
+    }
+  },
+  "teacherPortal": {
+    "nav": {
+      "brand": "Teacher Portal",
+      "myGroups": "My groups",
+      "calendar": "Calendar"
+    },
+    "dashboard": {
+      "brand": "Teacher Portal",
+      "title": "My assigned sessions",
+      "subtitle": "Here are your upcoming sessions and group details.",
+      "noSessions": "No sessions assigned yet. Check back once the admin schedules one for you.",
+      "studentsCount": "{enrolled} / {capacity} students"
+    },
+    "studentProfile": {
+      "backToRoster": "Back to {course} roster",
+      "remarkAdded": "Remark added.",
+      "enterRemark": "Please enter a remark.",
+      "badgeAwarded": "Badge awarded.",
+      "enterBadgeTitle": "Please enter a badge title.",
+      "notes": "Notes",
+      "notePlaceholder": "Write a note for this student...",
+      "addNote": "Add note",
+      "noNotesYet": "No notes yet.",
+      "badges": "Badges",
+      "awardNewBadge": "Award a new badge",
+      "noBadgesAwarded": "No badges awarded yet.",
+      "awardABadge": "Award a badge",
+      "close": "Close",
+      "badgeTitlePlaceholder": "Badge title (e.g. Top Builder)",
+      "notePlaceholderOptional": "Note (optional)",
+      "awardBadge": "Award badge"
+    },
+    "roster": {
+      "myGroups": "My groups",
+      "studentsEnrolled": "{count} students enrolled",
+      "noStudentsYet": "No students enrolled in this group yet.",
+      "noBadgesYet": "No badges yet",
+      "badgeCount": "{count, plural, one {# badge} other {# badges}}",
+      "students": "Students",
+      "active": "Active",
+      "pending": "Pending",
+      "avgProgress": "Avg. Progress",
+      "searchPlaceholder": "Search students...",
+      "allStatus": "All status",
+      "sortName": "Sort: Name",
+      "sortProgress": "Sort: Progress",
+      "sortBadges": "Sort: Badges",
+      "gridView": "Grid view",
+      "listView": "List view",
+      "noMatch": "No students match your search.",
+      "age": "Age {age}",
+      "progress": "Progress"
+    },
+    "calendar": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "noGroups": "No groups assigned yet — your working hours will fill in once the admin assigns you a session.",
+      "studentsCount": "{count} students"
+    },
+    "login": {
+      "eyebrow": "BrainTrain Teacher",
+      "signIn": "Sign in",
+      "returnToWebsite": "Return to website",
+      "welcome": "Welcome",
+      "welcomeAccent": "back, Teacher!",
+      "tagline": "Your classes, your students, their progress — all in one place.",
+      "email": "Email",
+      "password": "Password",
+      "accountSuspended": "This account has been suspended. Contact BrainTrain for help.",
+      "incorrectCredentials": "Incorrect email or password.",
+      "logIn": "Log in",
+      "accountsCreatedByStaff": "Teacher accounts are created by BrainTrain staff."
+    },
+    "verify": {
+      "eyebrow": "BrainTrain Teacher",
+      "title": "Enter your code",
+      "backToLogin": "Back to login",
+      "oneMore": "One more",
+      "stepToGo": "step to go!",
+      "tagline": "A quick 4-digit code keeps your students' notes and grades secure.",
+      "body": "Enter the 4-digit secret code your admin gave you along with your password.",
+      "secretCode": "Secret code",
+      "incorrectCode": "Incorrect code. Try again.",
+      "confirm": "Confirm"
+    }
   }
 }

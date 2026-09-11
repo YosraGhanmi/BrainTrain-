@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import {
   changePhone,
   addSecondaryPhone,
@@ -43,7 +44,7 @@ function EditToggle({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-export default function PersonalInfoSection({
+export default async function PersonalInfoSection({
   locale,
   phone,
   secondaryPhone,
@@ -54,15 +55,16 @@ export default function PersonalInfoSection({
   secondaryPhone: string | null;
   backupEmail: string | null;
 }) {
+  const t = await getTranslations({ locale, namespace: 'parentPortal.personalInfo' });
   return (
     <div className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
-      <h2 className="font-display text-lg font-bold text-ink">Contact information</h2>
-      <p className="mt-1 text-sm text-stone">Manage the phone numbers and backup email on your account.</p>
+      <h2 className="font-display text-lg font-bold text-ink">{t('heading')}</h2>
+      <p className="mt-1 text-sm text-stone">{t('subheading')}</p>
 
       <div className="mt-6">
-        <Row title="Primary phone number" value={phone} placeholder="Not set">
+        <Row title={t('primaryPhone')} value={phone} placeholder={t('notSet')}>
           <div className="flex flex-wrap gap-2">
-            <EditToggle label="Edit">
+            <EditToggle label={t('edit')}>
               <form action={changePhone} className="space-y-3">
                 <input type="hidden" name="locale" value={locale} />
                 <input
@@ -73,7 +75,7 @@ export default function PersonalInfoSection({
                   className="w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm outline-none focus:border-accent"
                 />
                 <button type="submit" className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
-                  Save
+                  {t('save')}
                 </button>
               </form>
             </EditToggle>
@@ -82,45 +84,45 @@ export default function PersonalInfoSection({
               <button
                 type="submit"
                 disabled={!secondaryPhone}
-                title={secondaryPhone ? undefined : 'Add a secondary phone number first'}
+                title={secondaryPhone ? undefined : t('addSecondaryFirst')}
                 className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition enabled:hover:border-red-300 enabled:hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Delete
+                {t('delete')}
               </button>
             </form>
           </div>
         </Row>
 
-        <Row title="Secondary phone number" value={secondaryPhone} placeholder="Not set">
+        <Row title={t('secondaryPhone')} value={secondaryPhone} placeholder={t('notSet')}>
           {secondaryPhone ? (
             <form action={deleteSecondaryPhone}>
               <input type="hidden" name="locale" value={locale} />
               <button type="submit" className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition hover:border-red-300 hover:text-red-600">
-                Delete
+                {t('delete')}
               </button>
             </form>
           ) : (
-            <EditToggle label="Add phone number">
+            <EditToggle label={t('addPhoneNumber')}>
               <form action={addSecondaryPhone} className="space-y-3">
                 <input type="hidden" name="locale" value={locale} />
                 <input
                   name="secondaryPhone"
                   type="tel"
                   required
-                  placeholder="e.g. +216 20 000 000"
+                  placeholder={t('phonePlaceholder')}
                   className="w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm outline-none focus:border-accent"
                 />
                 <button type="submit" className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
-                  Save
+                  {t('save')}
                 </button>
               </form>
             </EditToggle>
           )}
         </Row>
 
-        <Row title="Backup email" value={backupEmail} placeholder="Not set">
+        <Row title={t('backupEmail')} value={backupEmail} placeholder={t('notSet')}>
           <div className="flex flex-wrap gap-2">
-            <EditToggle label={backupEmail ? 'Edit' : 'Add backup email'}>
+            <EditToggle label={backupEmail ? t('edit') : t('addBackupEmail')}>
               <form action={updateBackupEmail} className="space-y-3">
                 <input type="hidden" name="locale" value={locale} />
                 <input
@@ -132,7 +134,7 @@ export default function PersonalInfoSection({
                   className="w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm outline-none focus:border-accent"
                 />
                 <button type="submit" className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
-                  Save
+                  {t('save')}
                 </button>
               </form>
             </EditToggle>
@@ -140,7 +142,7 @@ export default function PersonalInfoSection({
               <form action={deleteBackupEmail}>
                 <input type="hidden" name="locale" value={locale} />
                 <button type="submit" className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition hover:border-red-300 hover:text-red-600">
-                  Delete
+                  {t('delete')}
                 </button>
               </form>
             ) : null}

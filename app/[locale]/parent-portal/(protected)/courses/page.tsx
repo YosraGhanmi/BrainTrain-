@@ -1,9 +1,11 @@
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
+import { localized } from '@/lib/i18n/format';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CoursesExplorer from '@/components/portal/CoursesExplorer';
 import type { EnrollmentStatus } from '@prisma/client';
@@ -13,6 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ParentCoursesPage({ params }: { params: { locale: AppLocale } }) {
   const parent = await requireParent(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
   const children = await prisma.child.findMany({
     where: { parentId: parent.parentId },
     orderBy: { createdAt: 'asc' },
@@ -22,7 +25,7 @@ export default async function ParentCoursesPage({ params }: { params: { locale: 
   if (!selected) {
     return (
       <p className="rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-        No children yet. Add a child to start enrolling in courses.
+        {t('noChildren')}
       </p>
     );
   }
@@ -53,7 +56,7 @@ export default async function ParentCoursesPage({ params }: { params: { locale: 
 
   const courses = eligibleCourses.map((course) => ({
     slug: course.slug,
-    title: course.title.en,
+    title: localized(course.title, params.locale),
     sessionsCount: course.sessions,
     status: enrollmentByCourse.get(course.slug)?.status ?? null,
     enrollmentId: enrollmentByCourse.get(course.slug)?.enrollmentId ?? null,
@@ -62,7 +65,7 @@ export default async function ParentCoursesPage({ params }: { params: { locale: 
       <div className="relative h-32 w-full overflow-hidden rounded-2xl">
         <Image
           src={course.image}
-          alt={course.title.en}
+          alt={localized(course.title, params.locale)}
           fill
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="object-cover"

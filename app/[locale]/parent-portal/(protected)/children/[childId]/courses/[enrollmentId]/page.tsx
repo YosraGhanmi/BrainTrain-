@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import {
   CalendarDays,
@@ -19,6 +20,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
+import { localized, formatDate } from '@/lib/i18n/format';
 import { unenrollChild } from '@/lib/enrollment/actions';
 import { payNow } from '@/lib/payments/actions';
 import UnsubscribeButton from '@/components/portal/UnsubscribeButton';
@@ -28,8 +30,6 @@ import PaymentConfirmedModal from '@/components/portal/course/PaymentConfirmedMo
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-700',
@@ -47,6 +47,9 @@ export default async function EnrolledCoursePage({
   searchParams: { error?: string };
 }) {
   const parent = await requireParent(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.courseEnrollment' });
+  const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
+  const DAYS = tc.raw('days') as string[];
 
   const enrollment = await prisma.enrollment.findUnique({
     where: { id: params.enrollmentId },
@@ -75,11 +78,11 @@ export default async function EnrolledCoursePage({
     return (
       <div className="w-full pb-16">
         <Link
-          href={`/parent-portal/children/${enrollment.child.id}`}
+          href="/parent-portal/courses"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink/60 transition hover:text-ink"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to {enrollment.child.fullName}
+          {t('backToCourses')}
         </Link>
 
         <div className="relative mt-4 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#dce6ff] via-[#e6dcfb] to-[#fbdcec] p-10 text-center shadow-soft sm:p-14">
@@ -93,23 +96,25 @@ export default async function EnrolledCoursePage({
               <Clock3 className="h-7 w-7 text-amber-500" />
             </div>
             <span className="mt-5 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-700">
-              Pending
+              {t('pending')}
             </span>
-            <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">We're checking with Admin</h1>
+            <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('checkingWithAdmin')}</h1>
             <p className="mt-3 text-sm leading-relaxed text-ink/70">
-              {enrollment.child.fullName}'s enrollment in <strong>{course.title.en}</strong> is on its way — an admin
-              just needs to confirm your payment before the seat is locked in. You'll get a text message the moment
-              it's approved, and the course will unlock right here.
+              {t.rich('pendingBody', {
+                name: enrollment.child.fullName,
+                course: localized(course.title, params.locale),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
 
             <div className="mt-6 w-full rounded-2xl bg-white/70 p-4 text-left text-sm text-ink/80 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                <span className="font-semibold text-ink">{course.title.en}</span>
+                <span className="font-semibold text-ink">{localized(course.title, params.locale)}</span>
                 <span>{DAYS[session.dayOfWeek]} · {session.startTime}–{session.endTime}</span>
               </div>
               {pendingPayment ? (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-ink/5 pt-2 text-ink/70">
-                  <span>{pendingPayment.paymentPlan.method === 'CASH' ? 'Cash' : pendingPayment.paymentPlan.method === 'CHEQUE' ? 'Cheque' : 'Card'} payment</span>
+                  <span>{t('paymentMethod', { method: t(`methods.${pendingPayment.paymentPlan.method}`) })}</span>
                   <span className="font-semibold text-ink">{Number(pendingPayment.amount)} {pendingPayment.currency}</span>
                 </div>
               ) : null}
@@ -119,7 +124,7 @@ export default async function EnrolledCoursePage({
               href="/parent-portal"
               className="mt-8 rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
             >
-              Back to dashboard
+              {t('backToDashboard')}
             </Link>
           </div>
         </div>
@@ -142,7 +147,7 @@ export default async function EnrolledCoursePage({
     (p) => p.status === 'PAID' && p.parentNotifiedAt === null && p.paymentPlan.method !== 'CARD',
   );
 
-  const tagline = course.description.en.split('.')[0] + '.';
+  const tagline = localized(course.description, params.locale).split('.')[0] + '.';
 
   const displayedBadges = badges.slice(0, 4);
   const lockedBadgeSlots = Math.max(0, 4 - displayedBadges.length);
@@ -153,22 +158,22 @@ export default async function EnrolledCoursePage({
         <PaymentConfirmedModal
           paymentId={justConfirmedPayment.id}
           locale={params.locale}
-          courseTitle={course.title.en}
+          courseTitle={localized(course.title, params.locale)}
           amount={Number(justConfirmedPayment.amount)}
           currency={justConfirmedPayment.currency}
         />
       ) : null}
 
       <Link
-        href={`/parent-portal/children/${enrollment.child.id}`}
+        href="/parent-portal/courses"
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink/60 transition hover:text-ink"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to {enrollment.child.fullName}
+        {t('backToCourses')}
       </Link>
 
       {searchParams.error === 'already' ? (
-        <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-700">This enrollment is already cancelled.</p>
+        <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-700">{t('alreadyCancelled')}</p>
       ) : null}
 
       {/* Hero */}
@@ -183,9 +188,9 @@ export default async function EnrolledCoursePage({
         <div className="relative flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           <div className="max-w-xl">
             <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${STATUS_STYLES[enrollment.status]}`}>
-              {enrollment.status}
+              {t(`status.${enrollment.status}`)}
             </span>
-            <h1 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl lg:text-5xl">{course.title.en}</h1>
+            <h1 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl lg:text-5xl">{localized(course.title, params.locale)}</h1>
             <p className="mt-3 text-base text-ink/70">{tagline}</p>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-ink/70">
@@ -202,7 +207,7 @@ export default async function EnrolledCoursePage({
             {isFullyPaid ? (
               <span className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-sm">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                Course paid
+                {t('coursePaid')}
               </span>
             ) : null}
           </div>
@@ -217,14 +222,14 @@ export default async function EnrolledCoursePage({
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
           <span className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 shrink-0" />
-            Payment {outstandingPayment.status === 'OVERDUE' ? 'overdue' : 'due'}: {Number(outstandingPayment.amount)} {outstandingPayment.currency}
+            {outstandingPayment.status === 'OVERDUE' ? t('paymentOverdue') : t('paymentDue')}: {Number(outstandingPayment.amount)} {outstandingPayment.currency}
           </span>
           <form action={payNow}>
             <input type="hidden" name="locale" value={params.locale} />
             <input type="hidden" name="paymentId" value={outstandingPayment.id} />
             <input type="hidden" name="childId" value={enrollment.child.id} />
             <button type="submit" className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
-              Pay now
+              {t('payNow')}
             </button>
           </form>
         </div>
@@ -240,7 +245,7 @@ export default async function EnrolledCoursePage({
             <CalendarDays className="h-5 w-5 text-accent" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">Next session</p>
+            <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">{t('nextSession')}</p>
             <p className="truncate text-base font-bold text-ink">{DAYS[session.dayOfWeek]}</p>
             <p className="text-xs text-stone">{session.startTime} – {session.endTime}</p>
           </div>
@@ -252,7 +257,7 @@ export default async function EnrolledCoursePage({
             <MapPin className="h-5 w-5 text-accent2" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">Location</p>
+            <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">{t('location')}</p>
             <p className="truncate text-base font-bold text-ink">{session.location}</p>
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-stone/40" />
@@ -263,11 +268,11 @@ export default async function EnrolledCoursePage({
             <User className="h-5 w-5 text-emerald-600" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">Teacher</p>
+            <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">{t('teacher')}</p>
             <p className="truncate text-base font-bold text-ink" title={teacherName ?? undefined}>
-              {teacherName ?? 'Not yet assigned'}
+              {teacherName ?? t('notYetAssigned')}
             </p>
-            <p className="truncate text-xs text-stone">{course.title.en}</p>
+            <p className="truncate text-xs text-stone">{localized(course.title, params.locale)}</p>
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-stone/40" />
         </div>
@@ -281,14 +286,14 @@ export default async function EnrolledCoursePage({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-accent" />
-                <h2 className="font-display text-lg font-bold text-ink">Teacher updates</h2>
+                <h2 className="font-display text-lg font-bold text-ink">{t('teacherUpdates')}</h2>
               </div>
             </div>
 
             <div className="mt-4">
               {enrollment.notes.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-ink/15 bg-slate-50 p-6 text-center text-sm text-stone">
-                  No updates yet — your teacher will post notes here after class.
+                  {t('noUpdatesYet')}
                 </p>
               ) : (
                 <NotesList
@@ -296,7 +301,7 @@ export default async function EnrolledCoursePage({
                   notes={enrollment.notes.map((note) => ({
                     id: note.id,
                     content: note.content,
-                    createdAt: note.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    createdAt: formatDate(note.createdAt, params.locale, { month: 'short', day: 'numeric', year: 'numeric' }),
                   }))}
                 />
               )}
@@ -310,18 +315,18 @@ export default async function EnrolledCoursePage({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-gold" />
-                <h2 className="font-display text-lg font-bold text-ink">My badges</h2>
+                <h2 className="font-display text-lg font-bold text-ink">{t('myBadges')}</h2>
               </div>
-              <Link href={`/parent-portal/children/${enrollment.child.id}`} className="text-xs font-bold text-accent hover:underline">
-                View all
+              <Link href="/parent-portal#badges" className="text-xs font-bold text-accent hover:underline">
+                {t('viewAll')}
               </Link>
             </div>
 
             {badges.length === 0 ? (
               <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-accent/30 bg-accent/5 p-6 text-center">
                 <Sparkles className="h-7 w-7 text-accent" />
-                <p className="text-sm font-semibold text-ink">Your first badge is waiting!</p>
-                <p className="text-xs text-stone">Complete your first challenge to unlock it.</p>
+                <p className="text-sm font-semibold text-ink">{t('firstBadgeWaiting')}</p>
+                <p className="text-xs text-stone">{t('completeFirstChallenge')}</p>
               </div>
             ) : (
               <div className="mt-4 grid grid-cols-2 gap-3">
@@ -345,7 +350,7 @@ export default async function EnrolledCoursePage({
                     <p className="truncate text-xs font-bold text-ink">{badge.title}</p>
                     <p className="flex items-center gap-1 text-[0.65rem] font-semibold text-emerald-600">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Unlocked
+                      {t('unlocked')}
                     </p>
                   </div>
                 ))}
@@ -357,10 +362,10 @@ export default async function EnrolledCoursePage({
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink/5">
                       <Lock className="h-4 w-4 text-stone" />
                     </div>
-                    <p className="text-xs font-bold text-stone">Mystery</p>
+                    <p className="text-xs font-bold text-stone">{t('mystery')}</p>
                     <p className="flex items-center gap-1 text-[0.65rem] font-semibold text-stone/60">
                       <span className="h-1.5 w-1.5 rounded-full bg-stone/40" />
-                      Locked
+                      {t('locked')}
                     </p>
                   </div>
                 ))}

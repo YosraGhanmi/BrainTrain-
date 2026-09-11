@@ -9,6 +9,7 @@ import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
+import { localized } from '@/lib/i18n/format';
 import { resolvePrice } from '@/lib/pricing/compute';
 import { enrollChild } from '@/lib/enrollment/actions';
 import { sessionsConflict } from '@/lib/scheduling/slots';
@@ -21,30 +22,6 @@ import type { PlanType, PaymentMethod } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-const PLAN_INFO: { type: PlanType; label: string; hint: string }[] = [
-  { type: 'MONTHLY', label: 'Monthly', hint: 'Billed every month' },
-  { type: 'QUARTERLY', label: '3 months', hint: 'Billed once for 3 months' },
-  { type: 'YEARLY', label: 'Full year', hint: 'One payment, 15 Sep – 15 Jun' },
-];
-
-const PAYMENT_METHOD_INFO: { type: PaymentMethod; label: string }[] = [
-  { type: 'CASH', label: 'Cash' },
-  { type: 'CARD', label: 'Card' },
-  { type: 'CHEQUE', label: 'Cheque' },
-];
-
-const ERROR_MESSAGES: Record<string, string> = {
-  plan: 'Please choose a payment plan.',
-  method: 'Please choose a payment method.',
-  session: 'Please pick a group.',
-  ineligible: "That course isn't offered for this child's age group.",
-  capacity: 'That group is full. Please pick another.',
-  duplicate: 'This child is already enrolled in that group.',
-  conflict: "This child is already scheduled for another class at that same day and time. Please pick a different group.",
-};
-
 export default async function CourseDetailPage({
   params,
   searchParams,
@@ -53,6 +30,29 @@ export default async function CourseDetailPage({
   searchParams: { error?: string };
 }) {
   const parent = await requireParent(params.locale);
+  const tp = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
+  const td = await getTranslations({ locale: params.locale, namespace: 'parentPortal.courseDetail' });
+  const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
+  const DAYS = tc.raw('days') as string[];
+  const PLAN_INFO: { type: PlanType; label: string; hint: string }[] = [
+    { type: 'MONTHLY', label: td('plans.monthly.label'), hint: td('plans.monthly.hint') },
+    { type: 'QUARTERLY', label: td('plans.quarterly.label'), hint: td('plans.quarterly.hint') },
+    { type: 'YEARLY', label: td('plans.yearly.label'), hint: td('plans.yearly.hint') },
+  ];
+  const PAYMENT_METHOD_INFO: { type: PaymentMethod; label: string }[] = [
+    { type: 'CASH', label: td('methods.cash') },
+    { type: 'CARD', label: td('methods.card') },
+    { type: 'CHEQUE', label: td('methods.cheque') },
+  ];
+  const ERROR_MESSAGES: Record<string, string> = {
+    plan: td('errors.plan'),
+    method: td('errors.method'),
+    session: td('errors.session'),
+    ineligible: td('errors.ineligible'),
+    capacity: td('errors.capacity'),
+    duplicate: td('errors.duplicate'),
+    conflict: td('errors.conflict'),
+  };
   const children = await prisma.child.findMany({
     where: { parentId: parent.parentId },
     orderBy: { createdAt: 'asc' },
@@ -62,7 +62,7 @@ export default async function CourseDetailPage({
   if (!selected) {
     return (
       <p className="rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
-        No children yet. Add a child to start enrolling in courses.
+        {tp('noChildren')}
       </p>
     );
   }
@@ -117,7 +117,7 @@ export default async function CourseDetailPage({
       location: s.location,
       seatsLeft: s.capacity - s._count.enrollments,
       enrolled: enrolledSessionIds.has(s.id),
-      conflictLabel: conflict ? getCourseEntryOrThrow(conflict.courseSession.courseSlug).title.en : null,
+      conflictLabel: conflict ? localized(getCourseEntryOrThrow(conflict.courseSession.courseSlug).title, params.locale) : null,
     };
   });
 
@@ -129,7 +129,7 @@ export default async function CourseDetailPage({
 
   const media = course.image ? (
     <div className="relative h-56 w-full overflow-hidden rounded-2xl">
-      <Image src={course.image} alt={course.title.en} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
+      <Image src={course.image} alt={localized(course.title, params.locale)} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
     </div>
   ) : (
     <CourseIllustration icon={getIcon(course.icon)} color={course.color} className="h-56 w-full rounded-2xl" />
@@ -139,29 +139,29 @@ export default async function CourseDetailPage({
     <div>
       <Link href="/parent-portal/courses" className="inline-flex items-center gap-2 text-sm font-semibold text-stone transition hover:text-ink">
         <ArrowLeft className="h-4 w-4" />
-        Back to courses
+        {td('backToCourses')}
       </Link>
 
       {searchParams.error ? (
         <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">
-          {ERROR_MESSAGES[searchParams.error] ?? 'Something went wrong. Please try again.'}
+          {ERROR_MESSAGES[searchParams.error] ?? td('errors.generic')}
         </p>
       ) : null}
 
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div>
           {media}
-          <h1 className="mt-5 font-display text-2xl font-bold text-ink">{course.title.en}</h1>
-          <p className="mt-3 text-sm leading-relaxed text-stone">{course.description.en}</p>
+          <h1 className="mt-5 font-display text-2xl font-bold text-ink">{localized(course.title, params.locale)}</h1>
+          <p className="mt-3 text-sm leading-relaxed text-stone">{localized(course.description, params.locale)}</p>
         </div>
 
         <div>
-          <h2 className="font-display text-lg font-bold text-ink">Starting from</h2>
+          <h2 className="font-display text-lg font-bold text-ink">{td('startingFrom')}</h2>
           <p className="mt-2 font-display text-3xl font-bold text-ink">
             {prices[0].amount} {prices[0].currency}
-            <span className="text-base font-semibold text-stone"> / month</span>
+            <span className="text-base font-semibold text-stone"> {td('perMonth')}</span>
           </p>
-          <p className="mt-1 text-sm text-stone">3 months and full-year plans available at enrollment.</p>
+          <p className="mt-1 text-sm text-stone">{td('otherPlansHint')}</p>
         </div>
       </div>
 
@@ -174,11 +174,11 @@ export default async function CourseDetailPage({
         />
       ) : null}
 
-      <h2 className="mt-10 font-display text-lg font-bold text-ink">Enroll: group, plan &amp; payment</h2>
+      <h2 className="mt-10 font-display text-lg font-bold text-ink">{td('enrollHeading')}</h2>
 
       {groups.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-dashed border-ink/15 bg-white p-8 text-center text-stone">
-          No sessions are currently scheduled for this course.
+          {td('noSessions')}
         </p>
       ) : (
         <EnrollWizard

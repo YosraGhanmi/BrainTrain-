@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { uploadChildPhoto } from '@/lib/children/actions';
 import { rotateHue } from '@/lib/color';
 import ChildAvatarUploader from '@/components/portal/ChildAvatarUploader';
@@ -6,7 +7,7 @@ import type { AppLocale } from '@/i18n/routing';
 const MAX_VISIBLE_COURSES = 3;
 const DEFAULT_GRADIENT = 'linear-gradient(to bottom right, #3d7fff, #6c5ce7, #ff8c42)';
 
-export default function ChildProfileCard({
+export default async function ChildProfileCard({
   locale,
   childId,
   fullName,
@@ -23,6 +24,7 @@ export default function ChildProfileCard({
   ageGroupLabel: string;
   courseTitles: string[];
 }) {
+  const t = await getTranslations({ locale, namespace: 'parentPortal.dashboard.profile' });
   const visibleCourses = courseTitles.slice(0, MAX_VISIBLE_COURSES);
   const extraCount = courseTitles.length - visibleCourses.length;
 
@@ -50,7 +52,7 @@ export default function ChildProfileCard({
         <p className="text-sm text-stone">{ageGroupLabel}</p>
 
         {courseTitles.length === 0 ? (
-          <p className="mt-4 text-sm text-stone">Not enrolled in any course yet.</p>
+          <p className="mt-4 text-sm text-stone">{t('notEnrolled')}</p>
         ) : (
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             {visibleCourses.map((title) => (

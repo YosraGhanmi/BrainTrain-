@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db/prisma';
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 import { hashPassword } from '@/lib/portal-auth/password';
 import { revokeAllSessions } from '@/lib/portal-auth/session';
 import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
@@ -64,7 +64,7 @@ export async function createTeacher(formData: FormData): Promise<void> {
 }
 
 export async function deleteTeacher(userId: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.user.delete({ where: { id: userId } });
   redirect('/admin/teachers?saved=1');
 }
@@ -73,7 +73,7 @@ export async function deleteTeacher(userId: string): Promise<void> {
 // looked up — issuing a new one (shown once, same as createTeacher) is the
 // only recovery path. This also invalidates the teacher's previous code.
 export async function regenerateTeacherSecretCode(userId: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || user.role !== 'TEACHER') redirect('/admin/teachers?error=1');
 
@@ -89,7 +89,7 @@ export async function regenerateTeacherSecretCode(userId: string): Promise<void>
 }
 
 export async function addTeacherCourse(teacherId: string, formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const courseSlug = field(formData, 'courseSlug');
   if (!courseSlug) redirect('/admin/teachers?courseError=1');
 
@@ -104,7 +104,7 @@ export async function addTeacherCourse(teacherId: string, formData: FormData): P
 }
 
 export async function removeTeacherCourse(teacherId: string, courseSlug: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
   if (teacher) {
     await prisma.teacher.update({
@@ -116,7 +116,7 @@ export async function removeTeacherCourse(teacherId: string, courseSlug: string)
 }
 
 export async function setTeacherFrozen(userId: string, isFrozen: boolean): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.user.update({ where: { id: userId }, data: { isFrozen } });
   // Freezing kicks the account out of any active session immediately.
   if (isFrozen) await revokeAllSessions(userId);
@@ -128,7 +128,7 @@ export async function setTeacherFrozen(userId: string, isFrozen: boolean): Promi
 // ---------------------------------------------------------------------------
 
 export async function createSecretary(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const fullName = field(formData, 'fullName');
   const email = field(formData, 'email').toLowerCase();
   const phone = field(formData, 'phone');
@@ -150,13 +150,13 @@ export async function createSecretary(formData: FormData): Promise<void> {
 }
 
 export async function deleteSecretary(userId: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.user.delete({ where: { id: userId } });
   redirect('/admin/secretaries?saved=1');
 }
 
 export async function setSecretaryFrozen(userId: string, isFrozen: boolean): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.user.update({ where: { id: userId }, data: { isFrozen } });
   if (isFrozen) await revokeAllSessions(userId);
   redirect('/admin/secretaries?saved=1');
@@ -167,13 +167,13 @@ export async function setSecretaryFrozen(userId: string, isFrozen: boolean): Pro
 // ---------------------------------------------------------------------------
 
 export async function deleteParent(userId: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.user.delete({ where: { id: userId } });
   redirect('/admin/parents?saved=1');
 }
 
 export async function setParentFrozen(userId: string, isFrozen: boolean): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.user.update({ where: { id: userId }, data: { isFrozen } });
   if (isFrozen) await revokeAllSessions(userId);
   redirect('/admin/parents?saved=1');
@@ -216,7 +216,7 @@ export async function deleteChild(childId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function upsertCourseSession(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const id = field(formData, 'id');
   const courseSlug = field(formData, 'courseSlug');
   const teacherId = field(formData, 'teacherId');
@@ -263,7 +263,7 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
 }
 
 export async function deleteCourseSession(id: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.courseSession.delete({ where: { id } });
   redirect('/admin/sessions?saved=1');
 }
@@ -392,7 +392,7 @@ export async function setPaymentStatus(id: string, status: PaymentStatus): Promi
 // ---------------------------------------------------------------------------
 
 export async function upsertAgeGroupPricing(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const ageGroupSlug = field(formData, 'ageGroupSlug');
   if (!ageGroupSlug) redirect('/admin/pricing?error=1');
 
@@ -415,7 +415,7 @@ export async function upsertAgeGroupPricing(formData: FormData): Promise<void> {
 // checking "use default" in the Courses admin form, offered here too since
 // this is where all the course-specific overrides are visible at a glance.
 export async function clearCoursePricingOverride(courseSlug: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.pricingRule.deleteMany({ where: { courseSlug } });
   redirect('/admin/pricing?saved=1');
 }

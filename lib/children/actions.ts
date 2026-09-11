@@ -69,7 +69,7 @@ export async function editChild(formData: FormData): Promise<void> {
 
   const dateOfBirth = new Date(dateOfBirthRaw);
   if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
-    redirect(localizedPath(locale, `/parent-portal/children/${childId}?error=1`));
+    redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&error=1`));
   }
   getAgeGroupEntryOrThrow(ageGroupSlug);
 
@@ -78,8 +78,8 @@ export async function editChild(formData: FormData): Promise<void> {
     data: { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null },
   });
 
-  revalidatePath(`/${locale === 'fr' ? 'fr/' : ''}parent-portal/children/${childId}`);
-  redirect(localizedPath(locale, `/parent-portal/children/${childId}?saved=1`));
+  revalidatePath(`/${locale === 'fr' ? 'fr/' : ''}parent-portal/account`);
+  redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&saved=1`));
 }
 
 export async function uploadChildPhoto(formData: FormData): Promise<void> {
@@ -110,5 +110,5 @@ export async function uploadChildPhoto(formData: FormData): Promise<void> {
   await prisma.child.update({ where: { id: childId }, data: { photoUrl: `/children/${filename}`, photoColor } });
 
   revalidatePath('/parent-portal');
-  revalidatePath(`/parent-portal/children/${childId}`);
+  revalidatePath('/parent-portal/account');
 }

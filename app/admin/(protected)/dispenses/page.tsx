@@ -14,7 +14,8 @@ export default async function AdminDispensesPage({
 }: {
   searchParams: { saved?: string; error?: string };
 }) {
-  await requireAdmin();
+  const session = await requireAdmin();
+  const canDelete = session.kind === 'admin';
 
   const [expenses, totalResult] = await Promise.all([
     prisma.expense.findMany({ orderBy: { date: 'desc' } }),
@@ -126,7 +127,7 @@ export default async function AdminDispensesPage({
                   <td className="px-5 py-4 text-stone">{e.createdByName}</td>
                   <td className="max-w-[16rem] truncate px-5 py-4 text-stone">{e.note ?? '—'}</td>
                   <td className="px-5 py-4 text-right">
-                    <DeleteIconButton action={deleteExpense.bind(null, e.id)} />
+                    {canDelete ? <DeleteIconButton action={deleteExpense.bind(null, e.id)} /> : null}
                   </td>
                 </tr>
               ))

@@ -1,18 +1,21 @@
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { User, ShieldCheck, Users } from 'lucide-react';
 
 const TABS = [
-  { key: 'personal', label: 'Personal information', icon: User },
-  { key: 'security', label: 'Password & security', icon: ShieldCheck },
-  { key: 'children', label: 'Children', icon: Users },
+  { key: 'personal', icon: User },
+  { key: 'security', icon: ShieldCheck },
+  { key: 'children', icon: Users },
 ] as const;
 
 export type SettingsTab = (typeof TABS)[number]['key'];
 
-export default function SettingsTabs({ active }: { active: SettingsTab }) {
+export default async function SettingsTabs({ active }: { active: SettingsTab }) {
+  const t = await getTranslations('parentPortal.settingsTabs');
   return (
     <nav className="flex gap-2 overflow-x-auto pb-2 lg:w-72 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:border-r lg:border-ink/10 lg:pb-0 lg:pr-6">
-      {TABS.map(({ key, label, icon: Icon }) => {
+      {TABS.map(({ key, icon: Icon }) => {
+        const label = t(key);
         const isActive = key === active;
         return (
           <Link

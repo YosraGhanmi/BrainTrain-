@@ -25,6 +25,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
       </div>
 
       <SidebarNav
+        role={session.kind}
         unreadMessages={unreadMessages}
         pendingEnrollments={pendingEnrollments}
         unreadExpenseNotices={notifications.expenseNotices.length}
@@ -32,7 +33,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
 
       <div className="mt-auto pt-8">
         <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-wide text-stone/60">
-          Signed in as {session.kind === 'admin' ? 'Admin' : `Secretary (${session.fullName})`}
+          Signed in as {session.kind === 'admin' ? 'Admin' : `Reception (${session.fullName})`}
         </p>
         <form action={logout}>
           <RadialReveal

@@ -1,6 +1,7 @@
 import { readContent } from '@/lib/content/store';
 import { prisma } from '@/lib/db/prisma';
 import CoursesManager from '@/components/admin/CoursesManager';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import type { CourseEntry } from '@/lib/content/types';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic';
 const AGE_GROUP_PASTELS = ['#a78bfa', '#fdba74', '#7dd3fc', '#86efac', '#f9a8d4', '#fcd34d'];
 
 export default async function AdminCoursesPage() {
+  await requireAdminOnly();
   const { courses, ageGroups } = readContent();
 
   const overrideRules = await prisma.pricingRule.findMany({ where: { courseSlug: { not: null } } });

@@ -4,14 +4,14 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
-import { requireAdmin } from '@/lib/admin/guard';
+import { requireAdminOnly } from '@/lib/admin/guard';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
 }
 
 export async function upsertTimeSlot(formData: FormData): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   const id = field(formData, 'id');
   const label = field(formData, 'label');
   const dayOfWeek = Number(formData.get('dayOfWeek'));
@@ -41,7 +41,7 @@ export async function upsertTimeSlot(formData: FormData): Promise<void> {
 }
 
 export async function deleteTimeSlot(id: string): Promise<void> {
-  await requireAdmin();
+  await requireAdminOnly();
   await prisma.timeSlot.delete({ where: { id } });
   revalidatePath('/admin/time-slots');
   revalidatePath('/admin/sessions');

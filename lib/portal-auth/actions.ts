@@ -17,6 +17,7 @@ import {
   PENDING_TEACHER_COOKIE_NAME,
 } from '@/lib/portal-auth/session';
 import { localizedPath } from '@/lib/portal-auth/guard';
+import { SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import { sendSms } from '@/lib/sms/send';
 import { sendEmail } from '@/lib/email/send';
@@ -167,6 +168,11 @@ export async function loginSecretary(formData: FormData): Promise<void> {
     redirect('/admin/login?role=secretary&error=frozen');
   }
 
+  // A stale env-admin cookie from an earlier admin session on this browser
+  // takes priority over the portal session in getAdminSession() — without
+  // clearing it here, a reception sign-in would silently keep the previous
+  // admin's full access instead of the restricted reception role.
+  cookies().delete(SESSION_COOKIE_NAME);
   await createPortalSession(user!.id);
   redirect('/admin');
 }

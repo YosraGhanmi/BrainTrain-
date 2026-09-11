@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 type Group = {
   id: string;
@@ -15,12 +16,6 @@ type Group = {
 
 type PlanInfo = { type: string; label: string; hint: string; amount: number; currency: string };
 type MethodInfo = { type: string; label: string };
-
-const STEPS = [
-  { n: 1, label: 'Group' },
-  { n: 2, label: 'Plan' },
-  { n: 3, label: 'Method' },
-] as const;
 
 export default function EnrollWizard({
   action,
@@ -43,6 +38,12 @@ export default function EnrollWizard({
   plans: PlanInfo[];
   methods: MethodInfo[];
 }) {
+  const t = useTranslations('parentPortal.enrollWizard');
+  const STEPS = [
+    { n: 1, label: t('steps.group') },
+    { n: 2, label: t('steps.plan') },
+    { n: 3, label: t('steps.method') },
+  ] as const;
   const [step, setStep] = useState(1);
   const [groupId, setGroupId] = useState('');
   const [planType, setPlanType] = useState('');
@@ -105,7 +106,7 @@ export default function EnrollWizard({
                           type="button"
                           disabled={disabled}
                           onClick={() => setGroupId(g.id)}
-                          title={conflict ? `Overlaps with this child's ${g.conflictLabel} session` : undefined}
+                          title={conflict ? t('overlapsTitle', { course: g.conflictLabel ?? '' }) : undefined}
                           className={`block w-full rounded-xl border p-3 text-center transition ${
                             checked
                               ? 'border-accent bg-accent text-white'
@@ -120,12 +121,12 @@ export default function EnrollWizard({
                           </p>
                           <p className={`mt-0.5 text-[0.65rem] font-semibold ${blocked ? 'text-red-400' : 'text-white/60'}`}>
                             {g.enrolled
-                              ? 'Already enrolled'
+                              ? t('alreadyEnrolled')
                               : conflict
-                                ? `Conflicts with ${g.conflictLabel}`
+                                ? t('conflictsWith', { course: g.conflictLabel ?? '' })
                                 : full
-                                  ? 'Full'
-                                  : `${g.seatsLeft} seats left`}
+                                  ? t('full')
+                                  : t('seatsLeft', { count: g.seatsLeft })}
                           </p>
                         </button>
                       );
@@ -194,7 +195,7 @@ export default function EnrollWizard({
               onClick={() => setStep(step - 1)}
               className="rounded-full border border-ink/10 px-5 py-2.5 text-sm font-semibold text-ink transition hover:bg-slate-100"
             >
-              Back
+              {t('back')}
             </button>
           ) : (
             <span />
@@ -207,7 +208,7 @@ export default function EnrollWizard({
               onClick={() => setStep(step + 1)}
               className="ml-auto rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Next
+              {t('next')}
             </button>
           ) : (
             <button
@@ -215,7 +216,7 @@ export default function EnrollWizard({
               disabled={!canSubmit}
               className="ml-auto rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Enroll
+              {t('enroll')}
             </button>
           )}
         </div>

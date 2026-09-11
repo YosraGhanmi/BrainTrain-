@@ -1,18 +1,14 @@
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
+import { localized } from '@/lib/i18n/format';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 function parseMonth(value: string | undefined): { year: number; month: number } {
   const match = value?.match(/^(\d{4})-(\d{2})$/);
@@ -33,6 +29,10 @@ export default async function TeacherCalendarPage({
   searchParams: { month?: string };
 }) {
   const teacher = await requireTeacher(params.locale);
+  const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.calendar' });
+  const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
+  const WEEKDAYS = tc.raw('daysShort') as string[];
+  const MONTH_NAMES = tc.raw('months') as string[];
   const sessions = await prisma.courseSession.findMany({
     where: { teacherId: teacher.teacherId },
     include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
@@ -79,14 +79,14 @@ export default async function TeacherCalendarPage({
           <Link
             href={`/teacher/calendar?month=${monthParam(prevMonth.year, prevMonth.month)}`}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
-            aria-label="Previous month"
+            aria-label={t('previousMonth')}
           >
             <ChevronLeft className="h-4 w-4" />
           </Link>
           <Link
             href={`/teacher/calendar?month=${monthParam(nextMonth.year, nextMonth.month)}`}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white text-ink shadow-sm transition hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
-            aria-label="Next month"
+            aria-label={t('nextMonth')}
           >
             <ChevronRight className="h-4 w-4" />
           </Link>
@@ -95,7 +95,7 @@ export default async function TeacherCalendarPage({
 
       {!hasAny ? (
         <p className="mt-4 rounded-2xl border border-dashed border-ink/15 bg-white p-6 text-center text-stone">
-          No groups assigned yet — your working hours will fill in once the admin assigns you a session.
+          {t('noGroups')}
         </p>
       ) : (
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -109,7 +109,7 @@ export default async function TeacherCalendarPage({
                 >
                   <Icon className="h-3 w-3" style={{ color: course.color }} strokeWidth={2.25} />
                 </span>
-                {course.title.en}
+                {localized(course.title, params.locale)}
               </div>
             );
           })}
@@ -159,10 +159,10 @@ export default async function TeacherCalendarPage({
                               href={`/teacher/sessions/${s.id}`}
                               className="group flex max-w-[8rem] items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md"
                               style={{ backgroundColor: `${course.color}1a`, color: course.color }}
-                              title={`${course.title.en} · ${s.startTime}–${s.endTime} · ${s.location} · ${s._count.enrollments} students`}
+                              title={`${localized(course.title, params.locale)} · ${s.startTime}–${s.endTime} · ${s.location} · ${t('studentsCount', { count: s._count.enrollments })}`}
                             >
                               <Icon className="h-3 w-3 shrink-0 transition group-hover:scale-110" strokeWidth={2.5} />
-                              <span className="min-w-0 truncate">{course.title.en}</span>
+                              <span className="min-w-0 truncate">{localized(course.title, params.locale)}</span>
                               <span className="shrink-0 opacity-70">{s.startTime}</span>
                             </Link>
                           );
@@ -194,7 +194,7 @@ export default async function TeacherCalendarPage({
                   <span className="text-stone">
                     {s.startTime}–{s.endTime}
                   </span>
-                  <span className="font-semibold text-ink">{course.title.en}</span>
+                  <span className="font-semibold text-ink">{localized(course.title, params.locale)}</span>
                   <span className="flex items-center gap-1.5 text-xs text-stone sm:ml-auto">
                     <MapPin className="h-3.5 w-3.5" />
                     {s.location}

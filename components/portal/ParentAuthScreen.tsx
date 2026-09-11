@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { loginParent, registerParent } from '@/lib/portal-auth/actions';
 import PasswordInput from '@/components/portal/PasswordInput';
@@ -34,6 +35,7 @@ export default function ParentAuthScreen({
   loginSaved?: string;
   registerError?: string;
 }) {
+  const t = useTranslations('parentPortal.auth');
   const [mode, setMode] = useState<Mode>(initialMode);
   const animatingRef = useRef(false);
 
@@ -100,7 +102,7 @@ export default function ParentAuthScreen({
         className="absolute left-4 top-4 z-30 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone transition hover:text-ink xs:left-6 xs:top-6"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Back to website
+        {t('backToWebsite')}
       </Link>
 
       {/* Login form — pinned to the left half, never moves */}
@@ -110,15 +112,15 @@ export default function ParentAuthScreen({
         style={{ opacity: loginActive ? 1 : 0, pointerEvents: loginActive ? 'auto' : 'none' }}
       >
         <div className="w-full max-w-md">
-          <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">BrainTrain Parent</span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">Sign in</h1>
+          <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">{t('brand')}</span>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">{t('signIn')}</h1>
 
           <form action={loginParent} className="mt-12 space-y-7">
             <input type="hidden" name="locale" value={locale} />
 
             <div data-field className="space-y-2">
               <label htmlFor="parent-login-email" className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">
-                Email
+                {t('email')}
               </label>
               <input
                 id="parent-login-email"
@@ -131,34 +133,34 @@ export default function ParentAuthScreen({
             </div>
 
             <div data-field className="space-y-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">Password</label>
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('password')}</label>
               <PasswordInput name="password" autoComplete="current-password" />
             </div>
 
             {loginSaved === 'reset' ? (
               <p data-field className="text-sm font-semibold text-emerald-600">
-                Password reset. Log in with your new password.
+                {t('passwordReset')}
               </p>
             ) : loginSaved === 'password-changed' ? (
               <p data-field className="text-sm font-semibold text-emerald-600">
-                Password changed. Log in with your new password.
+                {t('passwordChanged')}
               </p>
             ) : null}
             {loginError === 'frozen' ? (
               <p data-field className="text-sm font-semibold text-red-600">
-                This account has been suspended. Contact BrainTrain for help.
+                {t('accountSuspended')}
               </p>
             ) : loginError === 'pending' ? (
               <p data-field className="text-sm font-semibold text-amber-700">
-                Your account is still awaiting admin approval. We&apos;ll email you once it&apos;s reviewed.
+                {t('accountPending')}
               </p>
             ) : loginError === 'rejected' ? (
               <p data-field className="text-sm font-semibold text-red-600">
-                Your registration wasn&apos;t approved. Please see the BrainTrain admin.
+                {t('accountRejected')}
               </p>
             ) : loginError ? (
               <p data-field className="text-sm font-semibold text-red-600">
-                Incorrect email or password. Try again.
+                {t('incorrectCredentials')}
               </p>
             ) : null}
 
@@ -167,16 +169,16 @@ export default function ParentAuthScreen({
               data-field
               className="w-full rounded-full bg-[#0b1a3a] px-6 py-4 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
             >
-              Log in
+              {t('logIn')}
             </button>
           </form>
 
           <div data-field className="mt-6 flex items-center justify-between text-sm">
             <Link href="/parent-portal/forgot-password" className="font-semibold text-stone hover:text-ink">
-              Forgot password?
+              {t('forgotPassword')}
             </Link>
             <button type="button" onClick={() => animateTo('signup')} className="font-semibold text-accent hover:underline">
-              Create an account
+              {t('createAccount')}
             </button>
           </div>
         </div>
@@ -189,14 +191,14 @@ export default function ParentAuthScreen({
         style={{ opacity: loginActive ? 0 : 1, pointerEvents: loginActive ? 'none' : 'auto' }}
       >
         <div className="ml-auto w-full max-w-md">
-          <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">BrainTrain Parent</span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">Sign up</h1>
+          <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">{t('brand')}</span>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">{t('signUp')}</h1>
 
           <form action={registerParent} className="mt-10 space-y-5">
             <input type="hidden" name="locale" value={locale} />
 
             <div data-field className="space-y-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">Full name</label>
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('fullName')}</label>
               <input
                 name="fullName"
                 required
@@ -205,7 +207,7 @@ export default function ParentAuthScreen({
             </div>
 
             <div data-field className="space-y-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">Email</label>
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('email')}</label>
               <input
                 name="email"
                 type="email"
@@ -218,7 +220,7 @@ export default function ParentAuthScreen({
             {/* Not in the original field list, but required — phone is a
                 unique account identifier used for SMS password resets. */}
             <div data-field className="space-y-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">Phone number</label>
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('phoneNumber')}</label>
               <input
                 name="phone"
                 type="tel"
@@ -229,22 +231,22 @@ export default function ParentAuthScreen({
             </div>
 
             <div data-field className="space-y-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">Password</label>
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('password')}</label>
               <PasswordInput name="password" autoComplete="new-password" />
             </div>
 
             <div data-field className="space-y-2">
-              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">Confirm password</label>
+              <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('confirmPassword')}</label>
               <PasswordInput name="confirmPassword" autoComplete="new-password" />
             </div>
 
             {registerError === 'exists' ? (
               <p data-field className="text-sm font-semibold text-red-600">
-                An account with that email or phone already exists.
+                {t('accountExists')}
               </p>
             ) : registerError ? (
               <p data-field className="text-sm font-semibold text-red-600">
-                Please check the form (passwords must match, 8+ characters).
+                {t('checkForm')}
               </p>
             ) : null}
 
@@ -253,14 +255,14 @@ export default function ParentAuthScreen({
               data-field
               className="w-full rounded-full bg-[#0b1a3a] px-6 py-3.5 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
             >
-              Create account
+              {t('createAccountButton')}
             </button>
           </form>
 
           <p data-field className="mt-6 text-center text-sm text-stone">
-            Already have an account?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <button type="button" onClick={() => animateTo('login')} className="font-semibold text-accent hover:underline">
-              Sign in
+              {t('signIn')}
             </button>
           </p>
         </div>
@@ -289,7 +291,7 @@ export default function ParentAuthScreen({
           <div ref={loginBladeTextRef} style={{ opacity: loginActive ? 1 : 0 }}>
             <span className="text-base font-bold uppercase tracking-[0.3em] text-[#ff8c42]">BrainTrain</span>
             <h2 className="mt-6 whitespace-nowrap font-display text-6xl font-bold leading-[0.95] text-white xl:text-7xl">
-              Welcome <span className="text-[#ff8c42]">back!</span>
+              {t('welcomeBack')} <span className="text-[#ff8c42]">{t('welcomeBackAccent')}</span>
             </h2>
           </div>
         </div>
@@ -297,13 +299,11 @@ export default function ParentAuthScreen({
           <div ref={signupBladeTextRef} style={{ opacity: loginActive ? 0 : 1 }}>
             <span className="text-sm font-bold uppercase tracking-[0.3em] text-[#ff8c42]">BrainTrain</span>
             <h2 className="mt-5 whitespace-nowrap font-display text-6xl font-bold leading-[0.95] text-white xl:text-7xl">
-              Join the
+              {t('joinThe')}
               <br />
-              <span className="text-[#ff8c42]">BrainTrain family</span>
+              <span className="text-[#ff8c42]">{t('joinTheAccent')}</span>
             </h2>
-            <p className="mt-8 text-lg leading-relaxed text-white/60">
-              Create your account to add your children and enroll them in courses.
-            </p>
+            <p className="mt-8 text-lg leading-relaxed text-white/60">{t('joinSubtext')}</p>
           </div>
         </div>
       </div>

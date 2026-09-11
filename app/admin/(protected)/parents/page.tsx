@@ -14,7 +14,8 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default async function AdminParentsPage({ searchParams }: { searchParams: { saved?: string } }) {
-  await requireAdmin();
+  const session = await requireAdmin();
+  const canEdit = session.kind === 'admin';
   const parents = await prisma.user.findMany({
     where: { role: 'PARENT' },
     include: { parent: { include: { children: true } } },
@@ -96,10 +97,10 @@ export default async function AdminParentsPage({ searchParams }: { searchParams:
                             </button>
                           </form>
                         </>
-                      ) : (
+                      ) : canEdit ? (
                         <FreezeToggleButton action={setParentFrozen.bind(null, p.id, !p.isFrozen)} isFrozen={p.isFrozen} />
-                      )}
-                      <DeleteIconButton action={deleteParent.bind(null, p.id)} />
+                      ) : null}
+                      {canEdit ? <DeleteIconButton action={deleteParent.bind(null, p.id)} /> : null}
                     </div>
                   </td>
                 </tr>

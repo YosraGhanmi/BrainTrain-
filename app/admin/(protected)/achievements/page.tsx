@@ -1,10 +1,12 @@
 import { readContent } from '@/lib/content/store';
 import { addAchievementImage, deleteAchievementImage } from '@/lib/admin/actions';
+import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminAchievementsPage({ searchParams }: { searchParams: { error?: string } }) {
+export default async function AdminAchievementsPage({ searchParams }: { searchParams: { error?: string } }) {
+  await requireAdminOnly();
   const { achievementsImages } = readContent();
 
   return (
