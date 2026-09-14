@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 type Note = {
@@ -39,12 +40,11 @@ export default async function StudentNotesPanel({
           placeholder={t('notePlaceholder')}
           className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
         />
-        <button
-          type="submit"
+        <PendingSubmitButton
           className="w-full rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
         >
           {t('addNote')}
-        </button>
+        </PendingSubmitButton>
       </form>
 
       {notes.length > 0 ? (

@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { loginTeacher } from '@/lib/portal-auth/actions';
 import PasswordInput from '@/components/portal/PasswordInput';
 import BrandedAuthPanel from '@/components/portal/BrandedAuthPanel';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 export default async function TeacherLoginPage({
@@ -50,12 +51,11 @@ export default async function TeacherLoginPage({
           <p className="text-sm font-semibold text-red-600">{t('incorrectCredentials')}</p>
         ) : null}
 
-        <button
-          type="submit"
+        <PendingSubmitButton
           className="w-full rounded-full bg-[#0b1a3a] px-6 py-4 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
         >
           {t('logIn')}
-        </button>
+        </PendingSubmitButton>
       </form>
 
       <p className="mt-6 text-center text-sm text-stone">{t('accountsCreatedByStaff')}</p>

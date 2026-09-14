@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { loginParent, registerParent } from '@/lib/portal-auth/actions';
 import PasswordInput from '@/components/portal/PasswordInput';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 type Mode = 'login' | 'signup';
@@ -164,13 +165,12 @@ export default function ParentAuthScreen({
               </p>
             ) : null}
 
-            <button
-              type="submit"
+            <PendingSubmitButton
               data-field
               className="w-full rounded-full bg-[#0b1a3a] px-6 py-4 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
             >
               {t('logIn')}
-            </button>
+            </PendingSubmitButton>
           </form>
 
           <div data-field className="mt-6 flex items-center justify-between text-sm">
@@ -250,13 +250,12 @@ export default function ParentAuthScreen({
               </p>
             ) : null}
 
-            <button
-              type="submit"
+            <PendingSubmitButton
               data-field
               className="w-full rounded-full bg-[#0b1a3a] px-6 py-3.5 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
             >
               {t('createAccountButton')}
-            </button>
+            </PendingSubmitButton>
           </form>
 
           <p data-field className="mt-6 text-center text-sm text-stone">

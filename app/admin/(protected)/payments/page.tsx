@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { setPaymentStatus } from '@/lib/admin/portal-actions';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,15 +64,15 @@ export default async function AdminPaymentsPage() {
                   <td className="px-5 py-4 text-right">
                     {p.status !== 'PAID' ? (
                       <form action={setPaymentStatus.bind(null, p.id, 'PAID')}>
-                        <button type="submit" className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                        <PendingSubmitButton className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
                           Mark paid
-                        </button>
+                        </PendingSubmitButton>
                       </form>
                     ) : (
                       <form action={setPaymentStatus.bind(null, p.id, 'PENDING')}>
-                        <button type="submit" className="rounded-full border border-ink/15 px-3 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
+                        <PendingSubmitButton className="rounded-full border border-ink/15 px-3 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
                           Reopen
-                        </button>
+                        </PendingSubmitButton>
                       </form>
                     )}
                   </td>

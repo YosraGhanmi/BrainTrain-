@@ -8,7 +8,7 @@ import TeamPhoto from '@/components/gallery/TeamPhoto';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function HeroImageTransition() {
+export default function HeroImageTransition({ registerHref = '/courses' }: { registerHref?: string }) {
   const heroRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +45,7 @@ export default function HeroImageTransition() {
   return (
     <div className="relative">
       <div ref={heroRef} className="relative z-10 bg-surface will-change-transform">
-        <HeroSection />
+        <HeroSection registerHref={registerHref} />
       </div>
       <div ref={imageRef} className="relative z-0 -mt-[30px] will-change-transform">
         <TeamPhoto />

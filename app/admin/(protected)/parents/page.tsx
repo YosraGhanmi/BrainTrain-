@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/admin/guard';
 import { deleteParent, setParentFrozen, approveParent, rejectParent } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,24 +78,24 @@ export default async function AdminParentsPage({ searchParams }: { searchParams:
                       {status === 'PENDING' ? (
                         <>
                           <form action={approveParent.bind(null, p.id)}>
-                            <button
-                              type="submit"
+                            <PendingSubmitButton
                               aria-label="Accept"
                               title="Accept"
+                              spinnerClassName="h-4 w-4"
                               className="flex items-center justify-center rounded-lg border border-emerald-200 p-1.5 text-emerald-600 transition hover:bg-emerald-50"
                             >
                               <Check className="h-4 w-4" />
-                            </button>
+                            </PendingSubmitButton>
                           </form>
                           <form action={rejectParent.bind(null, p.id)}>
-                            <button
-                              type="submit"
+                            <PendingSubmitButton
                               aria-label="Reject"
                               title="Reject"
+                              spinnerClassName="h-4 w-4"
                               className="flex items-center justify-center rounded-lg border border-red-200 p-1.5 text-red-600 transition hover:bg-red-50"
                             >
                               <X className="h-4 w-4" />
-                            </button>
+                            </PendingSubmitButton>
                           </form>
                         </>
                       ) : canEdit ? (

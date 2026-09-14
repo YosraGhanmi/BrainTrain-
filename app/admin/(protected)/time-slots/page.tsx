@@ -2,6 +2,7 @@ import { requireAdminOnly } from '@/lib/admin/guard';
 import { listTimeSlots } from '@/lib/scheduling/time-slots';
 import { upsertTimeSlot, deleteTimeSlot } from '@/lib/admin/time-slots-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { TimeSlot } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -80,12 +81,11 @@ function TimeSlotForm({ slot, isNew }: { slot: TimeSlot; isNew: boolean }) {
         </Field>
 
         <div className="flex justify-end sm:col-span-2 lg:col-span-4">
-          <button
-            type="submit"
+          <PendingSubmitButton
             className="rounded-full bg-ink px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
           >
             {isNew ? 'Add time slot' : 'Save'}
-          </button>
+          </PendingSubmitButton>
         </div>
       </form>
     </details>

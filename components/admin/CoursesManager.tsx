@@ -5,6 +5,7 @@ import { Plus, X } from 'lucide-react';
 import { upsertCourse, deleteCourse } from '@/lib/admin/actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import CourseIconPreview from '@/components/admin/CourseIconPreview';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import { getIcon } from '@/lib/content/icons';
 import type { AgeGroupEntry, CourseEntry } from '@/lib/content/types';
 
@@ -185,12 +186,11 @@ function CourseFormFields({
       </div>
 
       <div className="flex justify-end sm:col-span-2">
-        <button
-          type="submit"
+        <PendingSubmitButton
           className="rounded-full bg-ink px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
         >
           {isNew ? 'Add course' : 'Save'}
-        </button>
+        </PendingSubmitButton>
       </div>
     </form>
   );

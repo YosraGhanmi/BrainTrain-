@@ -3,6 +3,7 @@ import { upsertTimelineEntry, deleteTimelineEntry, reorderTimeline } from '@/lib
 import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import TimelineDragList from '@/components/admin/TimelineDragList';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import { CalendarDays, Image as ImageIcon, Facebook } from 'lucide-react';
 import type { TimelineEntry } from '@/lib/content/types';
 
@@ -93,12 +94,11 @@ function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: numbe
           </label>
 
           <div className="flex justify-end">
-            <button
-              type="submit"
+            <PendingSubmitButton
               className="rounded-full bg-ink px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
             >
               {isNew ? 'Add milestone' : 'Save'}
-            </button>
+            </PendingSubmitButton>
           </div>
         </form>
       </details>

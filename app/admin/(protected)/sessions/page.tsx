@@ -4,6 +4,7 @@ import { readContent } from '@/lib/content/store';
 import { upsertCourseSession, deleteCourseSession } from '@/lib/admin/portal-actions';
 import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,9 +72,9 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
           ))}
         </select>
         <input name="location" placeholder="Location" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
-        <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2 lg:col-span-4">
+        <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2 lg:col-span-4">
           Add session
-        </button>
+        </PendingSubmitButton>
       </form>
 
       <div className="mt-8 overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-soft">

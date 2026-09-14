@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Bell, Check, UserPlus, Receipt, AlertTriangle } from 'lucide-react';
+import { Bell, Check, UserPlus, Receipt, AlertTriangle, ClipboardCheck } from 'lucide-react';
 import { markNotificationRead, markAllNotificationsRead } from '@/lib/admin/portal-actions';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AdminNotifications } from '@/lib/admin/notifications';
 
 function timeAgo(date: Date): string {
@@ -20,6 +21,7 @@ function timeAgo(date: Date): string {
 export default function NotificationBell({
   pendingParents,
   expenseNotices,
+  preinscriptionNotices,
   overduePayments,
   totalCount,
 }: AdminNotifications) {
@@ -50,11 +52,11 @@ export default function NotificationBell({
         <div className="absolute right-0 z-30 mt-2 w-80 max-w-[85vw] overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-soft">
           <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
             <p className="text-sm font-bold text-ink">Notifications</p>
-            {expenseNotices.length > 0 ? (
+            {expenseNotices.length + preinscriptionNotices.length > 0 ? (
               <form action={markAllNotificationsRead}>
-                <button type="submit" className="text-xs font-semibold text-accent transition hover:underline">
+                <PendingSubmitButton className="text-xs font-semibold text-accent transition hover:underline">
                   Mark all read
-                </button>
+                </PendingSubmitButton>
               </form>
             ) : null}
           </div>
@@ -140,14 +142,44 @@ export default function NotificationBell({
                             <span className="block text-[11px] text-stone/70">{timeAgo(n.createdAt)}</span>
                           </Link>
                           <form action={markNotificationRead.bind(null, n.id)}>
-                            <button
-                              type="submit"
+                            <PendingSubmitButton
                               aria-label="Mark as read"
                               title="Mark as read"
+                              spinnerClassName="h-4 w-4"
                               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-stone transition hover:bg-slate-100 hover:text-ink"
                             >
                               <Check className="h-4 w-4" />
-                            </button>
+                            </PendingSubmitButton>
+                          </form>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {preinscriptionNotices.length > 0 ? (
+                  <div>
+                    <p className="px-4 pt-3 text-[10px] font-bold uppercase tracking-wide text-stone/70">Preinscriptions</p>
+                    <ul>
+                      {preinscriptionNotices.map((n) => (
+                        <li key={n.id} className="flex items-start gap-3 px-4 py-3 transition hover:bg-slate-50">
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <ClipboardCheck className="h-4 w-4" />
+                          </span>
+                          <Link href={n.link ?? '/admin/preinscriptions'} onClick={() => setOpen(false)} className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-ink">{n.title}</span>
+                            {n.body ? <span className="block truncate text-xs text-stone">{n.body}</span> : null}
+                            <span className="block text-[11px] text-stone/70">{timeAgo(n.createdAt)}</span>
+                          </Link>
+                          <form action={markNotificationRead.bind(null, n.id)}>
+                            <PendingSubmitButton
+                              aria-label="Mark as read"
+                              title="Mark as read"
+                              spinnerClassName="h-4 w-4"
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-stone transition hover:bg-slate-100 hover:text-ink"
+                            >
+                              <Check className="h-4 w-4" />
+                            </PendingSubmitButton>
                           </form>
                         </li>
                       ))}

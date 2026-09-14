@@ -24,6 +24,7 @@ import { localized, formatDate } from '@/lib/i18n/format';
 import { unenrollChild } from '@/lib/enrollment/actions';
 import { payNow } from '@/lib/payments/actions';
 import UnsubscribeButton from '@/components/portal/UnsubscribeButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import NotesList from '@/components/portal/course/NotesList';
 import PaymentConfirmedModal from '@/components/portal/course/PaymentConfirmedModal';
@@ -228,9 +229,9 @@ export default async function EnrolledCoursePage({
             <input type="hidden" name="locale" value={params.locale} />
             <input type="hidden" name="paymentId" value={outstandingPayment.id} />
             <input type="hidden" name="childId" value={enrollment.child.id} />
-            <button type="submit" className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+            <PendingSubmitButton className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
               {t('payNow')}
-            </button>
+            </PendingSubmitButton>
           </form>
         </div>
       ) : null}

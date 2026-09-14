@@ -7,6 +7,7 @@ import {
   updateBackupEmail,
   deleteBackupEmail,
 } from '@/lib/portal-auth/actions';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 function Row({
@@ -74,21 +75,20 @@ export default async function PersonalInfoSection({
                   defaultValue={phone}
                   className="w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm outline-none focus:border-accent"
                 />
-                <button type="submit" className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
+                <PendingSubmitButton className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
                   {t('save')}
-                </button>
+                </PendingSubmitButton>
               </form>
             </EditToggle>
             <form action={deletePrimaryPhone}>
               <input type="hidden" name="locale" value={locale} />
-              <button
-                type="submit"
+              <PendingSubmitButton
                 disabled={!secondaryPhone}
                 title={secondaryPhone ? undefined : t('addSecondaryFirst')}
                 className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition enabled:hover:border-red-300 enabled:hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {t('delete')}
-              </button>
+              </PendingSubmitButton>
             </form>
           </div>
         </Row>
@@ -97,9 +97,9 @@ export default async function PersonalInfoSection({
           {secondaryPhone ? (
             <form action={deleteSecondaryPhone}>
               <input type="hidden" name="locale" value={locale} />
-              <button type="submit" className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition hover:border-red-300 hover:text-red-600">
+              <PendingSubmitButton className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition hover:border-red-300 hover:text-red-600">
                 {t('delete')}
-              </button>
+              </PendingSubmitButton>
             </form>
           ) : (
             <EditToggle label={t('addPhoneNumber')}>
@@ -112,9 +112,9 @@ export default async function PersonalInfoSection({
                   placeholder={t('phonePlaceholder')}
                   className="w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm outline-none focus:border-accent"
                 />
-                <button type="submit" className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
+                <PendingSubmitButton className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
                   {t('save')}
-                </button>
+                </PendingSubmitButton>
               </form>
             </EditToggle>
           )}
@@ -133,17 +133,17 @@ export default async function PersonalInfoSection({
                   placeholder="you@example.com"
                   className="w-full rounded-lg border border-ink/10 bg-white px-4 py-2.5 text-sm outline-none focus:border-accent"
                 />
-                <button type="submit" className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
+                <PendingSubmitButton className="w-full rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent">
                   {t('save')}
-                </button>
+                </PendingSubmitButton>
               </form>
             </EditToggle>
             {backupEmail ? (
               <form action={deleteBackupEmail}>
                 <input type="hidden" name="locale" value={locale} />
-                <button type="submit" className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition hover:border-red-300 hover:text-red-600">
+                <PendingSubmitButton className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-stone transition hover:border-red-300 hover:text-red-600">
                   {t('delete')}
-                </button>
+                </PendingSubmitButton>
               </form>
             ) : null}
           </div>

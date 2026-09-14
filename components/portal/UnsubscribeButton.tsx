@@ -2,12 +2,12 @@
 
 import { LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export default function UnsubscribeButton() {
   const t = useTranslations('parentPortal.courseEnrollment');
   return (
-    <button
-      type="submit"
+    <PendingSubmitButton
       onClick={(e) => {
         if (!confirm(t('unsubscribeConfirm'))) {
           e.preventDefault();
@@ -17,6 +17,6 @@ export default function UnsubscribeButton() {
     >
       <LogOut className="h-3.5 w-3.5" />
       {t('leaveCourse')}
-    </button>
+    </PendingSubmitButton>
   );
 }

@@ -4,6 +4,7 @@ import { GraduationCap, BookOpen } from 'lucide-react';
 import { editChild } from '@/lib/children/actions';
 import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 import type { AgeGroupEntry } from '@/lib/content/types';
 import type { Prisma } from '@prisma/client';
@@ -133,9 +134,9 @@ export default async function ChildrenSection({
               </div>
 
               <div className="sm:col-span-2">
-                <button type="submit" className="rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+                <PendingSubmitButton className="rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
                   {t('saveChanges')}
-                </button>
+                </PendingSubmitButton>
               </div>
             </form>
           </section>

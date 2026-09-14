@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { confirmPasswordReset } from '@/lib/portal-auth/actions';
 import PasswordInput from '@/components/portal/PasswordInput';
 import AuthCard from '@/components/portal/AuthCard';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 export default async function ResetPasswordPage({
@@ -38,9 +39,9 @@ export default async function ResetPasswordPage({
           <p className="text-sm font-semibold text-red-600">{t('error')}</p>
         ) : null}
 
-        <button type="submit" className="w-full rounded-full bg-ink px-6 py-3.5 text-base font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+        <PendingSubmitButton className="w-full rounded-full bg-ink px-6 py-3.5 text-base font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
           {t('submit')}
-        </button>
+        </PendingSubmitButton>
       </form>
     </AuthCard>
   );

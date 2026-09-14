@@ -3,6 +3,7 @@ import { ArrowLeft, ShieldCheck, ClipboardList, GraduationCap } from 'lucide-rea
 import { login } from '@/lib/admin/actions';
 import { loginSecretary } from '@/lib/portal-auth/actions';
 import PasswordField from '@/components/admin/PasswordField';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 type Role = 'admin' | 'secretary';
 
@@ -152,12 +153,11 @@ export default function AdminLoginPage({
                   <p className="text-sm font-semibold text-red-600">Incorrect email or password. Try again.</p>
                 ) : null}
 
-                <button
-                  type="submit"
+                <PendingSubmitButton
                   className="w-full rounded-full bg-[#0b1a3a] px-6 py-4 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
                 >
                   Log in
-                </button>
+                </PendingSubmitButton>
               </form>
             </>
           )}

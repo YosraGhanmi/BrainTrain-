@@ -16,6 +16,7 @@ import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
 import RegenerateCodeButton from '@/components/admin/RegenerateCodeButton';
 import AddTeacherDialog from '@/components/admin/AddTeacherDialog';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { CourseEntry, AgeGroupEntry } from '@/lib/content/types';
 
 function CourseSelect({
@@ -104,9 +105,9 @@ export default async function AdminTeachersPage({
             ) : searchParams.error ? (
               <p className="text-sm font-semibold text-red-600 sm:col-span-2">Please fill in every field.</p>
             ) : null}
-            <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2">
+            <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2">
               Create teacher account
-            </button>
+            </PendingSubmitButton>
           </form>
         </AddTeacherDialog>
       </div>
@@ -187,9 +188,9 @@ export default async function AdminTeachersPage({
                             {ageGroupLabel ? <span className="text-stone">· {ageGroupLabel}</span> : null}
                             {canEdit ? (
                               <form action={removeTeacherCourse.bind(null, t.teacher!.id, slug)}>
-                                <button type="submit" aria-label="Remove course" className="rounded-full p-0.5 text-stone transition hover:bg-white hover:text-red-600">
+                                <PendingSubmitButton aria-label="Remove course" spinnerClassName="h-3 w-3" className="rounded-full p-0.5 text-stone transition hover:bg-white hover:text-red-600">
                                   <X className="h-3 w-3" />
-                                </button>
+                                </PendingSubmitButton>
                               </form>
                             ) : null}
                           </span>
@@ -204,9 +205,9 @@ export default async function AdminTeachersPage({
                           ageGroups={ageGroups}
                           className="rounded-lg border border-ink/10 bg-slate-50 px-2 py-1 text-xs outline-none focus:border-accent"
                         />
-                        <button type="submit" className="rounded-lg border border-ink/10 px-2 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
+                        <PendingSubmitButton className="rounded-lg border border-ink/10 px-2 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
                           Add
-                        </button>
+                        </PendingSubmitButton>
                       </form>
                     ) : null}
                   </div>

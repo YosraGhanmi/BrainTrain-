@@ -15,6 +15,14 @@ export type ExpenseNotice = {
   createdAt: Date;
 };
 
+export type PreinscriptionNotice = {
+  id: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  createdAt: Date;
+};
+
 export type OverduePaymentNotice = {
   id: string;
   amount: number;
@@ -26,6 +34,7 @@ export type OverduePaymentNotice = {
 export type AdminNotifications = {
   pendingParents: PendingParentNotice[];
   expenseNotices: ExpenseNotice[];
+  preinscriptionNotices: PreinscriptionNotice[];
   overduePayments: OverduePaymentNotice[];
   totalCount: number;
 };
@@ -35,7 +44,7 @@ export type AdminNotifications = {
 // model) rather than stored, so they vanish on their own once
 // approved/rejected or paid — no read-state to manage for those two.
 export async function getAdminNotifications(): Promise<AdminNotifications> {
-  const [pendingParentUsers, expenseNotices, overduePaymentRows] = await Promise.all([
+  const [pendingParentUsers, expenseNotices, preinscriptionNotices, overduePaymentRows] = await Promise.all([
     prisma.user.findMany({
       where: { role: 'PARENT', parent: { status: 'PENDING' } },
       orderBy: { createdAt: 'desc' },
@@ -43,7 +52,13 @@ export async function getAdminNotifications(): Promise<AdminNotifications> {
       select: { id: true, fullName: true, email: true, createdAt: true },
     }),
     prisma.notification.findMany({
-      where: { readAt: null },
+      where: { readAt: null, type: 'EXPENSE_ADDED' },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: { id: true, title: true, body: true, link: true, createdAt: true },
+    }),
+    prisma.notification.findMany({
+      where: { readAt: null, type: 'PREINSCRIPTION_SUBMITTED' },
       orderBy: { createdAt: 'desc' },
       take: 20,
       select: { id: true, title: true, body: true, link: true, createdAt: true },
@@ -73,7 +88,8 @@ export async function getAdminNotifications(): Promise<AdminNotifications> {
   return {
     pendingParents: pendingParentUsers,
     expenseNotices,
+    preinscriptionNotices,
     overduePayments,
-    totalCount: pendingParentUsers.length + expenseNotices.length + overduePayments.length,
+    totalCount: pendingParentUsers.length + expenseNotices.length + preinscriptionNotices.length + overduePayments.length,
   };
 }

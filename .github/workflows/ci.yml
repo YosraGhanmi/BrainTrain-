@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: braintrain
+          POSTGRES_PASSWORD: braintrain
+          POSTGRES_DB: braintrain
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U braintrain -d braintrain"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgresql://braintrain:braintrain@localhost:5432/braintrain
+      ADMIN_PASSWORD: ci-admin-password
+      ADMIN_SESSION_SECRET: ci-admin-session-secret
+      PORTAL_SESSION_SECRET: ci-portal-session-secret
+      STRIPE_SECRET_KEY: sk_test_ci
+      STRIPE_WEBHOOK_SECRET: whsec_ci
+      SMS_PROVIDER: twilio
+      TWILIO_ACCOUNT_SID: ACci
+      TWILIO_AUTH_TOKEN: ci-token
+      TWILIO_FROM_NUMBER: +15005550006
+      CRON_SECRET: ci-cron-secret
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build

@@ -2,6 +2,7 @@ import { readContent } from '@/lib/content/store';
 import { upsertAgeGroup, deleteAgeGroup } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AgeGroupEntry } from '@/lib/content/types';
 
 export const dynamic = 'force-dynamic';
@@ -78,12 +79,11 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
         </Field>
 
         <div className="flex justify-end">
-          <button
-            type="submit"
+          <PendingSubmitButton
             className="rounded-full bg-ink px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
           >
             {isNew ? 'Add age group' : 'Save'}
-          </button>
+          </PendingSubmitButton>
         </div>
       </form>
     </details>

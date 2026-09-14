@@ -3,6 +3,7 @@ import { requireAdminOnly } from '@/lib/admin/guard';
 import { createSecretary, deleteSecretary, setSecretaryFrozen } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,9 +32,9 @@ export default async function AdminSecretariesPage({ searchParams }: { searchPar
         <input name="email" type="email" placeholder="Email" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
         <input name="phone" type="tel" placeholder="Phone" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
         <input name="password" type="password" placeholder="Temporary password" required minLength={8} className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
-        <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2 lg:col-span-4">
+        <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2 lg:col-span-4">
           Create reception account
-        </button>
+        </PendingSubmitButton>
       </form>
 
       <div className="mt-8 overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-soft">

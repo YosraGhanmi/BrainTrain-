@@ -3,6 +3,7 @@ import { requireAdminOnly } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertAgeGroupPricing, clearCoursePricingOverride } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { PlanType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -79,12 +80,11 @@ export default async function AdminPricingPage({ searchParams }: { searchParams:
                     className="w-20 rounded-lg border border-ink/10 bg-slate-50 px-2 py-1.5 text-sm outline-none focus:border-accent"
                   />
                 </label>
-                <button
-                  type="submit"
+                <PendingSubmitButton
                   className="rounded-full bg-ink px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
                 >
                   Save
-                </button>
+                </PendingSubmitButton>
               </div>
             </form>
           );

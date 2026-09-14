@@ -2,6 +2,7 @@ import { readContent } from '@/lib/content/store';
 import { updateContact } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import { Mail, Phone, MapPin, Map } from 'lucide-react';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { LucideIcon } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -68,12 +69,11 @@ export default async function AdminContactPage() {
         </Card>
 
         <div className="flex justify-end">
-          <button
-            type="submit"
+          <PendingSubmitButton
             className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
           >
             Save
-          </button>
+          </PendingSubmitButton>
         </div>
       </form>
     </div>

@@ -2,6 +2,7 @@ import { readContent } from '@/lib/content/store';
 import { updateStats } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import StatsEditor from '@/components/admin/StatsEditor';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,12 +18,11 @@ export default async function AdminStatsPage() {
         <StatsEditor initial={stats} />
 
         <div className="mt-6 flex justify-end">
-          <button
-            type="submit"
+          <PendingSubmitButton
             className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
           >
             Save
-          </button>
+          </PendingSubmitButton>
         </div>
       </form>
     </div>

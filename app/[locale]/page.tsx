@@ -11,18 +11,20 @@ import ContactSection from '@/components/contact/ContactSection';
 import Footer from '@/components/footer/Footer';
 import { readContent } from '@/lib/content/store';
 import { getCourseKinds } from '@/lib/coursesData';
+import { getRegisterHref } from '@/lib/preinscription/actions';
 import type { AppLocale } from '@/i18n/routing';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
-export default function Home({ params }: { params: { locale: AppLocale } }) {
+export default async function Home({ params }: { params: { locale: AppLocale } }) {
   const content = readContent();
+  const registerHref = await getRegisterHref();
 
   return (
     <div className="min-h-screen bg-surface text-ink">
       <Navbar />
       <main>
-        <HeroImageTransition />
+        <HeroImageTransition registerHref={registerHref} />
         <PartnersSection logos={content.sponsors} />
         <PhilosophySection />
         <QuickStats quickStats={content.stats} />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, MapPin, Phone, CheckCircle2 } from 'lucide-react';
+import { Mail, MapPin, Phone, CheckCircle2, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ContactContent } from '@/lib/content/types';
 import { submitContactMessage } from '@/lib/contact/actions';
@@ -139,7 +139,10 @@ export default function ContactSection({ contact }: { contact: ContactContent })
                     {t('sent')}
                   </>
                 ) : status === 'sending' ? (
-                  t('sending')
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t('sending')}
+                  </>
                 ) : (
                   t('send')
                 )}

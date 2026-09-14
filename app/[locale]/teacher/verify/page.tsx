@@ -5,6 +5,7 @@ import { verifyTeacherSecretCode } from '@/lib/portal-auth/actions';
 import { verifyPendingTeacherToken, PENDING_TEACHER_COOKIE_NAME } from '@/lib/portal-auth/session';
 import { localizedPath } from '@/lib/portal-auth/guard';
 import BrandedAuthPanel from '@/components/portal/BrandedAuthPanel';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 export default async function TeacherVerifyPage({
@@ -50,12 +51,11 @@ export default async function TeacherVerifyPage({
 
         {searchParams.error ? <p className="text-sm font-semibold text-red-600">{t('incorrectCode')}</p> : null}
 
-        <button
-          type="submit"
+        <PendingSubmitButton
           className="w-full rounded-full bg-[#0b1a3a] px-6 py-4 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
         >
           {t('confirm')}
-        </button>
+        </PendingSubmitButton>
       </form>
     </BrandedAuthPanel>
   );

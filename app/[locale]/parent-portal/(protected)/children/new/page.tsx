@@ -3,6 +3,7 @@ import { addChild } from '@/lib/children/actions';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { listAgeGroupEntries } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -64,9 +65,9 @@ export default async function AddChildPage({
 
         {searchParams.error ? <p className="text-sm font-semibold text-red-600">{t('error')}</p> : null}
 
-        <button type="submit" className="w-full rounded-full bg-ink px-6 py-3.5 text-base font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+        <PendingSubmitButton className="w-full rounded-full bg-ink px-6 py-3.5 text-base font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
           {t('submit')}
-        </button>
+        </PendingSubmitButton>
       </form>
     </div>
   );

@@ -6,6 +6,7 @@ import { LogOut, ArrowLeft } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import PortalNavLinks from '@/components/portal/PortalNavLinks';
 import PortalShellChrome from '@/components/portal/PortalShellChrome';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import TextMorph from '@/components/text/TextMorph';
 
 export default async function PortalShell({
@@ -80,8 +81,7 @@ export default async function PortalShell({
         {fullName}
       </div>
       <form action={logoutPortal.bind(null, loginHref)}>
-        <button
-          type="submit"
+        <PendingSubmitButton
           className={
             isLight
               ? 'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-ink/70 transition hover:bg-slate-100 hover:text-ink'
@@ -90,7 +90,7 @@ export default async function PortalShell({
         >
           <LogOut className="h-4 w-4" />
           {t('logOut')}
-        </button>
+        </PendingSubmitButton>
       </form>
       <Link
         href="/"

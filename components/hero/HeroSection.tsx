@@ -20,7 +20,7 @@ const HeroScene = dynamic(() => import('@/components/3d/HeroScene'), {
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function HeroSection() {
+export default function HeroSection({ registerHref = '/courses' }: { registerHref?: string }) {
   const textRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('hero');
 
@@ -116,7 +116,7 @@ export default function HeroSection() {
               {t('lead')}
             </p>
             <div className="flex flex-wrap items-center gap-6">
-              <OrbitBorderButton label={t('register')} href="/courses" />
+              <OrbitBorderButton label={t('register')} href={registerHref} />
             </div>
           </div>
         </div>

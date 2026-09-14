@@ -2,6 +2,7 @@ import { ShieldCheck, ShieldOff } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { changePassword, requestTwoFactorEnable, confirmTwoFactorEnable, disableTwoFactor } from '@/lib/portal-auth/actions';
 import PasswordInput from '@/components/portal/PasswordInput';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 export default async function SecuritySection({
@@ -33,9 +34,9 @@ export default async function SecuritySection({
             <label className="text-sm font-semibold text-stone">{t('confirmNewPassword')}</label>
             <PasswordInput name="confirmPassword" autoComplete="new-password" />
           </div>
-          <button type="submit" className="rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+          <PendingSubmitButton className="rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
             {t('changePassword')}
-          </button>
+          </PendingSubmitButton>
         </form>
       </section>
 
@@ -57,9 +58,9 @@ export default async function SecuritySection({
               <input type="hidden" name="locale" value={locale} />
               <label className="text-sm font-semibold text-stone">{t('confirmToTurnOff')}</label>
               <PasswordInput name="currentPassword" autoComplete="current-password" />
-              <button type="submit" className="rounded-full border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-red-300 hover:text-red-600">
+              <PendingSubmitButton className="rounded-full border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-red-300 hover:text-red-600">
                 {t('turnOff')}
-              </button>
+              </PendingSubmitButton>
             </form>
           ) : verifying2fa ? (
             <form action={confirmTwoFactorEnable} className="space-y-3">
@@ -73,16 +74,16 @@ export default async function SecuritySection({
                 className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3 tracking-[0.4em] outline-none focus:border-accent"
                 placeholder="000000"
               />
-              <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+              <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
                 {t('verifyAndEnable')}
-              </button>
+              </PendingSubmitButton>
             </form>
           ) : (
             <form action={requestTwoFactorEnable}>
               <input type="hidden" name="locale" value={locale} />
-              <button type="submit" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+              <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
                 {t('activate')}
-              </button>
+              </PendingSubmitButton>
             </form>
           )}
         </div>

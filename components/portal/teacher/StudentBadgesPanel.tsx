@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { BADGE_STICKERS } from '@/lib/badges/stickers';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 type Badge = {
@@ -109,12 +110,11 @@ export default function StudentBadgesPanel({
                 placeholder={t('notePlaceholderOptional')}
                 className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
               />
-              <button
-                type="submit"
+              <PendingSubmitButton
                 className="w-full rounded-full bg-amber-500 px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-amber-600"
               >
                 {t('awardBadge')}
-              </button>
+              </PendingSubmitButton>
             </form>
           </div>
         </div>

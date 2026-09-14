@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 type Group = {
   id: string;
@@ -211,13 +212,12 @@ export default function EnrollWizard({
               {t('next')}
             </button>
           ) : (
-            <button
-              type="submit"
+            <PendingSubmitButton
               disabled={!canSubmit}
               className="ml-auto rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
               {t('enroll')}
-            </button>
+            </PendingSubmitButton>
           )}
         </div>
       </form>

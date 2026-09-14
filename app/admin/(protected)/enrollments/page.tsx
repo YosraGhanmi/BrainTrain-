@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { Clock3, ListFilter, X } from 'lucide-react';
+import { Clock3, X } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { updateEnrollmentStatus, approveEnrollment, moveEnrollment } from '@/lib/admin/portal-actions';
 import { getCourseEntryOrThrow, listAgeGroupEntries, listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
 import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -92,18 +93,14 @@ export default async function AdminEnrollmentsPage({
         <p className="mt-4 text-sm font-semibold text-emerald-600">Saved.</p>
       ) : null}
 
-      <div className="mt-6 rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-accent">
-            <ListFilter className="h-4 w-4" />
-            <p className="text-xs font-bold uppercase tracking-wide">Filters</p>
-          </div>
+      <div className="mt-6 flex flex-col items-end gap-3">
+        <div className="flex w-full justify-end">
           <p className="text-sm text-stone">
             <span className="font-bold text-ink">{enrollments.length}</span> enrollment{enrollments.length === 1 ? '' : 's'}
           </p>
         </div>
 
-        <form className="mt-4 flex flex-wrap items-end gap-3">
+        <form className="flex w-full flex-wrap items-end justify-end gap-3">
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone">Age group</span>
             <select
@@ -138,16 +135,15 @@ export default async function AdminEnrollmentsPage({
             </select>
           </label>
 
-          <button
-            type="submit"
+          <PendingSubmitButton
             className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
           >
             Apply
-          </button>
+          </PendingSubmitButton>
         </form>
 
         {hasFilters ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-stone">Active</span>
             {selectedAgeGroup ? (
               <Link
@@ -242,32 +238,31 @@ export default async function AdminEnrollmentsPage({
                                 );
                               })}
                             </select>
-                            <button type="submit" className="rounded-lg border border-ink/10 px-2 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
+                            <PendingSubmitButton className="rounded-lg border border-ink/10 px-2 py-1 text-xs font-semibold text-ink transition hover:bg-slate-100">
                               Move
-                            </button>
+                            </PendingSubmitButton>
                           </form>
                         ) : null}
                         {e.status === 'PENDING' ? (
                           <form action={approveEnrollment.bind(null, e.id)}>
-                            <button
-                              type="submit"
+                            <PendingSubmitButton
                               className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
                             >
                               Approve
-                            </button>
+                            </PendingSubmitButton>
                           </form>
                         ) : e.status === 'CANCELLED' ? (
                           <form action={updateEnrollmentStatus.bind(null, e.id, 'ACTIVE')}>
-                            <button type="submit" className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                            <PendingSubmitButton className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
                               Reactivate
-                            </button>
+                            </PendingSubmitButton>
                           </form>
                         ) : null}
                         {e.status !== 'CANCELLED' ? (
                           <form action={updateEnrollmentStatus.bind(null, e.id, 'CANCELLED')}>
-                            <button type="submit" className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50">
+                            <PendingSubmitButton className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50">
                               Cancel
-                            </button>
+                            </PendingSubmitButton>
                           </form>
                         ) : null}
                       </div>

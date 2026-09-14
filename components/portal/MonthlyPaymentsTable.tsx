@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { payNow } from '@/lib/payments/actions';
 import { formatDate } from '@/lib/i18n/format';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -143,12 +144,11 @@ export default function MonthlyPaymentsTable({
                       <input type="hidden" name="locale" value={locale} />
                       <input type="hidden" name="paymentId" value={payment.id} />
                       <input type="hidden" name="childId" value={childId} />
-                      <button
-                        type="submit"
+                      <PendingSubmitButton
                         className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
                       >
                         {t('payNow')}
-                      </button>
+                      </PendingSubmitButton>
                     </form>
                   ) : null}
                 </td>

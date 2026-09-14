@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { createExpense, deleteExpense } from '@/lib/admin/expenses';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,12 +87,11 @@ export default async function AdminDispensesPage({
         </label>
 
         <div className="flex items-end sm:col-span-2 lg:col-span-1">
-          <button
-            type="submit"
+          <PendingSubmitButton
             className="w-full rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:w-auto"
           >
             Add dispense
-          </button>
+          </PendingSubmitButton>
         </div>
       </form>
 

@@ -2,6 +2,7 @@ import { Mail, MailOpen } from 'lucide-react';
 import { readMessages } from '@/lib/messages/store';
 import { markMessageRead, deleteMessage } from '@/lib/admin/actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,13 +49,13 @@ export default function AdminMessagesPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs uppercase tracking-wide text-stone/70">{formatDate(m.createdAt)}</span>
                   <form action={markMessageRead.bind(null, m.id, !m.read)}>
-                    <button
-                      type="submit"
+                    <PendingSubmitButton
                       aria-label={m.read ? 'Mark as unread' : 'Mark as read'}
+                      spinnerClassName="h-4 w-4"
                       className="flex items-center justify-center rounded-lg border border-ink/10 p-1.5 text-ink/50 transition hover:bg-slate-100 hover:text-ink"
                     >
                       {m.read ? <MailOpen className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
-                    </button>
+                    </PendingSubmitButton>
                   </form>
                   <DeleteIconButton action={deleteMessage.bind(null, m.id)} />
                 </div>

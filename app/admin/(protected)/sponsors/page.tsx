@@ -2,6 +2,7 @@ import { readContent } from '@/lib/content/store';
 import { addSponsor, deleteSponsor } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +24,11 @@ export default async function AdminSponsorsPage({ searchParams }: { searchParams
           </label>
           <input id="logo" name="logo" type="file" accept="image/*" required className="block text-sm text-ink" />
         </div>
-        <button
-          type="submit"
+        <PendingSubmitButton
           className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90"
         >
           Add logo
-        </button>
+        </PendingSubmitButton>
         {searchParams.error ? <p className="w-full text-sm font-semibold text-red-600">Pick a file first.</p> : null}
       </form>
 
