@@ -14,6 +14,7 @@ import { absoluteUrl } from '@/lib/seo';
 import { routing } from '@/i18n/routing';
 import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM, sessionsConflict } from '@/lib/scheduling/slots';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { parseTeacherCourseSlugs, stringifyTeacherCourseSlugs } from '@/lib/teachers/course-slugs';
 import { Prisma } from '@prisma/client';
 import type { PlanType, EnrollmentStatus, PaymentStatus } from '@prisma/client';
 
@@ -56,7 +57,7 @@ export async function createTeacher(formData: FormData): Promise<void> {
       role: 'TEACHER',
       teacherSecretCodeHash,
       teacherSecretCode: secretCode,
-      teacher: { create: { courseSlugs: [courseSlug] } },
+      teacher: { create: { courseSlugs: stringifyTeacherCourseSlugs([courseSlug]) } },
     },
   });
 
@@ -94,10 +95,11 @@ export async function addTeacherCourse(teacherId: string, formData: FormData): P
   if (!courseSlug) redirect('/admin/teachers?courseError=1');
 
   const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
-  if (teacher && !teacher.courseSlugs.includes(courseSlug)) {
+  const courseSlugs = parseTeacherCourseSlugs(teacher?.courseSlugs);
+  if (teacher && !courseSlugs.includes(courseSlug)) {
     await prisma.teacher.update({
       where: { id: teacherId },
-      data: { courseSlugs: [...teacher.courseSlugs, courseSlug] },
+      data: { courseSlugs: stringifyTeacherCourseSlugs([...courseSlugs, courseSlug]) },
     });
   }
   redirect('/admin/teachers?saved=1');
@@ -107,9 +109,10 @@ export async function removeTeacherCourse(teacherId: string, courseSlug: string)
   await requireAdminOnly();
   const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } });
   if (teacher) {
+    const courseSlugs = parseTeacherCourseSlugs(teacher.courseSlugs);
     await prisma.teacher.update({
       where: { id: teacherId },
-      data: { courseSlugs: teacher.courseSlugs.filter((s) => s !== courseSlug) },
+      data: { courseSlugs: stringifyTeacherCourseSlugs(courseSlugs.filter((s) => s !== courseSlug)) },
     });
   }
   redirect('/admin/teachers?saved=1');

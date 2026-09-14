@@ -17,6 +17,7 @@ import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
 import RegenerateCodeButton from '@/components/admin/RegenerateCodeButton';
 import AddTeacherDialog from '@/components/admin/AddTeacherDialog';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import { parseTeacherCourseSlugs } from '@/lib/teachers/course-slugs';
 import type { CourseEntry, AgeGroupEntry } from '@/lib/content/types';
 
 function CourseSelect({
@@ -148,7 +149,10 @@ export default async function AdminTeachersPage({
             </tr>
           </thead>
           <tbody>
-            {teachers.map((t) => (
+            {teachers.map((t) => {
+              const teacherCourseSlugs = parseTeacherCourseSlugs(t.teacher?.courseSlugs);
+
+              return (
               <tr key={t.id} className="border-b border-ink/5 last:border-0">
                 <td className="px-5 py-4 font-semibold text-ink align-top">
                   <div className="flex items-center gap-2">
@@ -173,10 +177,10 @@ export default async function AdminTeachersPage({
                 </td>
                 <td className="px-5 py-4 align-top">
                   <div className="flex flex-col gap-1.5">
-                    {(t.teacher?.courseSlugs ?? []).length === 0 ? (
+                    {teacherCourseSlugs.length === 0 ? (
                       <span className="text-stone">—</span>
                     ) : (
-                      t.teacher!.courseSlugs.map((slug) => {
+                      teacherCourseSlugs.map((slug) => {
                         const course = courseBySlug.get(slug);
                         const ageGroupLabel = course ? ageGroupLabelBySlug.get(course.ageGroupSlug) : undefined;
                         return (
@@ -201,7 +205,7 @@ export default async function AdminTeachersPage({
                       <form action={addTeacherCourse.bind(null, t.teacher!.id)} className="mt-1 flex items-center gap-1.5">
                         <CourseSelect
                           name="courseSlug"
-                          courses={courses.filter((c) => !(t.teacher?.courseSlugs ?? []).includes(c.slug))}
+                          courses={courses.filter((c) => !teacherCourseSlugs.includes(c.slug))}
                           ageGroups={ageGroups}
                           className="rounded-lg border border-ink/10 bg-slate-50 px-2 py-1 text-xs outline-none focus:border-accent"
                         />
@@ -214,7 +218,7 @@ export default async function AdminTeachersPage({
                 </td>
                 <td className="px-5 py-4 text-stone align-top">
                   {t.teacher?.sessions.length ?? 0}
-                  {(t.teacher?.courseSlugs.length ?? 0) > 0 && (t.teacher?.sessions.length ?? 0) === 0 ? (
+                  {teacherCourseSlugs.length > 0 && (t.teacher?.sessions.length ?? 0) === 0 ? (
                     <Link
                       href="/admin/sessions"
                       title="Listing a course here doesn't put them on any group — assign them as the teacher on a specific group in Course sessions."
@@ -235,7 +239,8 @@ export default async function AdminTeachersPage({
                   ) : null}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

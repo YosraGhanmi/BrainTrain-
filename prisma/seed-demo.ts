@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../lib/portal-auth/password';
 import { DEFAULT_TEACHER_PASSWORD } from '../lib/admin/teacher-defaults';
 import { BADGE_STICKERS } from '../lib/badges/stickers';
+import { stringifyTeacherCourseSlugs } from '../lib/teachers/course-slugs';
 
 const prisma = new PrismaClient();
 
@@ -58,7 +59,7 @@ async function main() {
         passwordHash,
         role: 'TEACHER',
         teacherSecretCodeHash,
-        teacher: { create: { courseSlugs: ['robotique-14-18', 'python-14-18'] } },
+        teacher: { create: { courseSlugs: stringifyTeacherCourseSlugs(['robotique-14-18', 'python-14-18']) } },
       },
       include: { teacher: true },
     });
