@@ -1,8 +1,10 @@
-import { prisma } from '@/lib/db/prisma';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertCourseSession, deleteCourseSession } from '@/lib/admin/portal-actions';
 import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
+import { listFirebaseCourseSessions } from '@/lib/firebase/sessions';
+import { listFirebaseTeachers } from '@/lib/firebase/teachers';
+import { firestore } from '@/lib/firebase/admin';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
@@ -13,14 +15,21 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 export default async function AdminSessionsPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
   await requireAdminOnly();
   const [sessions, teachers, content, timeSlots] = await Promise.all([
-    prisma.courseSession.findMany({
-      include: { teacher: { include: { user: true } }, _count: { select: { enrollments: true } } },
-      orderBy: { term: 'desc' },
-    }),
-    prisma.user.findMany({ where: { role: 'TEACHER' }, include: { teacher: true } }),
+    listFirebaseCourseSessions(),
+    listFirebaseTeachers(),
     Promise.resolve(readContent()),
     listTimeSlots(),
   ]);
+
+  // Get enrollment count per session
+  const enrollmentCountBySession = new Map<string, number>();
+  await Promise.all(
+    sessions.map(async (s) => {
+      const snap = await firestore.collection('enrollments').where('courseSessionId', '==', s.id).count().get();
+      enrollmentCountBySession.set(s.id, snap.data().count);
+    }),
+  );
+  const teacherById = new Map(teachers.map((t) => [t.id, t]));
 
   return (
     <div>
@@ -56,7 +65,7 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
         <select name="teacherId" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
           <option value="">No teacher assigned yet</option>
           {teachers.map((t) => (
-            <option key={t.teacher!.id} value={t.teacher!.id}>
+            <option key={t.id} value={t.id}>
               {t.fullName}
             </option>
           ))}
@@ -93,6 +102,8 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
             {sessions.map((s) => {
               const course = content.courses.find((c) => c.slug === s.courseSlug);
               const slotLabel = findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime);
+              const teacher = s.teacherId ? teacherById.get(s.teacherId) : null;
+              const enrollmentCount = enrollmentCountBySession.get(s.id) ?? 0;
               return (
                 <tr key={s.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-5 py-4 font-semibold text-ink">{course?.title.en ?? s.courseSlug}</td>
@@ -100,9 +111,9 @@ export default async function AdminSessionsPage({ searchParams }: { searchParams
                   <td className="px-5 py-4 text-stone">
                     {DAYS[s.dayOfWeek]} {s.startTime}–{s.endTime} · {s.location}
                   </td>
-                  <td className="px-5 py-4 text-stone">{s.teacher?.user.fullName ?? '—'}</td>
+                  <td className="px-5 py-4 text-stone">{teacher?.fullName ?? '—'}</td>
                   <td className="px-5 py-4 text-stone">
-                    {s._count.enrollments} / {s.capacity}
+                    {enrollmentCount} / {s.capacity}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <DeleteIconButton action={deleteCourseSession.bind(null, s.id)} />

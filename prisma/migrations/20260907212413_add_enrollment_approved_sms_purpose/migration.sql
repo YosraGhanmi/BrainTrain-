@@ -1,2 +1,0 @@
--- AlterEnum
-ALTER TYPE "SmsPurpose" ADD VALUE 'ENROLLMENT_APPROVED';

@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { X, AlertTriangle } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import {
   createTeacher,
@@ -18,6 +17,8 @@ import RegenerateCodeButton from '@/components/admin/RegenerateCodeButton';
 import AddTeacherDialog from '@/components/admin/AddTeacherDialog';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import { parseTeacherCourseSlugs } from '@/lib/teachers/course-slugs';
+import { listFirebaseTeachers } from '@/lib/firebase/teachers';
+import { listFirebaseCourseSessionsByTeacher } from '@/lib/firebase/sessions';
 import type { CourseEntry, AgeGroupEntry } from '@/lib/content/types';
 
 function CourseSelect({
@@ -76,15 +77,18 @@ export default async function AdminTeachersPage({
 }) {
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
-  const teachers = await prisma.user.findMany({
-    where: { role: 'TEACHER' },
-    include: { teacher: { include: { sessions: true } } },
-    orderBy: { createdAt: 'desc' },
-  });
   const content = readContent();
   const { courses, ageGroups } = content;
   const courseBySlug = new Map(courses.map((c) => [c.slug, c]));
   const ageGroupLabelBySlug = new Map(ageGroups.map((g) => [g.slug, g.label.en]));
+
+  const teacherProfiles = await listFirebaseTeachers();
+  const teachersWithSessionCount = await Promise.all(
+    teacherProfiles.map(async (t) => {
+      const sessions = await listFirebaseCourseSessionsByTeacher(t.id);
+      return { ...t, sessionCount: sessions.length };
+    }),
+  );
 
   const selectClassName = 'rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent';
 
@@ -149,8 +153,8 @@ export default async function AdminTeachersPage({
             </tr>
           </thead>
           <tbody>
-            {teachers.map((t) => {
-              const teacherCourseSlugs = parseTeacherCourseSlugs(t.teacher?.courseSlugs);
+            {teachersWithSessionCount.map((t) => {
+              const teacherCourseSlugs = parseTeacherCourseSlugs(t.courseSlugs);
 
               return (
               <tr key={t.id} className="border-b border-ink/5 last:border-0">
@@ -191,7 +195,7 @@ export default async function AdminTeachersPage({
                             {course?.title.en ?? slug}
                             {ageGroupLabel ? <span className="text-stone">· {ageGroupLabel}</span> : null}
                             {canEdit ? (
-                              <form action={removeTeacherCourse.bind(null, t.teacher!.id, slug)}>
+                              <form action={removeTeacherCourse.bind(null, t.id, slug)}>
                                 <PendingSubmitButton aria-label="Remove course" spinnerClassName="h-3 w-3" className="rounded-full p-0.5 text-stone transition hover:bg-white hover:text-red-600">
                                   <X className="h-3 w-3" />
                                 </PendingSubmitButton>
@@ -202,7 +206,7 @@ export default async function AdminTeachersPage({
                       })
                     )}
                     {canEdit ? (
-                      <form action={addTeacherCourse.bind(null, t.teacher!.id)} className="mt-1 flex items-center gap-1.5">
+                      <form action={addTeacherCourse.bind(null, t.id)} className="mt-1 flex items-center gap-1.5">
                         <CourseSelect
                           name="courseSlug"
                           courses={courses.filter((c) => !teacherCourseSlugs.includes(c.slug))}
@@ -217,8 +221,8 @@ export default async function AdminTeachersPage({
                   </div>
                 </td>
                 <td className="px-5 py-4 text-stone align-top">
-                  {t.teacher?.sessions.length ?? 0}
-                  {teacherCourseSlugs.length > 0 && (t.teacher?.sessions.length ?? 0) === 0 ? (
+                  {t.sessionCount}
+                  {teacherCourseSlugs.length > 0 && t.sessionCount === 0 ? (
                     <Link
                       href="/admin/sessions"
                       title="Listing a course here doesn't put them on any group — assign them as the teacher on a specific group in Course sessions."

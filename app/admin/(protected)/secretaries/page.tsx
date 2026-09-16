@@ -1,18 +1,16 @@
-import { prisma } from '@/lib/db/prisma';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import { createSecretary, deleteSecretary, setSecretaryFrozen } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import { listFirebaseSecretaries } from '@/lib/firebase/secretaries';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminSecretariesPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
   await requireAdminOnly();
-  const secretaries = await prisma.user.findMany({
-    where: { role: 'SECRETARY' },
-    orderBy: { createdAt: 'desc' },
-  });
+  const secretaries = await listFirebaseSecretaries();
+
 
   return (
     <div>

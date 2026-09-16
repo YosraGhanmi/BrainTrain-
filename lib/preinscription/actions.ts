@@ -4,6 +4,13 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db/prisma';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
+import {
+  createFirebasePreinscription,
+  createFirebasePreinscriptionNotification,
+  getFirebasePreinscriptionSetting,
+  isFirebaseConfigured,
+  setFirebasePreinscriptionSetting,
+} from '@/lib/firebase/preinscriptions';
 import type { AppLocale } from '@/i18n/routing';
 
 const SETTING_ID = 1;
@@ -17,6 +24,9 @@ function getLocale(formData: FormData): AppLocale {
 }
 
 export async function getRegisterHref(): Promise<'/courses' | '/preinscription'> {
+  if (isFirebaseConfigured()) {
+    return (await getFirebasePreinscriptionSetting()) ? '/preinscription' : '/courses';
+  }
   const setting = await prisma.preinscriptionSetting.findUnique({ where: { id: SETTING_ID } });
   return setting?.routeRegisterToForm ? '/preinscription' : '/courses';
 }
@@ -24,6 +34,13 @@ export async function getRegisterHref(): Promise<'/courses' | '/preinscription'>
 export async function updatePreinscriptionRouting(formData: FormData): Promise<void> {
   await requireAdminOnly();
   const routeRegisterToForm = field(formData, 'routeRegisterToForm') === 'on';
+
+  if (isFirebaseConfigured()) {
+    await setFirebasePreinscriptionSetting(routeRegisterToForm);
+    revalidatePath('/[locale]', 'layout');
+    revalidatePath('/admin/preinscriptions');
+    redirect('/admin/preinscriptions?saved=1');
+  }
 
   await prisma.preinscriptionSetting.upsert({
     where: { id: SETTING_ID },
@@ -48,18 +65,23 @@ export async function submitPreinscription(formData: FormData): Promise<void> {
     redirect(`/${locale}/preinscription?error=1`);
   }
 
-  await prisma.preinscription.create({
-    data: { childFullName, childAge, institution, parentFullName, parentPhone },
-  });
+  if (isFirebaseConfigured()) {
+    await createFirebasePreinscription({ childFullName, childAge, institution, parentFullName, parentPhone });
+    await createFirebasePreinscriptionNotification(childFullName, parentFullName);
+  } else {
+    await prisma.preinscription.create({
+      data: { childFullName, childAge, institution, parentFullName, parentPhone },
+    });
 
-  await prisma.notification.create({
-    data: {
-      type: 'PREINSCRIPTION_SUBMITTED',
-      title: 'New preinscription received',
-      body: `${childFullName} — ${parentFullName}`,
-      link: '/admin/preinscriptions',
-    },
-  });
+    await prisma.notification.create({
+      data: {
+        type: 'PREINSCRIPTION_SUBMITTED',
+        title: 'New preinscription received',
+        body: `${childFullName} - ${parentFullName}`,
+        link: '/admin/preinscriptions',
+      },
+    });
+  }
 
   revalidatePath('/admin/preinscriptions');
   revalidatePath('/admin');

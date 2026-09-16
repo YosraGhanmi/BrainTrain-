@@ -1,9 +1,12 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/db/prisma';
 import { requireTeacher, localizedPath } from '@/lib/portal-auth/guard';
 import { isValidStickerUrl } from '@/lib/badges/stickers';
+import { createFirebaseTeacherNote } from '@/lib/firebase/teacher-notes';
+import { createFirebaseBadge } from '@/lib/firebase/badges';
+import { getFirebaseCourseSession } from '@/lib/firebase/sessions';
+import { firestore } from '@/lib/firebase/admin';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -30,18 +33,27 @@ export async function addTeacherNote(formData: FormData): Promise<void> {
   const fail = () => redirect(localizedPath(locale, `${back}?error=1`));
   if (!content) fail();
 
-  const session = await prisma.courseSession.findUnique({ where: { id: courseSessionId } });
+  const session = await getFirebaseCourseSession(courseSessionId);
   if (!session || session.teacherId !== teacher.teacherId) {
     redirect(localizedPath(locale, '/teacher?error=1'));
   }
 
-  const enrollment = await prisma.enrollment.findUnique({
-    where: { childId_courseSessionId: { childId, courseSessionId } },
-  });
-  if (!enrollment) fail();
+  // Find the enrollment for this child+session pair
+  const enrollmentSnap = await firestore
+    .collection('enrollments')
+    .where('childId', '==', childId)
+    .where('courseSessionId', '==', courseSessionId)
+    .limit(1)
+    .get();
+  if (enrollmentSnap.empty) fail();
 
-  await prisma.teacherNote.create({
-    data: { teacherId: teacher.teacherId, childId, courseSessionId, enrollmentId: enrollment!.id, content },
+  const enrollmentId = enrollmentSnap.docs[0].id;
+  await createFirebaseTeacherNote({
+    teacherId: teacher.teacherId,
+    childId,
+    courseSessionId,
+    enrollmentId,
+    content,
   });
 
   redirect(localizedPath(locale, `${back}?saved=1`));
@@ -65,18 +77,28 @@ export async function awardBadge(formData: FormData): Promise<void> {
   const fail = () => redirect(localizedPath(locale, `${back}?badgeError=1`));
   if (!title) fail();
 
-  const session = await prisma.courseSession.findUnique({ where: { id: courseSessionId } });
+  const session = await getFirebaseCourseSession(courseSessionId);
   if (!session || session.teacherId !== teacher.teacherId) {
     redirect(localizedPath(locale, '/teacher?error=1'));
   }
 
-  const enrollment = await prisma.enrollment.findUnique({
-    where: { childId_courseSessionId: { childId, courseSessionId } },
-  });
-  if (!enrollment) fail();
+  // Verify child is enrolled in this session
+  const enrollmentSnap = await firestore
+    .collection('enrollments')
+    .where('childId', '==', childId)
+    .where('courseSessionId', '==', courseSessionId)
+    .limit(1)
+    .get();
+  if (enrollmentSnap.empty) fail();
 
-  await prisma.badge.create({
-    data: { teacherId: teacher.teacherId, childId, courseSessionId, title, note: note || null, emoji, imageUrl },
+  await createFirebaseBadge({
+    teacherId: teacher.teacherId,
+    childId,
+    courseSessionId,
+    title,
+    note: note || null,
+    emoji,
+    imageUrl,
   });
 
   redirect(localizedPath(locale, `${back}?badgeSaved=1`));

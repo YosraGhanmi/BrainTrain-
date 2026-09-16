@@ -9,23 +9,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: braintrain
-          POSTGRES_PASSWORD: braintrain
-          POSTGRES_DB: braintrain
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U braintrain -d braintrain"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     env:
-      DATABASE_URL: postgresql://braintrain:braintrain@localhost:5432/braintrain
       ADMIN_PASSWORD: ci-admin-password
       ADMIN_SESSION_SECRET: ci-admin-session-secret
       PORTAL_SESSION_SECRET: ci-portal-session-secret
@@ -52,9 +36,6 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
-
-      - name: Apply database migrations
-        run: npx prisma migrate deploy
 
       - name: Type-check
         run: npx tsc --noEmit

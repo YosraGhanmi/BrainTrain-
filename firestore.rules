@@ -1,0 +1,147 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------------------
+    // Helper functions
+    // ---------------------------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Users (parents, teachers, secretaries)
+    // ---------------------------------------------------------------------------
+
+    // A user can read/write their own profile; nobody else can access it
+    // from the browser. All privileged operations go through the Firebase
+    // Admin SDK (server actions) which bypasses these rules.
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Children
+    // ---------------------------------------------------------------------------
+
+    // A parent can only read/write children whose parentId matches their uid.
+    match /children/{childId} {
+      allow read, write: if isSignedIn()
+        && resource != null
+        && resource.data.parentId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.parentId == request.auth.uid;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Preinscriptions
+    // ---------------------------------------------------------------------------
+
+    // Public preinscription form: anyone can create, only Admin SDK can read/delete.
+    match /preinscriptions/{id} {
+      allow create: if true;
+      allow read, write: if false; // Admin SDK only
+    }
+
+    // ---------------------------------------------------------------------------
+    // Course sessions, time slots, pricing rules — read by authenticated users
+    // ---------------------------------------------------------------------------
+
+    match /course_sessions/{id} {
+      allow read: if isSignedIn();
+      allow write: if false; // Admin SDK only
+    }
+
+    match /time_slots/{id} {
+      allow read: if isSignedIn();
+      allow write: if false; // Admin SDK only
+    }
+
+    match /pricing_rules/{id} {
+      allow read: if isSignedIn();
+      allow write: if false; // Admin SDK only
+    }
+
+    // ---------------------------------------------------------------------------
+    // Enrollments, payment plans, payments — parent read only
+    // ---------------------------------------------------------------------------
+
+    match /enrollments/{id} {
+      allow read: if isSignedIn()
+        && (resource == null || resource.data.childId in getUserChildIds());
+      allow write: if false; // Admin SDK only
+    }
+
+    match /payment_plans/{id} {
+      allow read: if isSignedIn();
+      allow write: if false; // Admin SDK only
+    }
+
+    match /payments/{id} {
+      allow read: if isSignedIn();
+      allow write: if false; // Admin SDK only
+    }
+
+    // ---------------------------------------------------------------------------
+    // Teacher notes and badges — teacher/parent can read their own
+    // ---------------------------------------------------------------------------
+
+    match /teacher_notes/{id} {
+      allow read: if isSignedIn()
+        && (resource.data.teacherId == request.auth.uid
+            || isParentOfChild(resource.data.childId));
+      allow write: if false; // Admin SDK only (server actions)
+    }
+
+    match /badges/{id} {
+      allow read: if isSignedIn()
+        && (resource.data.teacherId == request.auth.uid
+            || isParentOfChild(resource.data.childId));
+      allow write: if false; // Admin SDK only
+    }
+
+    // ---------------------------------------------------------------------------
+    // Admin-only collections (Admin SDK access only from server)
+    // ---------------------------------------------------------------------------
+
+    match /notifications/{id} {
+      allow read, write: if false;
+    }
+
+    match /expenses/{id} {
+      allow read, write: if false;
+    }
+
+    match /sms_notifications/{id} {
+      allow read, write: if false;
+    }
+
+    match /settings/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Helper functions requiring data access (defined at bottom to avoid
+    // forward-reference issues in some Firestore rule evaluators)
+    // ---------------------------------------------------------------------------
+
+    function getUserChildIds() {
+      // Returns the set of childIds owned by the requesting user.
+      // NOTE: Firestore rules cannot execute arbitrary queries; this is
+      // evaluated by the security rules engine — keep it simple.
+      return [];  // Browser-side enrollment reads should go through the Admin SDK
+                  // via server components / server actions for security.
+    }
+
+    function isParentOfChild(childId) {
+      return get(/databases/$(database)/documents/children/$(childId)).data.parentId == request.auth.uid;
+    }
+  }
+}

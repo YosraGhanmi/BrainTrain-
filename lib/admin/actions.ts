@@ -11,9 +11,13 @@ import { setMessageRead, deleteMessage as deleteMessageEntry } from '@/lib/messa
 import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 import { destroyPortalSession } from '@/lib/portal-auth/session';
-import { prisma } from '@/lib/db/prisma';
+import {
+  upsertFirebasePricingRule,
+  deleteFirebasePricingRulesByAgeGroup,
+  deleteFirebasePricingRulesByCourse,
+} from '@/lib/firebase/pricing';
 import type { TimelineEntry, LocalizedString } from '@/lib/content/types';
-import type { PlanType } from '@prisma/client';
+import type { PlanType } from '@/lib/firebase/pricing';
 
 const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
 
@@ -403,18 +407,14 @@ export async function upsertCourse(formData: FormData): Promise<void> {
   // monthly/quarterly/yearly amounts that win over that default (resolvePrice).
   const useDefaultPricing = String(formData.get('useDefaultPricing') ?? '') === 'on';
   if (useDefaultPricing) {
-    await prisma.pricingRule.deleteMany({ where: { courseSlug: slug } });
+    await deleteFirebasePricingRulesByCourse(slug);
   } else {
     const currency = String(formData.get('pricingCurrency') ?? 'TND').trim() || 'TND';
     await Promise.all(
       PLAN_TYPES.map((planType) => {
         const amount = Math.max(0, Number(formData.get(`amount_${planType}`)) || 0);
-        return prisma.pricingRule.upsert({
-          where: { planType_courseSlug: { planType, courseSlug: slug } },
-          update: { amount, currency },
-          create: { planType, courseSlug: slug, amount, currency },
-        });
-      })
+        return upsertFirebasePricingRule({ planType, courseSlug: slug, amount, currency });
+      }),
     );
   }
 
@@ -427,7 +427,7 @@ export async function deleteCourse(slug: string): Promise<void> {
   const content = readContent();
   content.courses = content.courses.filter((c) => c.slug !== slug);
   writeContent(content);
-  await prisma.pricingRule.deleteMany({ where: { courseSlug: slug } });
+  await deleteFirebasePricingRulesByCourse(slug);
   revalidatePublicContent();
   redirect('/admin/courses?saved=1');
 }
@@ -473,8 +473,8 @@ export async function deleteAgeGroup(slug: string): Promise<void> {
   content.courses = content.courses.filter((c) => c.ageGroupSlug !== slug);
   writeContent(content);
   await Promise.all([
-    prisma.pricingRule.deleteMany({ where: { ageGroupSlug: slug } }),
-    prisma.pricingRule.deleteMany({ where: { courseSlug: { in: removedCourseSlugs } } }),
+    deleteFirebasePricingRulesByAgeGroup(slug),
+    ...removedCourseSlugs.map((cs) => deleteFirebasePricingRulesByCourse(cs)),
   ]);
   revalidatePublicContent();
   redirect('/admin/age-groups?saved=1');

@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Users2, CreditCard, Wallet, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
+import { firestore } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -132,39 +132,35 @@ export default async function AdminDashboardPage({
   const nextMonthParam = monthParamFor(monthIndex === 11 ? year + 1 : year, monthIndex === 11 ? 0 : monthIndex + 1);
   const isCurrentMonth = monthParamFor(year, monthIndex) === monthParamFor(new Date().getFullYear(), new Date().getMonth());
 
-  const [
-    parentsCount,
-    teachersCount,
-    childrenCount,
-    activeEnrollments,
-    childrenByAgeGroup,
-    paidPayments,
-    unpaidPayments,
-    earningsResult,
-    dispensesResult,
-  ] = await Promise.all([
-    prisma.parent.count(),
-    prisma.teacher.count(),
-    prisma.child.count(),
-    prisma.enrollment.count({ where: { status: 'ACTIVE' } }),
-    prisma.child.groupBy({ by: ['ageGroupSlug'], _count: { _all: true } }),
-    // A yearly/quarterly plan's single Payment row keeps the dueDate it was
-    // created with, so a parent who pays in a later month than they were
-    // billed would never show up under "paid" for the month the money
-    // actually came in if this went by dueDate — paidAt is when it happened.
-    prisma.payment.count({ where: { status: 'PAID', paidAt: { gte: monthStart, lt: monthEnd } } }),
-    // Still-outstanding bills, by contrast, only make sense scoped to when
-    // they're due — a payment already marked PAID (however late) is no
-    // longer "remaining" in the month it was originally due.
-    prisma.payment.count({ where: { status: { not: 'PAID' }, dueDate: { gte: monthStart, lt: monthEnd } } }),
-    prisma.payment.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
-    prisma.expense.aggregate({ _sum: { amount: true } }),
-  ]);
+  const [parentSnap, teacherSnap, childSnap, enrollmentSnap, childGroupSnap, paidSnap, unpaidSnap, earningsSnap, dispensesSnap] =
+    await Promise.all([
+      firestore.collection('users').where('role', '==', 'PARENT').count().get(),
+      firestore.collection('users').where('role', '==', 'TEACHER').count().get(),
+      firestore.collection('children').count().get(),
+      firestore.collection('enrollments').where('status', '==', 'ACTIVE').count().get(),
+      firestore.collection('children').get(),
+      firestore.collection('payments').where('status', '==', 'PAID').where('paidAt', '>=', monthStart).where('paidAt', '<', monthEnd).count().get(),
+      firestore.collection('payments').where('status', '!=', 'PAID').where('dueDate', '>=', monthStart).where('dueDate', '<', monthEnd).count().get(),
+      firestore.collection('payments').where('status', '==', 'PAID').get(),
+      firestore.collection('expenses').get(),
+    ]);
 
-  const totalEarnings = Number(earningsResult._sum.amount ?? 0);
-  const totalDispenses = Number(dispensesResult._sum.amount ?? 0);
+  const parentsCount = parentSnap.data().count;
+  const teachersCount = teacherSnap.data().count;
+  const childrenCount = childSnap.data().count;
+  const activeEnrollments = enrollmentSnap.data().count;
+  const paidPayments = paidSnap.data().count;
+  const unpaidPayments = unpaidSnap.data().count;
 
-  const countByAgeGroupSlug = new Map(childrenByAgeGroup.map((g) => [g.ageGroupSlug, g._count._all]));
+  const totalEarnings = earningsSnap.docs.reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
+  const totalDispenses = dispensesSnap.docs.reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
+
+  // Build age group breakdown from the children collection
+  const countByAgeGroupSlug = new Map<string, number>();
+  childGroupSnap.docs.forEach((doc) => {
+    const slug = String(doc.data().ageGroupSlug ?? '');
+    countByAgeGroupSlug.set(slug, (countByAgeGroupSlug.get(slug) ?? 0) + 1);
+  });
   const allAgeGroups = readContent().ageGroups;
   const colorByAgeGroupSlug = new Map(allAgeGroups.map((g, i) => [g.slug, AGE_GROUP_COLORS[i % AGE_GROUP_COLORS.length]]));
   const ageGroupStats = allAgeGroups

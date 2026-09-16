@@ -1,23 +1,11 @@
-import { prisma } from '@/lib/db/prisma';
-import type { PlanType } from '@prisma/client';
+import { resolveFirebasePrice } from '@/lib/firebase/pricing';
 
 // Resolves a course-specific override if the course opted into one, else the
-// price its age group defaults to. See prisma/schema.prisma's PricingRule
-// comment for how the two are distinguished.
+// price its age group defaults to. Delegates to the Firebase pricing module.
 export async function resolvePrice(
-  planType: PlanType,
+  planType: 'MONTHLY' | 'QUARTERLY' | 'YEARLY',
   courseSlug: string,
-  ageGroupSlug: string
+  ageGroupSlug: string,
 ): Promise<{ amount: number; currency: string }> {
-  const override = await prisma.pricingRule.findUnique({
-    where: { planType_courseSlug: { planType, courseSlug } },
-  });
-  if (override) return { amount: Number(override.amount), currency: override.currency };
-
-  const ageGroupDefault = await prisma.pricingRule.findUnique({
-    where: { planType_ageGroupSlug: { planType, ageGroupSlug } },
-  });
-  if (ageGroupDefault) return { amount: Number(ageGroupDefault.amount), currency: ageGroupDefault.currency };
-
-  throw new Error(`No pricing rule found for plan type "${planType}" (course "${courseSlug}", age group "${ageGroupSlug}").`);
+  return resolveFirebasePrice(planType, courseSlug, ageGroupSlug);
 }

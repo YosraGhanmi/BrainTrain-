@@ -7,6 +7,7 @@ import PersonalInfoSection from '@/components/portal/settings/PersonalInfoSectio
 import SecuritySection from '@/components/portal/settings/SecuritySection';
 import ChildrenSection from '@/components/portal/settings/ChildrenSection';
 import type { AppLocale } from '@/i18n/routing';
+import { listFirebaseChildren, isFirebaseConfigured } from '@/lib/firebase/children';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,11 +73,13 @@ async function ChildrenTab({
   parentId: string;
   selectedChildId: string;
 }) {
-  const kids = await prisma.child.findMany({
-    where: { parentId },
-    include: { enrollments: { include: { courseSession: true }, orderBy: { enrolledAt: 'desc' } } },
-    orderBy: { createdAt: 'asc' },
-  });
+  const kids = isFirebaseConfigured()
+    ? (await listFirebaseChildren(parentId)).map((child) => ({ ...child, enrollments: [] }))
+    : await prisma.child.findMany({
+        where: { parentId },
+        include: { enrollments: { include: { courseSession: true }, orderBy: { enrolledAt: 'desc' } } },
+        orderBy: { createdAt: 'asc' },
+      });
   const ageGroups = listAgeGroupEntries();
 
   return <ChildrenSection locale={locale} kids={kids} ageGroups={ageGroups} selectedChildId={selectedChildId} />;

@@ -5,6 +5,8 @@ import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { prisma } from '@/lib/db/prisma';
 import type { AppLocale } from '@/i18n/routing';
 import { LayoutDashboard, BookOpen, CalendarDays, CreditCard, Settings } from 'lucide-react';
+import { listFirebaseChildren } from '@/lib/firebase/children';
+import { isFirebaseConfigured } from '@/lib/firebase/portal-auth';
 
 export default async function ParentPortalLayout({
   children,
@@ -15,11 +17,9 @@ export default async function ParentPortalLayout({
 }) {
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.nav' });
-  const kids = await prisma.child.findMany({
-    where: { parentId: parent.parentId },
-    orderBy: { createdAt: 'asc' },
-    select: { id: true, fullName: true },
-  });
+  const kids = isFirebaseConfigured()
+    ? (await listFirebaseChildren(parent.parentId)).map(({ id, fullName }) => ({ id, fullName }))
+    : await prisma.child.findMany({ where: { parentId: parent.parentId }, orderBy: { createdAt: 'asc' }, select: { id: true, fullName: true } });
   const selectedKid = resolveSelectedChild(kids);
 
   return (

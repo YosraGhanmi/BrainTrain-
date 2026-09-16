@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/db/prisma';
 import { getSmsProvider } from './index';
-import type { SmsPurpose } from '@prisma/client';
+import { logSmsSent, logSmsFailed } from '@/lib/firebase/sms-logs';
+import type { SmsPurpose } from '@/lib/firebase/sms-logs';
 
 export async function sendSms(params: {
   parentId: string;
@@ -12,29 +12,23 @@ export async function sendSms(params: {
   const provider = getSmsProvider();
   try {
     const result = await provider.send(params.phone, params.message);
-    await prisma.sMSNotification.create({
-      data: {
-        parentId: params.parentId,
-        phone: params.phone,
-        message: params.message,
-        purpose: params.purpose,
-        status: 'SENT',
-        provider: provider.name,
-        providerMessageId: result.providerMessageId,
-        relatedPaymentId: params.relatedPaymentId,
-      },
+    await logSmsSent({
+      parentId: params.parentId,
+      phone: params.phone,
+      message: params.message,
+      purpose: params.purpose,
+      provider: provider.name,
+      providerMessageId: result.providerMessageId,
+      relatedPaymentId: params.relatedPaymentId,
     });
   } catch (err) {
-    await prisma.sMSNotification.create({
-      data: {
-        parentId: params.parentId,
-        phone: params.phone,
-        message: params.message,
-        purpose: params.purpose,
-        status: 'FAILED',
-        provider: getSmsProvider().name,
-        relatedPaymentId: params.relatedPaymentId,
-      },
+    await logSmsFailed({
+      parentId: params.parentId,
+      phone: params.phone,
+      message: params.message,
+      purpose: params.purpose,
+      provider: provider.name,
+      relatedPaymentId: params.relatedPaymentId,
     });
     throw err;
   }

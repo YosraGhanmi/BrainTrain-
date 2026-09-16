@@ -1,14 +1,19 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { resolvePrice } from '@/lib/pricing/compute';
 import { sessionsConflict } from '@/lib/scheduling/slots';
+import {
+  createFirebaseEnrollment,
+  updateFirebaseEnrollmentStatus,
+  getFirebaseEnrollment,
+} from '@/lib/firebase/enrollments';
+import { getFirebaseCourseSession } from '@/lib/firebase/sessions';
+import { getFirebaseChild } from '@/lib/firebase/children';
 import type { AppLocale } from '@/i18n/routing';
-import type { PlanType, PaymentMethod } from '@prisma/client';
+import type { PlanType, PaymentMethod } from '@/lib/firebase/enrollments';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -37,61 +42,35 @@ export async function enrollChild(formData: FormData): Promise<void> {
   if (!PLAN_TYPES.includes(planType)) fail('plan');
   if (!PAYMENT_METHODS.includes(paymentMethod)) fail('method');
 
-  const child = await prisma.child.findUnique({ where: { id: childId } });
+  const child = await getFirebaseChild(childId);
   if (!child || child.parentId !== parent.parentId) {
     redirect(localizedPath(locale, '/parent-portal?error=1'));
   }
 
-  const session = await prisma.courseSession.findUnique({ where: { id: courseSessionId } });
+  const session = await getFirebaseCourseSession(courseSessionId);
   if (!session) fail('session');
 
   const course = getCourseEntryOrThrow(session!.courseSlug);
   if (course.ageGroupSlug !== child!.ageGroupSlug) fail('ineligible');
 
+  const { amount, currency } = await resolvePrice(planType, session!.courseSlug, course.ageGroupSlug);
+
   let enrollmentId = '';
-
   try {
-    await prisma.$transaction(async (tx) => {
-      const activeCount = await tx.enrollment.count({
-        where: { courseSessionId, status: { in: ['PENDING', 'ACTIVE'] } },
-      });
-      if (activeCount >= session!.capacity) {
-        throw new Error('CAPACITY_FULL');
-      }
-
-      // A child can't be in two sessions that overlap in time regardless of
-      // which course they belong to — check against every other session
-      // this child is already (pending or actively) enrolled in.
-      const otherSessions = await tx.enrollment.findMany({
-        where: { childId, status: { in: ['PENDING', 'ACTIVE'] }, courseSessionId: { not: courseSessionId } },
-        include: { courseSession: true },
-      });
-      if (otherSessions.some((e) => sessionsConflict(session!, e.courseSession))) {
-        throw new Error('SCHEDULE_CONFLICT');
-      }
-
-      const { amount, currency } = await resolvePrice(planType, session!.courseSlug, course.ageGroupSlug);
-
-      const enrollment = await tx.enrollment.create({
-        data: { childId: childId, courseSessionId, status: 'PENDING' },
-      });
-      enrollmentId = enrollment.id;
-
-      const paymentPlan = await tx.paymentPlan.create({
-        data: { enrollmentId: enrollment.id, type: planType, method: paymentMethod, amount, currency },
-      });
-
-      // Only the first payment is generated here — for MONTHLY plans,
-      // subsequent months' Payment rows are created from /admin/payments as
-      // each billing period opens, keeping this transaction fast and simple.
-      await tx.payment.create({
-        data: { paymentPlanId: paymentPlan.id, enrollmentId: enrollment.id, amount, currency, dueDate: new Date(), status: 'PENDING' },
-      });
+    const result = await createFirebaseEnrollment({
+      childId,
+      courseSessionId,
+      session: session!,
+      planType,
+      paymentMethod,
+      amount,
+      currency,
     });
+    enrollmentId = result.enrollmentId;
   } catch (err) {
     if (err instanceof Error && err.message === 'CAPACITY_FULL') fail('capacity');
     if (err instanceof Error && err.message === 'SCHEDULE_CONFLICT') fail('conflict');
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') fail('duplicate');
+    if (err instanceof Error && err.message === 'DUPLICATE') fail('duplicate');
     throw err;
   }
 
@@ -107,21 +86,15 @@ export async function unenrollChild(formData: FormData): Promise<void> {
 
   const detailPath = `/parent-portal/children/${childId}/courses/${enrollmentId}`;
 
-  const enrollment = await prisma.enrollment.findUnique({
-    where: { id: enrollmentId },
-    include: { child: true },
-  });
-  if (!enrollment || enrollment.child.parentId !== parent.parentId) {
+  const enrollment = await getFirebaseEnrollment(enrollmentId);
+  const child = enrollment ? await getFirebaseChild(enrollment.childId) : null;
+  if (!enrollment || !child || child.parentId !== parent.parentId) {
     redirect(localizedPath(locale, '/parent-portal?error=1'));
   }
   if (enrollment!.status === 'CANCELLED') {
     redirect(localizedPath(locale, `${detailPath}?error=already`));
   }
 
-  await prisma.enrollment.update({
-    where: { id: enrollmentId },
-    data: { status: 'CANCELLED' },
-  });
-
+  await updateFirebaseEnrollmentStatus(enrollmentId, 'CANCELLED');
   redirect(localizedPath(locale, '/parent-portal/courses?unsubscribed=1'));
 }

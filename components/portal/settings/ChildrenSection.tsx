@@ -7,11 +7,19 @@ import { localized } from '@/lib/i18n/format';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 import type { AgeGroupEntry } from '@/lib/content/types';
-import type { Prisma } from '@prisma/client';
-
-type ChildWithEnrollments = Prisma.ChildGetPayload<{
-  include: { enrollments: { include: { courseSession: true } } };
-}>;
+type ChildWithEnrollments = {
+  id: string;
+  fullName: string;
+  dateOfBirth: Date;
+  ageGroupSlug: string;
+  institution: string | null;
+  specialNeeds: string | null;
+  enrollments: Array<{
+    id: string;
+    status: string;
+    courseSession: { courseSlug: string; term: string };
+  }>;
+};
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-700',

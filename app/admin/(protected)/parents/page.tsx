@@ -1,10 +1,10 @@
 import { Check, X } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { deleteParent, setParentFrozen, approveParent, rejectParent } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import { listFirebaseParentProfiles } from '@/lib/firebase/portal-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,14 +17,8 @@ const STATUS_BADGE: Record<string, string> = {
 export default async function AdminParentsPage({ searchParams }: { searchParams: { saved?: string } }) {
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
-  const parents = await prisma.user.findMany({
-    where: { role: 'PARENT' },
-    include: { parent: { include: { children: true } } },
-    // Pending accounts surface first so they don't get lost under approved ones.
-    orderBy: [{ parent: { status: 'asc' } }, { createdAt: 'desc' }],
-  });
-
-  const pendingCount = parents.filter((p) => p.parent?.status === 'PENDING').length;
+  const parents = await listFirebaseParentProfiles();
+  const pendingCount = parents.filter((p) => p.parentStatus === 'PENDING').length;
 
   return (
     <div>
@@ -52,7 +46,7 @@ export default async function AdminParentsPage({ searchParams }: { searchParams:
           </thead>
           <tbody>
             {parents.map((p) => {
-              const status = p.parent?.status ?? 'APPROVED';
+              const status = p.parentStatus ?? 'APPROVED';
               return (
                 <tr key={p.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-5 py-4 font-semibold text-ink">
@@ -67,7 +61,7 @@ export default async function AdminParentsPage({ searchParams }: { searchParams:
                   </td>
                   <td className="px-5 py-4 text-stone">{p.email}</td>
                   <td className="px-5 py-4 text-stone">{p.phone}</td>
-                  <td className="px-5 py-4 text-stone">{p.parent?.children.length ?? 0}</td>
+                  <td className="px-5 py-4 text-stone">{p.childCount ?? 0}</td>
                   <td className="px-5 py-4">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${STATUS_BADGE[status]}`}>
                       {status.charAt(0) + status.slice(1).toLowerCase()}

@@ -2,8 +2,9 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
+import { createFirebaseExpense, deleteFirebaseExpense } from '@/lib/firebase/expenses';
+import { createFirebaseNotification } from '@/lib/firebase/notifications';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -26,29 +27,24 @@ export async function createExpense(formData: FormData): Promise<void> {
 
   const createdByName = session.kind === 'admin' ? 'Admin' : session.fullName;
 
-  await prisma.expense.create({
-    data: {
-      label,
-      amount,
-      currency,
-      category: category || null,
-      note: note || null,
-      date: dateRaw ? new Date(dateRaw) : new Date(),
-      createdByName,
-      createdByRole: session.kind === 'admin' ? 'ADMIN' : 'SECRETARY',
-    },
+  await createFirebaseExpense({
+    label,
+    amount,
+    currency,
+    category: category || null,
+    note: note || null,
+    date: dateRaw ? new Date(dateRaw) : new Date(),
+    createdByName,
+    createdByRole: session.kind === 'admin' ? 'ADMIN' : 'SECRETARY',
   });
 
-  // Only notify the admin about expenses a secretary logged — an admin
-  // creating one doesn't need to be told about their own action.
+  // Notify admin when a secretary logs an expense
   if (session.kind === 'secretary') {
-    await prisma.notification.create({
-      data: {
-        type: 'EXPENSE_ADDED',
-        title: `${session.fullName} logged a dispense`,
-        body: `${label} — ${amount.toFixed(2)} ${currency}`,
-        link: '/admin/dispenses',
-      },
+    await createFirebaseNotification({
+      type: 'EXPENSE_ADDED',
+      title: `${session.fullName} logged a dispense`,
+      body: `${label} — ${amount.toFixed(2)} ${currency}`,
+      link: '/admin/dispenses',
     });
   }
 
@@ -59,7 +55,7 @@ export async function createExpense(formData: FormData): Promise<void> {
 
 export async function deleteExpense(id: string): Promise<void> {
   await requireAdminOnly();
-  await prisma.expense.delete({ where: { id } });
+  await deleteFirebaseExpense(id);
   revalidatePath('/admin/dispenses');
   revalidatePath('/admin');
 }

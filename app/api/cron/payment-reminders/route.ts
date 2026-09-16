@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
+import { firestore } from '@/lib/firebase/admin';
 import { sendSms } from '@/lib/sms/send';
+import { flipOverduePayments } from '@/lib/firebase/enrollments';
 
 const REMINDER_WINDOW_DAYS = 3;
 
 // No cron infra exists in this project — this endpoint is meant to be hit by
-// an external scheduler (Vercel Cron, a system cron job, GitHub Actions,
-// etc.) on e.g. a daily schedule, authenticated with a shared secret header
-// rather than a user session.
+// an external scheduler (OVH cron, GitHub Actions, etc.) on a daily schedule,
+// authenticated with a shared secret header rather than a user session.
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const secret = req.headers.get('x-cron-secret');
   if (!secret || secret !== process.env.CRON_SECRET) {
@@ -16,41 +16,49 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const now = new Date();
 
-  // Flip anything past its due date from PENDING to OVERDUE first, so the
-  // reminder query below (and /admin/payments) reflects current state.
-  await prisma.payment.updateMany({
-    where: { status: 'PENDING', dueDate: { lt: now } },
-    data: { status: 'OVERDUE' },
-  });
+  // Flip anything past its due date from PENDING to OVERDUE
+  const flipped = await flipOverduePayments();
 
   const windowEnd = new Date(now.getTime() + REMINDER_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  const duePayments = await prisma.payment.findMany({
-    where: {
-      status: { in: ['PENDING', 'OVERDUE'] },
-      dueDate: { lte: windowEnd },
-    },
-    include: {
-      paymentPlan: { include: { enrollment: { include: { child: { include: { parent: { include: { user: true } } } } } } } },
-    },
-  });
+
+  // Find payments due within the reminder window (or already overdue)
+  const paymentsSnap = await firestore
+    .collection('payments')
+    .where('status', 'in', ['PENDING', 'OVERDUE'])
+    .where('dueDate', '<=', windowEnd)
+    .get();
 
   let sent = 0;
   let failed = 0;
 
-  for (const payment of duePayments) {
-    const parent = payment.paymentPlan.enrollment.child.parent;
+  for (const doc of paymentsSnap.docs) {
+    const payment = doc.data();
+    // Resolve child → parent chain
+    const enrollmentDoc = await firestore.collection('enrollments').doc(String(payment.enrollmentId)).get();
+    const childId = enrollmentDoc.data()?.childId as string | undefined;
+    if (!childId) continue;
+
+    const childDoc = await firestore.collection('children').doc(childId).get();
+    const parentId = childDoc.data()?.parentId as string | undefined;
+    if (!parentId) continue;
+
+    const parentDoc = await firestore.collection('users').doc(parentId).get();
+    const phone = String(parentDoc.data()?.phone ?? '');
+    if (!phone) continue;
+
     const isOverdue = payment.status === 'OVERDUE';
+    const dueDate = payment.dueDate?.toDate?.() ?? new Date(payment.dueDate ?? 0);
     const message = isOverdue
       ? `BrainTrain: your payment of ${payment.amount} ${payment.currency} is overdue. Please pay via the parent portal to avoid interruption.`
-      : `BrainTrain: your payment of ${payment.amount} ${payment.currency} is due soon (${payment.dueDate.toDateString()}). Pay via the parent portal.`;
+      : `BrainTrain: your payment of ${payment.amount} ${payment.currency} is due soon (${dueDate.toDateString()}). Pay via the parent portal.`;
 
     try {
       await sendSms({
-        parentId: parent.id,
-        phone: parent.user.phone,
+        parentId,
+        phone,
         message,
         purpose: 'PAYMENT_REMINDER',
-        relatedPaymentId: payment.id,
+        relatedPaymentId: doc.id,
       });
       sent += 1;
     } catch {
@@ -58,5 +66,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  return NextResponse.json({ checked: duePayments.length, sent, failed });
+  return NextResponse.json({ flipped, checked: paymentsSnap.size, sent, failed });
 }
