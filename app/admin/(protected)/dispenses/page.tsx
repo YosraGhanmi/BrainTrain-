@@ -1,7 +1,7 @@
 import { Wallet } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { createExpense, deleteExpense } from '@/lib/admin/expenses';
+import { listFirebaseExpenses } from '@/lib/firebase/expenses';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
@@ -10,20 +10,18 @@ export const dynamic = 'force-dynamic';
 const inputClassName =
   'w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent';
 
-export default async function AdminDispensesPage({
-  searchParams,
-}: {
-  searchParams: { saved?: string; error?: string };
-}) {
+export default async function AdminDispensesPage(
+  props: {
+    searchParams: Promise<{ saved?: string; error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const session = await requireAdmin();
   const canDelete = session.kind === 'admin';
 
-  const [expenses, totalResult] = await Promise.all([
-    prisma.expense.findMany({ orderBy: { date: 'desc' } }),
-    prisma.expense.aggregate({ _sum: { amount: true } }),
-  ]);
+  const expenses = await listFirebaseExpenses();
 
-  const total = Number(totalResult._sum.amount ?? 0);
+  const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const currency = expenses[0]?.currency ?? 'TND';
   const today = new Date().toISOString().slice(0, 10);
 

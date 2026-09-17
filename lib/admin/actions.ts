@@ -50,7 +50,7 @@ export async function login(formData: FormData): Promise<void> {
   // Clear any leftover reception portal session from this browser so logging
   // out of the admin account later doesn't fall back into that session.
   await destroyPortalSession();
-  cookies().set(SESSION_COOKIE_NAME, createSessionToken(), {
+  (await cookies()).set(SESSION_COOKIE_NAME, createSessionToken(), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -63,7 +63,7 @@ export async function login(formData: FormData): Promise<void> {
 export async function logout(): Promise<void> {
   // Clears both the legacy admin cookie and a secretary's DB-backed portal
   // session — whichever one is actually in use, the other is a no-op.
-  cookies().delete(SESSION_COOKIE_NAME);
+  (await cookies()).delete(SESSION_COOKIE_NAME);
   await destroyPortalSession();
   redirect('/admin/login');
 }
@@ -98,15 +98,13 @@ async function saveUploadedImage(file: File, folder: UploadFolder): Promise<stri
 const COMBINING_MARKS = new RegExp('[\\u0300-\\u036f]', 'g');
 
 function slugify(input: string): string {
-  return (
-    input
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(COMBINING_MARKS, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 60) || 'item'
-  );
+  return (input
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(COMBINING_MARKS, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'item');
 }
 
 function uniqueSlug(base: string, taken: string[]): string {

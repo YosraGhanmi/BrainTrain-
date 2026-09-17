@@ -13,7 +13,7 @@ function optimizedSrc(src: string, displayWidth: number): string {
   if (!src.startsWith("/")) return src; // remote/absolute URLs pass through untouched
   const target = displayWidth * 2; // headroom for retina without going full-res
   const width = NEXT_IMAGE_WIDTHS.find((w) => w >= target) ?? NEXT_IMAGE_WIDTHS[NEXT_IMAGE_WIDTHS.length - 1];
-  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=70`;
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`;
 }
 
 interface RoundCarouselImage {

@@ -1,18 +1,18 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Facebook, Instagram, Linkedin, Twitter, Youtube, MessageCircle, Music2, Link2, Plus, Trash2 } from 'lucide-react';
+import { AtSign, BriefcaseBusiness, Camera, MessageCircle, Music2, Link2, Plus, Share2, Trash2, Video } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 type Row = { key: number; label: string; href: string };
 
 function iconFor(label: string): LucideIcon {
   const l = label.toLowerCase();
-  if (l.includes('facebook')) return Facebook;
-  if (l.includes('instagram')) return Instagram;
-  if (l.includes('linkedin')) return Linkedin;
-  if (l.includes('twitter') || l === 'x') return Twitter;
-  if (l.includes('youtube')) return Youtube;
+  if (l.includes('facebook')) return Share2;
+  if (l.includes('instagram')) return Camera;
+  if (l.includes('linkedin')) return BriefcaseBusiness;
+  if (l.includes('twitter') || l === 'x') return AtSign;
+  if (l.includes('youtube')) return Video;
   if (l.includes('tiktok')) return Music2;
   if (l.includes('whatsapp')) return MessageCircle;
   return Link2;

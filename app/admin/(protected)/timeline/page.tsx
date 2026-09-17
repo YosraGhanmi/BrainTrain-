@@ -4,7 +4,7 @@ import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import TimelineDragList from '@/components/admin/TimelineDragList';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { CalendarDays, Image as ImageIcon, Facebook } from 'lucide-react';
+import { CalendarDays, Image as ImageIcon, Share2 } from 'lucide-react';
 import type { TimelineEntry } from '@/lib/content/types';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +26,7 @@ function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: numbe
               <CalendarDays className="h-3.5 w-3.5" style={{ color: NAVY }} />
               {isNew ? 'New milestone' : entry.date.en || 'No date'}
               {entry.logo ? <ImageIcon className="h-3.5 w-3.5 text-stone/60" /> : null}
-              {entry.facebookUrl ? <Facebook className="h-3.5 w-3.5 text-[#1877f2]" /> : null}
+              {entry.facebookUrl ? <Share2 className="h-3.5 w-3.5 text-[#1877f2]" /> : null}
             </p>
             <h3 className="mt-1.5 font-display text-lg font-semibold text-ink">
               {isNew ? '+ Add a milestone' : entry.title.en || 'Untitled milestone'}

@@ -13,7 +13,7 @@ const FIREBASE_SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 export async function createPortalSession(userId: string, firebaseIdToken?: string): Promise<void> {
   if (firebaseIdToken) {
     const sessionCookie = await firebaseAdminAuth.createSessionCookie(firebaseIdToken, { expiresIn: FIREBASE_SESSION_TTL_MS });
-    cookies().set(PORTAL_SESSION_COOKIE_NAME, sessionCookie, {
+    (await cookies()).set(PORTAL_SESSION_COOKIE_NAME, sessionCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -27,7 +27,7 @@ export async function createPortalSession(userId: string, firebaseIdToken?: stri
 }
 
 export async function destroyPortalSession(): Promise<void> {
-  cookies().delete(PORTAL_SESSION_COOKIE_NAME);
+  (await cookies()).delete(PORTAL_SESSION_COOKIE_NAME);
 }
 
 // Revokes every existing session for a user — called on password change so
@@ -93,7 +93,7 @@ export type PortalSessionUser = {
 };
 
 export async function getPortalSessionUser(): Promise<PortalSessionUser | null> {
-  const token = cookies().get(PORTAL_SESSION_COOKIE_NAME)?.value;
+  const token = (await cookies()).get(PORTAL_SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
 
   try {

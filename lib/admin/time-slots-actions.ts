@@ -2,9 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/db/prisma';
 import { requireAdminOnly } from '@/lib/admin/guard';
+import { createFirebaseTimeSlot, deleteFirebaseTimeSlot, updateFirebaseTimeSlot } from '@/lib/firebase/time-slots';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -24,12 +23,12 @@ export async function upsertTimeSlot(formData: FormData): Promise<void> {
 
   try {
     if (id) {
-      await prisma.timeSlot.update({ where: { id }, data: { label, dayOfWeek, startTime, endTime } });
+      await updateFirebaseTimeSlot(id, { label, dayOfWeek, startTime, endTime });
     } else {
-      await prisma.timeSlot.create({ data: { label, dayOfWeek, startTime, endTime } });
+      await createFirebaseTimeSlot({ label, dayOfWeek, startTime, endTime });
     }
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    if (err instanceof Error && err.message === 'LABEL_TAKEN') {
       redirect('/admin/time-slots?error=duplicate');
     }
     throw err;
@@ -42,7 +41,7 @@ export async function upsertTimeSlot(formData: FormData): Promise<void> {
 
 export async function deleteTimeSlot(id: string): Promise<void> {
   await requireAdminOnly();
-  await prisma.timeSlot.delete({ where: { id } });
+  await deleteFirebaseTimeSlot(id);
   revalidatePath('/admin/time-slots');
   revalidatePath('/admin/sessions');
   redirect('/admin/time-slots?saved=1');

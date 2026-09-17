@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { Clock3, X } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { updateEnrollmentStatus, approveEnrollment, moveEnrollment } from '@/lib/admin/portal-actions';
 import { getCourseEntryOrThrow, listAgeGroupEntries, listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
 import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import type { Prisma } from '@prisma/client';
+import { firestore } from '@/lib/firebase/admin';
+import { getFirebaseChild } from '@/lib/firebase/children';
+import { type FirebaseChild } from '@/lib/firebase/children';
+import { listAllFirebaseEnrollments } from '@/lib/firebase/enrollments';
+import { listAllFirebaseSessionsWithCounts, type SessionWithCount } from '@/lib/firebase/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,11 +21,12 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: 'bg-slate-200 text-slate-600',
 };
 
-export default async function AdminEnrollmentsPage({
-  searchParams,
-}: {
-  searchParams: { saved?: string; error?: string; ageGroup?: string; group?: string };
-}) {
+export default async function AdminEnrollmentsPage(
+  props: {
+    searchParams: Promise<{ saved?: string; error?: string; ageGroup?: string; group?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireAdmin();
 
   const ageGroups = listAgeGroupEntries();
@@ -31,36 +35,58 @@ export default async function AdminEnrollmentsPage({
   const selectedAgeGroup = searchParams.ageGroup ?? '';
   const selectedGroup = searchParams.group ?? '';
 
-  const where: Prisma.EnrollmentWhereInput = {};
-  const courseSessionWhere: Prisma.CourseSessionWhereInput = {};
+  let courseSlugFilter: Set<string> | null = null;
+  let slotFilter: { dayOfWeek: number; startTime: string; endTime: string } | null = null;
   if (selectedAgeGroup) {
     const slugs = listCourseEntriesForAgeGroup(selectedAgeGroup).map((c) => c.slug);
-    courseSessionWhere.courseSlug = { in: slugs };
+    courseSlugFilter = new Set(slugs);
   }
   if (selectedGroup) {
     const slot = timeSlots.find((s) => s.label === selectedGroup);
     // An unmatched label (a filter link for a slot since renamed/deleted)
     // should show nothing rather than silently falling back to "all groups."
-    courseSessionWhere.dayOfWeek = slot?.dayOfWeek ?? -1;
-    courseSessionWhere.startTime = slot?.startTime ?? '';
-    courseSessionWhere.endTime = slot?.endTime ?? '';
-  }
-  if (Object.keys(courseSessionWhere).length > 0) {
-    where.courseSession = courseSessionWhere;
+    slotFilter = { dayOfWeek: slot?.dayOfWeek ?? -1, startTime: slot?.startTime ?? '', endTime: slot?.endTime ?? '' };
   }
 
-  const [enrollments, sessions] = await Promise.all([
-    prisma.enrollment.findMany({
-      where,
-      include: { child: { include: { parent: { include: { user: true } } } }, courseSession: true },
-      // Enrollments awaiting approval float to the top so they're the first
-      // thing a secretary/admin sees — everything else stays newest-first.
-      orderBy: [{ status: 'asc' }, { enrolledAt: 'desc' }],
+  const [rawEnrollments, sessions] = await Promise.all([listAllFirebaseEnrollments(), listAllFirebaseSessionsWithCounts()]);
+  const sessionById = new Map(sessions.map((session) => [session.id, session]));
+  type AdminEnrollmentRow = {
+    id: string;
+    childId: string;
+    courseSessionId: string;
+    status: 'PENDING' | 'ACTIVE' | 'CANCELLED';
+    enrolledAt: Date;
+    courseSession: SessionWithCount;
+    child: FirebaseChild;
+    parentName: string;
+  };
+
+  const rows = await Promise.all(
+    rawEnrollments.map(async (enrollment): Promise<AdminEnrollmentRow | null> => {
+      const courseSession = sessionById.get(enrollment.courseSessionId);
+      if (!courseSession) return null;
+      if (courseSlugFilter && !courseSlugFilter.has(courseSession.courseSlug)) return null;
+      if (
+        slotFilter &&
+        (courseSession.dayOfWeek !== slotFilter.dayOfWeek ||
+          courseSession.startTime !== slotFilter.startTime ||
+          courseSession.endTime !== slotFilter.endTime)
+      ) {
+        return null;
+      }
+      const child = await getFirebaseChild(enrollment.childId);
+      if (!child) return null;
+      const parent = await firestore.collection('users').doc(child.parentId).get();
+      return { ...enrollment, courseSession, child, parentName: String(parent.data()?.fullName ?? '') };
     }),
-    prisma.courseSession.findMany({
-      include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
-    }),
-  ]);
+  );
+
+  const enrollments = rows
+    .filter((row): row is AdminEnrollmentRow => Boolean(row))
+    .sort((a, b) => {
+      if (a.status !== b.status) return a.status === 'PENDING' ? -1 : b.status === 'PENDING' ? 1 : a.status.localeCompare(b.status);
+      return b.enrolledAt.getTime() - a.enrolledAt.getTime();
+    });
 
   const ageGroupLabelBySlug = new Map(ageGroups.map((g) => [g.slug, g.label.en]));
   const pendingCount = enrollments.filter((e) => e.status === 'PENDING').length;
@@ -205,7 +231,7 @@ export default async function AdminEnrollmentsPage({
                 return (
                   <tr key={e.id} className="border-b border-ink/5 last:border-0">
                     <td className="px-5 py-4 font-semibold text-ink">{e.child.fullName}</td>
-                    <td className="px-5 py-4 text-stone">{e.child.parent.user.fullName}</td>
+                    <td className="px-5 py-4 text-stone">{e.parentName}</td>
                     <td className="px-5 py-4 text-stone">{course.title.en}</td>
                     <td className="px-5 py-4 text-stone">{ageGroupLabelBySlug.get(course.ageGroupSlug) ?? '—'}</td>
                     <td className="px-5 py-4 text-stone">
@@ -228,7 +254,7 @@ export default async function AdminEnrollmentsPage({
                                 Move to group…
                               </option>
                               {otherSessions.map((s) => {
-                                const seatsLeft = s.capacity - s._count.enrollments;
+                                const seatsLeft = s.capacity - s.enrollmentCount;
                                 const label = findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime);
                                 return (
                                   <option key={s.id} value={s.id} disabled={seatsLeft <= 0}>

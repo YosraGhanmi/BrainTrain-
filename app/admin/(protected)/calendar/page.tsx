@@ -5,7 +5,8 @@ import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminCalendarPage({ searchParams }: { searchParams: { error?: string } }) {
+export default async function AdminCalendarPage(props: { searchParams: Promise<{ error?: string }> }) {
+  const searchParams = await props.searchParams;
   const { calendarEvents, ageGroups, courses } = readContent();
   const sorted = [...calendarEvents].sort((a, b) => a.date.localeCompare(b.date));
 

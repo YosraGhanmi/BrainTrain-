@@ -8,14 +8,15 @@ import BrandedAuthPanel from '@/components/portal/BrandedAuthPanel';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
-export default async function TeacherVerifyPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { error?: string };
-}) {
-  const userId = verifyPendingTeacherToken(cookies().get(PENDING_TEACHER_COOKIE_NAME)?.value);
+export default async function TeacherVerifyPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const userId = verifyPendingTeacherToken((await cookies()).get(PENDING_TEACHER_COOKIE_NAME)?.value);
   if (!userId) {
     redirect(localizedPath(params.locale, '/teacher/login'));
   }

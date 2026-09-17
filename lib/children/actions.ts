@@ -5,10 +5,9 @@ import path from 'path';
 import sharp from 'sharp';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
-import { createFirebaseChild, getFirebaseChild, isFirebaseConfigured, updateFirebaseChild } from '@/lib/firebase/children';
+import { createFirebaseChild, getFirebaseChild, updateFirebaseChild } from '@/lib/firebase/children';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -38,20 +37,14 @@ export async function addChild(formData: FormData): Promise<void> {
   // persisting a dangling reference.
   getAgeGroupEntryOrThrow(ageGroupSlug);
 
-  if (isFirebaseConfigured()) {
-    await createFirebaseChild({
-      parentId: parent.parentId,
-      fullName,
-      dateOfBirth,
-      ageGroupSlug,
-      institution: institution || null,
-      specialNeeds: specialNeeds || null,
-    });
-  } else {
-    await prisma.child.create({
-      data: { parentId: parent.parentId, fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null },
-    });
-  }
+  await createFirebaseChild({
+    parentId: parent.parentId,
+    fullName,
+    dateOfBirth,
+    ageGroupSlug,
+    institution: institution || null,
+    specialNeeds: specialNeeds || null,
+  });
 
   redirect(localizedPath(locale, '/parent-portal?saved=1'));
 }
@@ -67,7 +60,7 @@ export async function editChild(formData: FormData): Promise<void> {
   const institution = field(formData, 'institution');
   const specialNeeds = field(formData, 'specialNeeds');
 
-  const child = isFirebaseConfigured() ? await getFirebaseChild(childId) : await prisma.child.findUnique({ where: { id: childId } });
+  const child = await getFirebaseChild(childId);
   if (!child || child.parentId !== parent.parentId) {
     redirect(localizedPath(locale, '/parent-portal?error=1'));
   }
@@ -78,14 +71,7 @@ export async function editChild(formData: FormData): Promise<void> {
   }
   getAgeGroupEntryOrThrow(ageGroupSlug);
 
-  if (isFirebaseConfigured()) {
-    await updateFirebaseChild(childId, { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null });
-  } else {
-    await prisma.child.update({
-      where: { id: childId },
-      data: { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null },
-    });
-  }
+  await updateFirebaseChild(childId, { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null });
 
   revalidatePath(`/${locale === 'fr' ? 'fr/' : ''}parent-portal/account`);
   redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&saved=1`));
@@ -99,7 +85,7 @@ export async function uploadChildPhoto(formData: FormData): Promise<void> {
   const file = formData.get('photo');
   if (!(file instanceof File) || file.size === 0 || !file.type.startsWith('image/')) return;
 
-  const child = isFirebaseConfigured() ? await getFirebaseChild(childId) : await prisma.child.findUnique({ where: { id: childId } });
+  const child = await getFirebaseChild(childId);
   if (!child || child.parentId !== parent.parentId) return;
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -116,11 +102,7 @@ export async function uploadChildPhoto(formData: FormData): Promise<void> {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, filename), resized);
 
-  if (isFirebaseConfigured()) {
-    await updateFirebaseChild(childId, { photoUrl: `/children/${filename}`, photoColor });
-  } else {
-    await prisma.child.update({ where: { id: childId }, data: { photoUrl: `/children/${filename}`, photoColor } });
-  }
+  await updateFirebaseChild(childId, { photoUrl: `/children/${filename}`, photoColor });
 
   revalidatePath('/parent-portal');
   revalidatePath('/parent-portal/account');

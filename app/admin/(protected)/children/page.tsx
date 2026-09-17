@@ -1,20 +1,14 @@
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { deleteChild } from '@/lib/admin/portal-actions';
 import { getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
-import { isFirebaseConfigured, listAllFirebaseChildren } from '@/lib/firebase/children';
+import { listAllFirebaseChildren } from '@/lib/firebase/children';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminChildrenPage() {
   await requireAdmin();
-  const children = isFirebaseConfigured()
-    ? await listAllFirebaseChildren()
-    : await prisma.child.findMany({
-        include: { parent: { include: { user: true } }, enrollments: true },
-        orderBy: { createdAt: 'desc' },
-      });
+  const children = await listAllFirebaseChildren();
 
   return (
     <div>
@@ -37,8 +31,8 @@ export default async function AdminChildrenPage() {
               <tr key={c.id} className="border-b border-ink/5 last:border-0">
                 <td className="px-5 py-4 font-semibold text-ink">{c.fullName}</td>
                 <td className="px-5 py-4 text-stone">{getAgeGroupEntryOrThrow(c.ageGroupSlug).label.en}</td>
-                <td className="px-5 py-4 text-stone">{'parentName' in c ? c.parentName : c.parent.user.fullName}</td>
-                <td className="px-5 py-4 text-stone">{'enrollmentCount' in c ? c.enrollmentCount : c.enrollments.length}</td>
+                <td className="px-5 py-4 text-stone">{c.parentName}</td>
+                <td className="px-5 py-4 text-stone">{c.enrollmentCount}</td>
                 <td className="px-5 py-4 text-stone">{c.specialNeeds ?? '—'}</td>
                 <td className="px-5 py-4 text-right">
                   <DeleteIconButton action={deleteChild.bind(null, c.id)} />

@@ -40,7 +40,8 @@ export function generateStaticParams() {
   return readContent().ageGroups.map((g) => ({ slug: g.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
+  const params = await props.params;
   const group = getAgeGroup(params.slug, params.locale);
   if (!group) return { title: 'Courses | BrainTrain' };
 
@@ -84,7 +85,8 @@ const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: numb
   { icon: Leaf, top: '95%', left: '55%', size: 22, rotate: -10 },
 ];
 
-export default async function AgeGroupCoursesPage({ params }: { params: { slug: string; locale: AppLocale } }) {
+export default async function AgeGroupCoursesPage(props: { params: Promise<{ slug: string; locale: AppLocale }> }) {
+  const params = await props.params;
   const group = getAgeGroup(params.slug, params.locale);
   if (!group) notFound();
 

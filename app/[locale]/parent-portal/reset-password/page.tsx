@@ -5,13 +5,14 @@ import AuthCard from '@/components/portal/AuthCard';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
-export default async function ResetPasswordPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { phone?: string; error?: string };
-}) {
+export default async function ResetPasswordPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ phone?: string; error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.resetPassword' });
   return (
     <AuthCard eyebrow={t('eyebrow')} title={t('title')}>

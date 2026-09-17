@@ -1,22 +1,21 @@
 import { getTranslations } from 'next-intl/server';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import MonthlyPaymentsTable from '@/components/portal/MonthlyPaymentsTable';
+import { listFirebaseChildren } from '@/lib/firebase/children';
+import { listFirebasePaymentsWithRelationsByChild } from '@/lib/firebase/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ParentPaymentsPage({ params }: { params: { locale: AppLocale } }) {
+export default async function ParentPaymentsPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
-  const children = await prisma.child.findMany({
-    where: { parentId: parent.parentId },
-    orderBy: { createdAt: 'asc' },
-  });
-  const selected = resolveSelectedChild(children);
+  const children = await listFirebaseChildren(parent.parentId);
+  const selected = await resolveSelectedChild(children);
 
   if (!selected) {
     return (
@@ -26,32 +25,22 @@ export default async function ParentPaymentsPage({ params }: { params: { locale:
     );
   }
 
-  const child = await prisma.child.findUnique({
-    where: { id: selected.id },
-    include: {
-      enrollments: {
-        include: {
-          courseSession: true,
-          payments: { orderBy: { dueDate: 'desc' } },
-        },
-      },
-    },
-  });
+  const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
 
-  const payments = child.enrollments.flatMap((enrollment) =>
-    enrollment.payments.map((payment) => {
-      const course = getCourseEntryOrThrow(enrollment.courseSession.courseSlug);
+  const payments = (await listFirebasePaymentsWithRelationsByChild(child.id))
+    .filter((payment) => payment.enrollment)
+    .map((payment) => {
+      const course = getCourseEntryOrThrow(payment.enrollment!.courseSession.courseSlug);
       return {
         id: payment.id,
         courseTitle: localized(course.title, params.locale),
-        amount: Number(payment.amount),
+        amount: payment.amount,
         currency: payment.currency,
         dueDate: payment.dueDate.toISOString(),
         status: payment.status,
       };
-    })
-  );
+    });
 
   return (
     <div>

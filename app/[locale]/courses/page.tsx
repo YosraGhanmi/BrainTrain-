@@ -20,7 +20,8 @@ const METADATA_BY_LOCALE: Record<string, Metadata> = {
   },
 };
 
-export function generateMetadata({ params }: { params: { locale: AppLocale } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ locale: AppLocale }> }): Promise<Metadata> {
+  const params = await props.params;
   const base = METADATA_BY_LOCALE[params.locale] ?? METADATA_BY_LOCALE.en;
   const url = absoluteUrl(params.locale, '/courses');
   return {
@@ -30,7 +31,8 @@ export function generateMetadata({ params }: { params: { locale: AppLocale } }):
   };
 }
 
-export default async function CoursesPage({ params }: { params: { locale: AppLocale } }) {
+export default async function CoursesPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   // Icons must stay raw string names here (not resolved LucideIcon
   // components) — AgeGroupCoverflow is a client component and a resolved
   // component reference can't cross the server/client boundary as a prop.

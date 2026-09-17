@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow, getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
 import { addTeacherNote, awardBadge } from '@/lib/teacher/actions';
@@ -10,6 +9,7 @@ import { rotateHue } from '@/lib/color';
 import { localized, formatDate } from '@/lib/i18n/format';
 import StudentNotesPanel from '@/components/portal/teacher/StudentNotesPanel';
 import StudentBadgesPanel from '@/components/portal/teacher/StudentBadgesPanel';
+import { getFirebaseStudentSessionProfile } from '@/lib/firebase/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -23,38 +23,22 @@ function initials(fullName: string): string {
     .join('');
 }
 
-export default async function TeacherStudentProfilePage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale; sessionId: string; childId: string };
-  searchParams: { error?: string; saved?: string; badgeError?: string; badgeSaved?: string };
-}) {
+export default async function TeacherStudentProfilePage(
+  props: {
+    params: Promise<{ locale: AppLocale; sessionId: string; childId: string }>;
+    searchParams: Promise<{ error?: string; saved?: string; badgeError?: string; badgeSaved?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const teacher = await requireTeacher(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.studentProfile' });
-  const session = await prisma.courseSession.findUnique({ where: { id: params.sessionId } });
-  if (!session || session.teacherId !== teacher.teacherId) notFound();
+  const profile = await getFirebaseStudentSessionProfile(params.childId, params.sessionId);
+  if (!profile || profile.session.teacherId !== teacher.teacherId) notFound();
+  const { session, enrollment, child, notes, badges } = profile;
   const course = getCourseEntryOrThrow(session.courseSlug);
 
-  const enrollment = await prisma.enrollment.findUnique({
-    where: { childId_courseSessionId: { childId: params.childId, courseSessionId: session.id } },
-    include: { child: true },
-  });
-  if (!enrollment || !['PENDING', 'ACTIVE'].includes(enrollment.status)) notFound();
-  const child = enrollment.child;
   const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
-
-  const notes = await prisma.teacherNote.findMany({
-    where: { childId: child.id, courseSessionId: session.id },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  // Only badges this teacher personally awarded this child — not every
-  // teacher's badges across every course the child is enrolled in.
-  const badges = await prisma.badge.findMany({
-    where: { childId: child.id, teacherId: teacher.teacherId },
-    orderBy: { awardedAt: 'desc' },
-  });
 
   const returnTo = `/teacher/sessions/${session.id}/students/${child.id}`;
   const baseColor = child.photoColor ?? course.color;

@@ -1,20 +1,14 @@
 import { ClipboardCheck } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requirePreinscriptionAccess, updatePreinscriptionRouting } from '@/lib/preinscription/actions';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { getFirebasePreinscriptionSetting, isFirebaseConfigured, listFirebasePreinscriptions } from '@/lib/firebase/preinscriptions';
+import { getFirebasePreinscriptionSetting, listFirebasePreinscriptions } from '@/lib/firebase/preinscriptions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminPreinscriptionsPage({ searchParams }: { searchParams: { saved?: string } }) {
+export default async function AdminPreinscriptionsPage(props: { searchParams: Promise<{ saved?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await requirePreinscriptionAccess();
-  const firebaseConfigured = isFirebaseConfigured();
-  const [routeToForm, submissions] = firebaseConfigured
-    ? [await getFirebasePreinscriptionSetting(), await listFirebasePreinscriptions()]
-    : await Promise.all([
-        prisma.preinscriptionSetting.findUnique({ where: { id: 1 } }).then((value) => value?.routeRegisterToForm ?? false),
-        prisma.preinscription.findMany({ orderBy: { createdAt: 'desc' } }),
-      ]);
+  const [routeToForm, submissions] = await Promise.all([getFirebasePreinscriptionSetting(), listFirebasePreinscriptions()]);
 
   return (
     <div>

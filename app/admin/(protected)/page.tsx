@@ -117,11 +117,12 @@ function monthParamFor(year: number, monthIndex: number): string {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
 }
 
-export default async function AdminDashboardPage({
-  searchParams,
-}: {
-  searchParams: { month?: string };
-}) {
+export default async function AdminDashboardPage(
+  props: {
+    searchParams: Promise<{ month?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   await requireAdmin();
 
   const { year, monthIndex } = parseMonthParam(searchParams.month);

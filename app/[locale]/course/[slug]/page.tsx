@@ -18,7 +18,8 @@ export function generateStaticParams() {
   return readContent().courses.map((c) => ({ slug: c.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
+  const params = await props.params;
   const course = getCourse(params.slug, params.locale);
   if (!course) return { title: 'Course | BrainTrain' };
 
@@ -49,13 +50,14 @@ export function generateMetadata({ params }: { params: { slug: string; locale: A
   };
 }
 
-export default async function CourseDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { slug: string; locale: AppLocale };
-  searchParams: { age?: string };
-}) {
+export default async function CourseDetailPage(
+  props: {
+    params: Promise<{ slug: string; locale: AppLocale }>;
+    searchParams: Promise<{ age?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const course = getCourse(params.slug, params.locale);
   if (!course) notFound();
 

@@ -1,27 +1,24 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { CalendarDays, Clock, MapPin, Users, ChevronRight, Sparkles, BookOpen, PenTool, Bot } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
 import { findSlotLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
+import { listFirebaseSessionsWithCountsByTeacher } from '@/lib/firebase/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export default async function TeacherDashboardPage({ params }: { params: { locale: AppLocale } }) {
+export default async function TeacherDashboardPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   const teacher = await requireTeacher(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.dashboard' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
   const [sessions, timeSlots] = await Promise.all([
-    prisma.courseSession.findMany({
-      where: { teacherId: teacher.teacherId },
-      include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
-      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-    }),
+    listFirebaseSessionsWithCountsByTeacher(teacher.teacherId),
     listTimeSlots(),
   ]);
 
@@ -92,7 +89,7 @@ export default async function TeacherDashboardPage({ params }: { params: { local
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5 text-accent" />
-                      {t('studentsCount', { enrolled: session._count.enrollments, capacity: session.capacity })}
+                      {t('studentsCount', { enrolled: session.enrollmentCount, capacity: session.capacity })}
                     </span>
                   </div>
                 </div>

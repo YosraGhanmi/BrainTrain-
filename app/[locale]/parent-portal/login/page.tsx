@@ -1,13 +1,14 @@
 import ParentAuthScreen from '@/components/portal/ParentAuthScreen';
 import type { AppLocale } from '@/i18n/routing';
 
-export default function ParentLoginPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { error?: string; saved?: string };
-}) {
+export default async function ParentLoginPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ error?: string; saved?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   return (
     <ParentAuthScreen
       locale={params.locale}

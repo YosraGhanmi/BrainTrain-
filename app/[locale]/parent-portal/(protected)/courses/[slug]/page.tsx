@@ -3,7 +3,6 @@ import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
@@ -18,17 +17,20 @@ import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CurriculumTimeline from '@/components/course/CurriculumTimeline';
 import EnrollWizard from '@/components/portal/EnrollWizard';
 import type { AppLocale } from '@/i18n/routing';
-import type { PlanType, PaymentMethod } from '@prisma/client';
+import { listFirebaseChildren } from '@/lib/firebase/children';
+import { listFirebaseEnrollmentsWithSessionsByChild, listFirebaseSessionsWithCountsByCourse } from '@/lib/firebase/read-models';
+import type { PlanType, PaymentMethod } from '@/lib/firebase/enrollments';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CourseDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale; slug: string };
-  searchParams: { error?: string };
-}) {
+export default async function CourseDetailPage(
+  props: {
+    params: Promise<{ locale: AppLocale; slug: string }>;
+    searchParams: Promise<{ error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const parent = await requireParent(params.locale);
   const tp = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
   const td = await getTranslations({ locale: params.locale, namespace: 'parentPortal.courseDetail' });
@@ -53,11 +55,8 @@ export default async function CourseDetailPage({
     duplicate: td('errors.duplicate'),
     conflict: td('errors.conflict'),
   };
-  const children = await prisma.child.findMany({
-    where: { parentId: parent.parentId },
-    orderBy: { createdAt: 'asc' },
-  });
-  const selected = resolveSelectedChild(children);
+  const children = await listFirebaseChildren(parent.parentId);
+  const selected = await resolveSelectedChild(children);
 
   if (!selected) {
     return (
@@ -67,7 +66,7 @@ export default async function CourseDetailPage({
     );
   }
 
-  const child = await prisma.child.findUnique({ where: { id: selected.id } });
+  const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
 
   const course = readContent().courses.find((c) => c.slug === params.slug);
@@ -80,30 +79,17 @@ export default async function CourseDetailPage({
   }));
 
   const [sessions, timeSlots] = await Promise.all([
-    prisma.courseSession.findMany({
-      where: { courseSlug: params.slug },
-      include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
-      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-    }),
+    listFirebaseSessionsWithCountsByCourse(params.slug),
     listTimeSlots(),
   ]);
 
+  const otherEnrollments = await listFirebaseEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']);
   const enrolledSessionIds = new Set(
-    (
-      await prisma.enrollment.findMany({
-        where: { childId: child.id, status: { in: ['PENDING', 'ACTIVE'] }, courseSession: { courseSlug: params.slug } },
-        select: { courseSessionId: true },
-      })
-    ).map((e) => e.courseSessionId)
+    otherEnrollments.filter((enrollment) => enrollment.courseSession.courseSlug === params.slug).map((e) => e.courseSessionId)
   );
 
   // This child's whole schedule (every course, not just this one) — used to
   // flag groups here that would double-book them at the same day/time.
-  const otherEnrollments = await prisma.enrollment.findMany({
-    where: { childId: child.id, status: { in: ['PENDING', 'ACTIVE'] } },
-    include: { courseSession: true },
-  });
-
   const groups = sessions.map((s, i) => {
     const conflict = otherEnrollments.find(
       (e) => e.courseSessionId !== s.id && sessionsConflict(s, e.courseSession)
@@ -115,7 +101,7 @@ export default async function CourseDetailPage({
       startTime: s.startTime,
       endTime: s.endTime,
       location: s.location,
-      seatsLeft: s.capacity - s._count.enrollments,
+      seatsLeft: s.capacity - s.enrollmentCount,
       enrolled: enrolledSessionIds.has(s.id),
       conflictLabel: conflict ? localized(getCourseEntryOrThrow(conflict.courseSession.courseSlug).title, params.locale) : null,
     };

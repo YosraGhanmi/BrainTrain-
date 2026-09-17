@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import type { EnrollmentStatus } from '@prisma/client';
+import type { EnrollmentStatus } from '@/lib/firebase/enrollments';
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: 'bg-emerald-50 text-emerald-700',

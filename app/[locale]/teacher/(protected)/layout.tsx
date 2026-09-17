@@ -4,15 +4,21 @@ import { requireTeacher, localizedPath } from '@/lib/portal-auth/guard';
 import type { AppLocale } from '@/i18n/routing';
 import { Users, CalendarDays } from 'lucide-react';
 
-export default async function TeacherPortalLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { locale: AppLocale };
-}) {
-  const teacher = await requireTeacher(params.locale);
-  const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.nav' });
+export default async function TeacherPortalLayout(
+  props: {
+    children: React.ReactNode;
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
+  const locale = params.locale as AppLocale;
+
+  const {
+    children
+  } = props;
+
+  const teacher = await requireTeacher(locale);
+  const t = await getTranslations({ locale, namespace: 'teacherPortal.nav' });
 
   return (
     <PortalShell
@@ -20,7 +26,7 @@ export default async function TeacherPortalLayout({
       brandLabel={t('brand')}
       fullName={teacher.fullName}
       email={teacher.email}
-      loginHref={localizedPath(params.locale, '/teacher/login')}
+      loginHref={localizedPath(locale, '/teacher/login')}
       theme="light"
       navLinks={[
         { label: t('myGroups'), href: '/teacher', icon: Users },

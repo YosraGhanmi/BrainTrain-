@@ -22,7 +22,8 @@ import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
-export function generateMetadata({ params }: { params: { locale: AppLocale } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ locale: AppLocale }> }): Promise<Metadata> {
+  const params = await props.params;
   const title = params.locale === 'fr' ? 'Preinscription | BrainTrain' : 'Pre-registration | BrainTrain';
   const description =
     params.locale === 'fr'
@@ -37,13 +38,14 @@ export function generateMetadata({ params }: { params: { locale: AppLocale } }):
   };
 }
 
-export default function PreinscriptionPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { sent?: string; error?: string };
-}) {
+export default async function PreinscriptionPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ sent?: string; error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const isFr = params.locale === 'fr';
   const backgroundIcons = [
     { Icon: Atom, className: 'left-[5%] top-[18%] rotate-[-18deg]' },

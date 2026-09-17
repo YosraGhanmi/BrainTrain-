@@ -1,10 +1,9 @@
-import { prisma } from '@/lib/db/prisma';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertAgeGroupPricing, clearCoursePricingOverride } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import type { PlanType } from '@prisma/client';
+import { listFirebasePricingRules, type PlanType } from '@/lib/firebase/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +13,10 @@ const PLAN_FIELDS: { type: PlanType; label: string }[] = [
   { type: 'YEARLY', label: 'Full year (15 Sep – 15 Jun)' },
 ];
 
-export default async function AdminPricingPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
+export default async function AdminPricingPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const [rules, content] = await Promise.all([prisma.pricingRule.findMany(), Promise.resolve(readContent())]);
+  const [rules, content] = await Promise.all([listFirebasePricingRules(), Promise.resolve(readContent())]);
 
   const ageGroupDefaults: Record<string, Partial<Record<PlanType, number>> & { currency: string }> = {};
   const courseOverrides: Record<string, Partial<Record<PlanType, number>> & { currency: string }> = {};

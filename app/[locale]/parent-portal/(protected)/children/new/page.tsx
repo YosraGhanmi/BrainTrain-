@@ -8,13 +8,14 @@ import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AddChildPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { error?: string };
-}) {
+export default async function AddChildPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.addChild' });
   const ageGroups = listAgeGroupEntries();

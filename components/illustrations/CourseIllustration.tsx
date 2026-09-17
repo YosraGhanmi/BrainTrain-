@@ -1,5 +1,7 @@
 import { Bot, Code2, Rocket as RocketIcon, Smile, CircuitBoard, Printer, Terminal as TerminalIcon, type LucideIcon } from 'lucide-react';
 
+import type { JSX } from "react";
+
 const LINE = 'rgba(20,23,31,0.35)';
 
 function Robot({ color }: { color: string }) {

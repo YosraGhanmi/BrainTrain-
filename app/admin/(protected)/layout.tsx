@@ -8,15 +8,12 @@ import { logout } from '@/lib/admin/actions';
 import { requireAdmin } from '@/lib/admin/guard';
 import { getAdminNotifications } from '@/lib/admin/notifications';
 import { readMessages } from '@/lib/messages/store';
-import { prisma } from '@/lib/db/prisma';
-import { isFirebaseConfigured } from '@/lib/firebase/portal-auth';
+import { countPendingFirebaseEnrollments } from '@/lib/firebase/enrollments';
 
 export default async function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin();
   const unreadMessages = readMessages().filter((m) => !m.read).length;
-  const [pendingEnrollments, notifications] = isFirebaseConfigured()
-    ? [0, { pendingParents: [], expenseNotices: [], preinscriptionNotices: [], overduePayments: [], totalCount: 0 }]
-    : await Promise.all([prisma.enrollment.count({ where: { status: 'PENDING' } }), getAdminNotifications()]);
+  const [pendingEnrollments, notifications] = await Promise.all([countPendingFirebaseEnrollments(), getAdminNotifications()]);
 
   const sidebar = (
     <>

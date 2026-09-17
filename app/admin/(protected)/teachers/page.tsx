@@ -70,11 +70,12 @@ function CourseSelect({
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminTeachersPage({
-  searchParams,
-}: {
-  searchParams: { error?: string; courseError?: string; saved?: string; code?: string; email?: string };
-}) {
+export default async function AdminTeachersPage(
+  props: {
+    searchParams: Promise<{ error?: string; courseError?: string; saved?: string; code?: string; email?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
   const content = readContent();

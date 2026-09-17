@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight, Pin } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
@@ -9,6 +8,8 @@ import { readContent } from '@/lib/content/store';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
 import type { AppLocale } from '@/i18n/routing';
+import { listFirebaseChildren } from '@/lib/firebase/children';
+import { listFirebaseEnrollmentsWithSessionsByChild } from '@/lib/firebase/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,24 +24,22 @@ function monthParam(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
 
-export default async function ParentSchedulePage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { month?: string };
-}) {
+export default async function ParentSchedulePage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ month?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const parent = await requireParent(params.locale);
   const tp = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.schedule' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const WEEKDAYS = tc.raw('daysShort') as string[];
   const MONTH_NAMES = tc.raw('months') as string[];
-  const children = await prisma.child.findMany({
-    where: { parentId: parent.parentId },
-    orderBy: { createdAt: 'asc' },
-  });
-  const selected = resolveSelectedChild(children);
+  const children = await listFirebaseChildren(parent.parentId);
+  const selected = await resolveSelectedChild(children);
 
   if (!selected) {
     return (
@@ -50,19 +49,12 @@ export default async function ParentSchedulePage({
     );
   }
 
-  const child = await prisma.child.findUnique({
-    where: { id: selected.id },
-    include: {
-      enrollments: {
-        where: { status: 'ACTIVE' },
-        include: { courseSession: true },
-      },
-    },
-  });
+  const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
+  const enrollments = await listFirebaseEnrollmentsWithSessionsByChild(child.id, ['ACTIVE']);
 
-  const byDayOfWeek = new Map<number, typeof child.enrollments>();
-  for (const e of child.enrollments) {
+  const byDayOfWeek = new Map<number, typeof enrollments>();
+  for (const e of enrollments) {
     const list = byDayOfWeek.get(e.courseSession.dayOfWeek) ?? [];
     list.push(e);
     byDayOfWeek.set(e.courseSession.dayOfWeek, list);
@@ -71,7 +63,7 @@ export default async function ParentSchedulePage({
     list.sort((a, b) => a.courseSession.startTime.localeCompare(b.courseSession.startTime));
   }
 
-  const enrolledCourseSlugs = new Set(child.enrollments.map((e) => e.courseSession.courseSlug));
+  const enrolledCourseSlugs = new Set(enrollments.map((e) => e.courseSession.courseSlug));
   const { calendarEvents } = readContent();
   const visibleEvents = calendarEvents.filter(
     (event) =>
@@ -104,10 +96,10 @@ export default async function ParentSchedulePage({
     eventsByDayOfMonth.set(eventDate.getDate(), list);
   }
 
-  const hasAny = child.enrollments.length > 0;
+  const hasAny = enrollments.length > 0;
 
   // Distinct courses on this child's schedule, for the color/icon legend.
-  const legend = [...new Set(child.enrollments.map((e) => e.courseSession.courseSlug))].map((slug) =>
+  const legend = [...new Set(enrollments.map((e) => e.courseSession.courseSlug))].map((slug) =>
     getCourseEntryOrThrow(slug)
   );
 

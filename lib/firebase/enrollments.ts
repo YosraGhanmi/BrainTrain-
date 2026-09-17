@@ -106,9 +106,54 @@ export async function listFirebaseEnrollmentsByCourseSession(courseSessionId: st
   return snapshot.docs.map((doc) => mapEnrollment(doc.id, doc.data()));
 }
 
+export async function getFirebaseEnrollmentByChildAndSession(childId: string, courseSessionId: string): Promise<FirebaseEnrollment | null> {
+  const snapshot = await enrollments()
+    .where('childId', '==', childId)
+    .where('courseSessionId', '==', courseSessionId)
+    .limit(1)
+    .get();
+  if (snapshot.empty) return null;
+  const doc = snapshot.docs[0];
+  return mapEnrollment(doc.id, doc.data());
+}
+
+export async function countFirebaseEnrollmentsByCourseSession(
+  courseSessionId: string,
+  statuses: EnrollmentStatus[] = ['PENDING', 'ACTIVE'],
+): Promise<number> {
+  let query = enrollments().where('courseSessionId', '==', courseSessionId) as FirebaseFirestore.Query;
+  if (statuses.length > 0) query = query.where('status', 'in', statuses);
+  const snapshot = await query.count().get();
+  return snapshot.data().count;
+}
+
 export async function listAllFirebaseEnrollments(): Promise<FirebaseEnrollment[]> {
   const snapshot = await enrollments().orderBy('enrolledAt', 'desc').get();
   return snapshot.docs.map((doc) => mapEnrollment(doc.id, doc.data()));
+}
+
+export async function countPendingFirebaseEnrollments(): Promise<number> {
+  const snapshot = await enrollments().where('status', '==', 'PENDING').count().get();
+  return snapshot.data().count;
+}
+
+export async function listAllFirebasePayments(): Promise<FirebasePayment[]> {
+  const snapshot = await payments().orderBy('dueDate', 'desc').get();
+  return snapshot.docs.map((doc) => mapPayment(doc.id, doc.data()));
+}
+
+export async function listFirebasePaymentsByChild(childId: string): Promise<FirebasePayment[]> {
+  const enrollmentSnapshot = await enrollments().where('childId', '==', childId).get();
+  const enrollmentIds = new Set(enrollmentSnapshot.docs.map((doc) => doc.id));
+  if (enrollmentIds.size === 0) return [];
+  const snapshot = await payments().orderBy('dueDate', 'desc').get();
+  return snapshot.docs.map((doc) => mapPayment(doc.id, doc.data())).filter((payment) => enrollmentIds.has(payment.enrollmentId));
+}
+
+export async function getFirebasePaymentPlan(id: string): Promise<FirebasePaymentPlan | null> {
+  const doc = await paymentPlans().doc(id).get();
+  if (!doc.exists) return null;
+  return mapPlan(doc.id, doc.data() ?? {});
 }
 
 export async function updateFirebaseEnrollmentStatus(id: string, status: EnrollmentStatus): Promise<void> {
@@ -124,6 +169,11 @@ export async function getFirebasePaymentPlanByEnrollment(enrollmentId: string): 
   if (snapshot.empty) return null;
   const doc = snapshot.docs[0];
   return mapPlan(doc.id, doc.data());
+}
+
+export async function listFirebasePaymentPlansByEnrollment(enrollmentId: string): Promise<FirebasePaymentPlan[]> {
+  const snapshot = await paymentPlans().where('enrollmentId', '==', enrollmentId).get();
+  return snapshot.docs.map((doc) => mapPlan(doc.id, doc.data()));
 }
 
 // ---------------------------------------------------------------------------

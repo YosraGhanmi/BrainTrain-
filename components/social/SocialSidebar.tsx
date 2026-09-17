@@ -1,13 +1,13 @@
 'use client';
 
 import { usePathname } from '@/i18n/navigation';
-import { Facebook, Instagram, Linkedin, Share2, type LucideIcon } from 'lucide-react';
+import { BriefcaseBusiness, Camera, Share2, type LucideIcon } from 'lucide-react';
 import type { SocialLink } from '@/lib/content/types';
 
 const ICONS: Record<string, LucideIcon> = {
-  Facebook,
-  Instagram,
-  LinkedIn: Linkedin,
+  Facebook: Share2,
+  Instagram: Camera,
+  LinkedIn: BriefcaseBusiness,
 };
 
 function iconFor(label: string): LucideIcon {

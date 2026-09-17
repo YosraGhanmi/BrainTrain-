@@ -20,11 +20,12 @@ const ROLE_COPY: Record<Role, { heading: string; accent: string; placeholder: st
   },
 };
 
-export default function AdminLoginPage({
-  searchParams,
-}: {
-  searchParams: { error?: string; role?: string };
-}) {
+export default async function AdminLoginPage(
+  props: {
+    searchParams: Promise<{ error?: string; role?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const role: Role | null = searchParams.role === 'admin' || searchParams.role === 'secretary' ? searchParams.role : null;
 
   return (

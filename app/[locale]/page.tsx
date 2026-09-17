@@ -16,7 +16,8 @@ import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Home({ params }: { params: { locale: AppLocale } }) {
+export default async function Home(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   const content = readContent();
   const registerHref = await getRegisterHref();
 

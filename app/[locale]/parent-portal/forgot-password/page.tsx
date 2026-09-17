@@ -5,7 +5,8 @@ import AuthCard from '@/components/portal/AuthCard';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
-export default async function ForgotPasswordPage({ params }: { params: { locale: AppLocale } }) {
+export default async function ForgotPasswordPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.forgotPassword' });
   return (
     <AuthCard eyebrow={t('eyebrow')} title={t('title')}>

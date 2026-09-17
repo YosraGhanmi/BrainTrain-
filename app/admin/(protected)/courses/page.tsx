@@ -1,7 +1,7 @@
 import { readContent } from '@/lib/content/store';
-import { prisma } from '@/lib/db/prisma';
 import CoursesManager from '@/components/admin/CoursesManager';
 import { requireAdminOnly } from '@/lib/admin/guard';
+import { listFirebasePricingRules } from '@/lib/firebase/pricing';
 import type { CourseEntry } from '@/lib/content/types';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,7 @@ export default async function AdminCoursesPage() {
   await requireAdminOnly();
   const { courses, ageGroups } = readContent();
 
-  const overrideRules = await prisma.pricingRule.findMany({ where: { courseSlug: { not: null } } });
+  const overrideRules = (await listFirebasePricingRules()).filter((rule) => rule.courseSlug);
   const courseOverrides: Record<string, { MONTHLY?: number; QUARTERLY?: number; YEARLY?: number; currency: string }> = {};
   for (const rule of overrideRules) {
     if (!rule.courseSlug) continue;

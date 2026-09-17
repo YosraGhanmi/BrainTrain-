@@ -13,7 +13,7 @@ export type AdminSessionInfo =
 //    DB-backed portal session parents/teachers use — so freezing/deleting a
 //    secretary account from /admin/secretaries takes effect immediately.
 export async function getAdminSession(): Promise<AdminSessionInfo | null> {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
   if (verifySessionToken(token)) return { kind: 'admin' };
 
   const user = await getPortalSessionUser();

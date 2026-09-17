@@ -13,7 +13,7 @@ export type FirebaseTeacherProfile = {
   fullName: string;
   role: 'TEACHER';
   teacherId: string; // same as uid — stored for convenience
-  // Comma-separated or JSON-stringified course slugs (matches Prisma schema convention)
+  // JSON-stringified course slugs assigned to this teacher.
   courseSlugs: string;
   teacherSecretCodeHash: string | null;
   teacherSecretCode: string | null; // plaintext, staff-visible in admin panel

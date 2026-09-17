@@ -3,7 +3,8 @@ import { Link } from '@/i18n/navigation';
 import { ArrowLeft, Clock } from 'lucide-react';
 import type { AppLocale } from '@/i18n/routing';
 
-export default async function ParentPendingPage({ params }: { params: { locale: AppLocale } }) {
+export default async function ParentPendingPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.pending' });
   return (
     <div className="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#0b1a3a] px-5 py-20">

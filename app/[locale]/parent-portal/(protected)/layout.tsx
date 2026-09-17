@@ -2,25 +2,27 @@ import { getTranslations } from 'next-intl/server';
 import PortalShell from '@/components/portal/PortalShell';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
-import { prisma } from '@/lib/db/prisma';
 import type { AppLocale } from '@/i18n/routing';
 import { LayoutDashboard, BookOpen, CalendarDays, CreditCard, Settings } from 'lucide-react';
 import { listFirebaseChildren } from '@/lib/firebase/children';
-import { isFirebaseConfigured } from '@/lib/firebase/portal-auth';
 
-export default async function ParentPortalLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { locale: AppLocale };
-}) {
-  const parent = await requireParent(params.locale);
-  const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.nav' });
-  const kids = isFirebaseConfigured()
-    ? (await listFirebaseChildren(parent.parentId)).map(({ id, fullName }) => ({ id, fullName }))
-    : await prisma.child.findMany({ where: { parentId: parent.parentId }, orderBy: { createdAt: 'asc' }, select: { id: true, fullName: true } });
-  const selectedKid = resolveSelectedChild(kids);
+export default async function ParentPortalLayout(
+  props: {
+    children: React.ReactNode;
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
+  const locale = params.locale as AppLocale;
+
+  const {
+    children
+  } = props;
+
+  const parent = await requireParent(locale);
+  const t = await getTranslations({ locale, namespace: 'parentPortal.nav' });
+  const kids = (await listFirebaseChildren(parent.parentId)).map(({ id, fullName }) => ({ id, fullName }));
+  const selectedKid = await resolveSelectedChild(kids);
 
   return (
     <PortalShell
@@ -29,7 +31,7 @@ export default async function ParentPortalLayout({
       fullName={parent.fullName}
       email={parent.email}
       settingsHref="/parent-portal/account"
-      loginHref={localizedPath(params.locale, '/parent-portal/login')}
+      loginHref={localizedPath(locale, '/parent-portal/login')}
       theme="light"
       navLinks={[
         { label: t('dashboard'), href: '/parent-portal', icon: LayoutDashboard },

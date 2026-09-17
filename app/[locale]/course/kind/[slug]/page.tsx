@@ -18,7 +18,8 @@ export function generateStaticParams() {
   return getCourseKinds('en').map((kind) => ({ slug: kind.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string; locale: AppLocale } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
+  const params = await props.params;
   const kind = getCourseKind(params.slug, params.locale);
   if (!kind) return { title: 'Course | BrainTrain' };
 
@@ -33,7 +34,8 @@ export function generateMetadata({ params }: { params: { slug: string; locale: A
   };
 }
 
-export default async function CourseKindPage({ params }: { params: { slug: string; locale: AppLocale } }) {
+export default async function CourseKindPage(props: { params: Promise<{ slug: string; locale: AppLocale }> }) {
+  const params = await props.params;
   const kind = getCourseKind(params.slug, params.locale);
   if (!kind) notFound();
 

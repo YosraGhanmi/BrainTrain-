@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { resolvePrice } from '@/lib/pricing/compute';
-import { sessionsConflict } from '@/lib/scheduling/slots';
 import {
   createFirebaseEnrollment,
   updateFirebaseEnrollmentStatus,

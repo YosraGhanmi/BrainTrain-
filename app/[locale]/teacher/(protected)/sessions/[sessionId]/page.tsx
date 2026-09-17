@@ -2,13 +2,14 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ChevronRight, CalendarDays, MapPin, Users, Sparkles } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
 import { estimateCompletedSessions, percentFromCompleted } from '@/lib/progress';
 import StudentRoster, { type RosterStudent } from '@/components/portal/teacher/StudentRoster';
+import { getFirebaseCourseSession } from '@/lib/firebase/sessions';
+import { getFirebaseRosterForSession } from '@/lib/firebase/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -21,33 +22,24 @@ function ageFromDateOfBirth(dateOfBirth: Date): number {
   return age;
 }
 
-export default async function TeacherSessionRosterPage({
-  params,
-}: {
-  params: { locale: AppLocale; sessionId: string };
-}) {
+export default async function TeacherSessionRosterPage(
+  props: {
+    params: Promise<{ locale: AppLocale; sessionId: string }>;
+  }
+) {
+  const params = await props.params;
   const teacher = await requireTeacher(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.roster' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
-  const session = await prisma.courseSession.findUnique({
-    where: { id: params.sessionId },
-    include: {
-      enrollments: {
-        where: { status: { in: ['PENDING', 'ACTIVE'] } },
-        include: {
-          child: { include: { badges: true } },
-        },
-        orderBy: { enrolledAt: 'asc' },
-      },
-    },
-  });
+  const session = await getFirebaseCourseSession(params.sessionId);
 
   if (!session || session.teacherId !== teacher.teacherId) notFound();
   const course = getCourseEntryOrThrow(session.courseSlug);
   const Icon = getIcon(course.icon);
 
-  const students: RosterStudent[] = session.enrollments.map((enrollment) => {
+  const roster = await getFirebaseRosterForSession(session.id);
+  const students: RosterStudent[] = roster.map((enrollment) => {
     const child = enrollment.child;
     const completed = estimateCompletedSessions(enrollment.enrolledAt, course.sessions);
     return {
@@ -58,7 +50,7 @@ export default async function TeacherSessionRosterPage({
       age: ageFromDateOfBirth(child.dateOfBirth),
       status: enrollment.status as 'PENDING' | 'ACTIVE',
       progressPercent: percentFromCompleted(completed, course.sessions),
-      badges: child.badges.map((b) => ({ id: b.id, emoji: b.emoji, imageUrl: b.imageUrl, title: b.title })),
+      badges: enrollment.badges.map((badge) => ({ id: badge.id, emoji: badge.emoji, imageUrl: badge.imageUrl, title: badge.title })),
     };
   });
 

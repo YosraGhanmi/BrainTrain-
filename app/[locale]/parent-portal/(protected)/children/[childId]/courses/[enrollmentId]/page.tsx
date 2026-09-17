@@ -16,7 +16,6 @@ import {
   Settings,
   Clock3,
 } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
@@ -29,6 +28,8 @@ import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import NotesList from '@/components/portal/course/NotesList';
 import PaymentConfirmedModal from '@/components/portal/course/PaymentConfirmedModal';
 import type { AppLocale } from '@/i18n/routing';
+import { listFirebaseBadgesByCourseSession } from '@/lib/firebase/badges';
+import { getFirebaseEnrollmentWithRelations } from '@/lib/firebase/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,42 +41,35 @@ const STATUS_STYLES: Record<string, string> = {
 
 const BADGE_PALETTE = ['#6c5ce7', '#f7b500', '#00b894', '#3d7fff', '#ff8c42'];
 
-export default async function EnrolledCoursePage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale; childId: string; enrollmentId: string };
-  searchParams: { error?: string };
-}) {
+export default async function EnrolledCoursePage(
+  props: {
+    params: Promise<{ locale: AppLocale; childId: string; enrollmentId: string }>;
+    searchParams: Promise<{ error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.courseEnrollment' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
 
-  const enrollment = await prisma.enrollment.findUnique({
-    where: { id: params.enrollmentId },
-    include: {
-      child: true,
-      courseSession: { include: { teacher: { include: { user: true } } } },
-      notes: { orderBy: { createdAt: 'desc' } },
-      payments: { orderBy: { dueDate: 'asc' }, include: { paymentPlan: true } },
-    },
-  });
+  const row = await getFirebaseEnrollmentWithRelations(params.enrollmentId);
 
-  if (!enrollment || enrollment.childId !== params.childId || enrollment.child.parentId !== parent.parentId) {
+  if (!row || row.enrollment.childId !== params.childId || row.child.parentId !== parent.parentId) {
     notFound();
   }
 
+  const { enrollment, child, notes, payments, teacherName } = row;
   const course = getCourseEntryOrThrow(enrollment.courseSession.courseSlug);
   const Icon = getIcon(course.icon);
   const session = enrollment.courseSession;
-  const teacherName = session.teacher?.user.fullName ?? null;
 
   // Nothing here is real yet while an admin hasn't confirmed the payment —
   // show a focused waiting screen instead of course progress/badges/notes
   // that don't apply until the enrollment is actually active.
   if (enrollment.status === 'PENDING') {
-    const pendingPayment = enrollment.payments[0];
+    const pendingPayment = payments[0];
     return (
       <div className="w-full pb-16">
         <Link
@@ -102,7 +96,7 @@ export default async function EnrolledCoursePage({
             <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">{t('checkingWithAdmin')}</h1>
             <p className="mt-3 text-sm leading-relaxed text-ink/70">
               {t.rich('pendingBody', {
-                name: enrollment.child.fullName,
+                name: child.fullName,
                 course: localized(course.title, params.locale),
                 strong: (chunks) => <strong>{chunks}</strong>,
               })}
@@ -115,7 +109,7 @@ export default async function EnrolledCoursePage({
               </div>
               {pendingPayment ? (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-ink/5 pt-2 text-ink/70">
-                  <span>{t('paymentMethod', { method: t(`methods.${pendingPayment.paymentPlan.method}`) })}</span>
+                  <span>{t('paymentMethod', { method: t(`methods.${pendingPayment.paymentPlan?.method ?? 'CASH'}`) })}</span>
                   <span className="font-semibold text-ink">{Number(pendingPayment.amount)} {pendingPayment.currency}</span>
                 </div>
               ) : null}
@@ -133,19 +127,16 @@ export default async function EnrolledCoursePage({
     );
   }
 
-  const badges = await prisma.badge.findMany({
-    where: { childId: enrollment.childId, courseSessionId: enrollment.courseSessionId },
-    orderBy: { awardedAt: 'desc' },
-  });
+  const badges = (await listFirebaseBadgesByCourseSession(session.id)).filter((badge) => badge.childId === enrollment.childId);
 
-  const outstandingPayment = enrollment.payments.find((p) => p.status !== 'PAID');
-  const isFullyPaid = enrollment.payments.length > 0 && !outstandingPayment;
+  const outstandingPayment = payments.find((p) => p.status !== 'PAID');
+  const isFullyPaid = payments.length > 0 && !outstandingPayment;
 
   // Cash/cheque payments are confirmed by staff, not by the parent's own
   // checkout redirect (unlike card payments, which get instant feedback from
   // Stripe) — show a one-time popup the first time the parent sees it.
-  const justConfirmedPayment = enrollment.payments.find(
-    (p) => p.status === 'PAID' && p.parentNotifiedAt === null && p.paymentPlan.method !== 'CARD',
+  const justConfirmedPayment = payments.find(
+    (p) => p.status === 'PAID' && p.parentNotifiedAt === null && p.paymentPlan?.method !== 'CARD',
   );
 
   const tagline = localized(course.description, params.locale).split('.')[0] + '.';
@@ -228,7 +219,7 @@ export default async function EnrolledCoursePage({
           <form action={payNow}>
             <input type="hidden" name="locale" value={params.locale} />
             <input type="hidden" name="paymentId" value={outstandingPayment.id} />
-            <input type="hidden" name="childId" value={enrollment.child.id} />
+            <input type="hidden" name="childId" value={child.id} />
             <PendingSubmitButton className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
               {t('payNow')}
             </PendingSubmitButton>
@@ -292,14 +283,14 @@ export default async function EnrolledCoursePage({
             </div>
 
             <div className="mt-4">
-              {enrollment.notes.length === 0 ? (
+              {notes.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-ink/15 bg-slate-50 p-6 text-center text-sm text-stone">
                   {t('noUpdatesYet')}
                 </p>
               ) : (
                 <NotesList
                   teacherName={teacherName}
-                  notes={enrollment.notes.map((note) => ({
+                  notes={notes.map((note) => ({
                     id: note.id,
                     content: note.content,
                     createdAt: formatDate(note.createdAt, params.locale, { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -382,7 +373,7 @@ export default async function EnrolledCoursePage({
           <form action={unenrollChild}>
             <input type="hidden" name="locale" value={params.locale} />
             <input type="hidden" name="enrollmentId" value={enrollment.id} />
-            <input type="hidden" name="childId" value={enrollment.child.id} />
+            <input type="hidden" name="childId" value={child.id} />
             <UnsubscribeButton />
           </form>
         </div>

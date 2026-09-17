@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
@@ -8,19 +7,19 @@ import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CoursesExplorer from '@/components/portal/CoursesExplorer';
-import type { EnrollmentStatus } from '@prisma/client';
+import { listFirebaseChildren } from '@/lib/firebase/children';
+import { listFirebaseEnrollmentsWithSessionsByChild } from '@/lib/firebase/read-models';
+import type { EnrollmentStatus } from '@/lib/firebase/enrollments';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ParentCoursesPage({ params }: { params: { locale: AppLocale } }) {
+export default async function ParentCoursesPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
-  const children = await prisma.child.findMany({
-    where: { parentId: parent.parentId },
-    orderBy: { createdAt: 'asc' },
-  });
-  const selected = resolveSelectedChild(children);
+  const children = await listFirebaseChildren(parent.parentId);
+  const selected = await resolveSelectedChild(children);
 
   if (!selected) {
     return (
@@ -30,23 +29,16 @@ export default async function ParentCoursesPage({ params }: { params: { locale: 
     );
   }
 
-  const child = await prisma.child.findUnique({
-    where: { id: selected.id },
-    include: {
-      enrollments: {
-        where: { status: { in: ['PENDING', 'ACTIVE'] } },
-        include: { courseSession: true },
-      },
-    },
-  });
+  const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
+  const enrollments = await listFirebaseEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']);
 
   const eligibleCourses = listCourseEntriesForAgeGroup(child.ageGroupSlug);
 
   // If a child has both a PENDING and an ACTIVE session for the same course,
   // ACTIVE is the more relevant status to surface on the catalog card.
   const enrollmentByCourse = new Map<string, { status: EnrollmentStatus; enrollmentId: string }>();
-  for (const e of child.enrollments) {
+  for (const e of enrollments) {
     const slug = e.courseSession.courseSlug;
     const current = enrollmentByCourse.get(slug);
     if (!current || (current.status === 'PENDING' && e.status === 'ACTIVE')) {

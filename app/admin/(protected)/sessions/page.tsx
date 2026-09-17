@@ -12,7 +12,8 @@ export const dynamic = 'force-dynamic';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export default async function AdminSessionsPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
+export default async function AdminSessionsPage(props: { searchParams: Promise<{ error?: string; saved?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireAdminOnly();
   const [sessions, teachers, content, timeSlots] = await Promise.all([
     listFirebaseCourseSessions(),

@@ -58,7 +58,8 @@ const METADATA_BY_LOCALE: Record<string, { tagline: string; description: string 
   },
 };
 
-export function generateMetadata({ params }: { params: { locale: AppLocale } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ locale: AppLocale }> }): Promise<Metadata> {
+  const params = await props.params;
   const base = METADATA_BY_LOCALE[params.locale] ?? METADATA_BY_LOCALE.en;
   const url = absoluteUrl(params.locale);
   return {
@@ -89,13 +90,18 @@ export function generateMetadata({ params }: { params: { locale: AppLocale } }):
   };
 }
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { locale: string };
-}) {
+export default async function LocaleLayout(
+  props: {
+    children: React.ReactNode;
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   const { locale } = params;
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
 

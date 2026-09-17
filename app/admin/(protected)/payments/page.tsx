@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/db/prisma';
 import { requireAdmin } from '@/lib/admin/guard';
 import { setPaymentStatus } from '@/lib/admin/portal-actions';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import { listAllFirebasePaymentsWithRelations } from '@/lib/firebase/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,14 +15,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default async function AdminPaymentsPage() {
   await requireAdmin();
-  const payments = await prisma.payment.findMany({
-    include: {
-      paymentPlan: {
-        include: { enrollment: { include: { child: { include: { parent: { include: { user: true } } } }, courseSession: true } } },
-      },
-    },
-    orderBy: { dueDate: 'desc' },
-  });
+  const payments = await listAllFirebasePaymentsWithRelations();
 
   return (
     <div>
@@ -45,15 +38,16 @@ export default async function AdminPaymentsPage() {
           </thead>
           <tbody>
             {payments.map((p) => {
-              const enrollment = p.paymentPlan.enrollment;
+              const enrollment = p.enrollment;
+              if (!enrollment || !p.child) return null;
               const course = getCourseEntryOrThrow(enrollment.courseSession.courseSlug);
               return (
                 <tr key={p.id} className="border-b border-ink/5 last:border-0">
-                  <td className="px-5 py-4 font-semibold text-ink">{enrollment.child.fullName}</td>
-                  <td className="px-5 py-4 text-stone">{enrollment.child.parent.user.fullName}</td>
+                  <td className="px-5 py-4 font-semibold text-ink">{p.child.fullName}</td>
+                  <td className="px-5 py-4 text-stone">{p.parentName}</td>
                   <td className="px-5 py-4 text-stone">{course.title.en}</td>
-                  <td className="px-5 py-4 text-stone">{p.paymentPlan.type}</td>
-                  <td className="px-5 py-4 text-stone">{p.paymentPlan.method}</td>
+                  <td className="px-5 py-4 text-stone">{p.paymentPlan?.type ?? '—'}</td>
+                  <td className="px-5 py-4 text-stone">{p.paymentPlan?.method ?? '—'}</td>
                   <td className="px-5 py-4 text-stone">
                     {Number(p.amount)} {p.currency}
                   </td>

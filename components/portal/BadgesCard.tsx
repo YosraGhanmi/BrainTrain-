@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import type { Badge } from '@prisma/client';
+import type { FirebaseBadge } from '@/lib/firebase/badges';
 
 // Placeholder circular styling until real badge artwork is uploaded — each
 // badge just cycles through this palette so a grid of several looks varied.
@@ -12,7 +12,7 @@ const PALETTE = [
   'bg-rose-50 ring-rose-300',
 ];
 
-export default async function BadgesCard({ badges }: { badges: Badge[] }) {
+export default async function BadgesCard({ badges }: { badges: FirebaseBadge[] }) {
   const t = await getTranslations('parentPortal.dashboard.badges');
   return (
     <div id="badges" className="h-full scroll-mt-6 rounded-3xl border border-ink/10 bg-white p-6 shadow-soft">

@@ -1,25 +1,25 @@
 import { getTranslations } from 'next-intl/server';
 import { requireParent } from '@/lib/portal-auth/guard';
-import { prisma } from '@/lib/db/prisma';
 import { listAgeGroupEntries } from '@/lib/content/lookup';
 import SettingsTabs, { type SettingsTab } from '@/components/portal/settings/SettingsTabs';
 import PersonalInfoSection from '@/components/portal/settings/PersonalInfoSection';
 import SecuritySection from '@/components/portal/settings/SecuritySection';
 import ChildrenSection from '@/components/portal/settings/ChildrenSection';
 import type { AppLocale } from '@/i18n/routing';
-import { listFirebaseChildren, isFirebaseConfigured } from '@/lib/firebase/children';
+import { listFirebaseChildrenWithEnrollments } from '@/lib/firebase/read-models';
 
 export const dynamic = 'force-dynamic';
 
 const TABS: SettingsTab[] = ['personal', 'security', 'children'];
 
-export default async function AccountPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { tab?: string; child?: string; saved?: string; error?: string; verify2fa?: string };
-}) {
+export default async function AccountPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ tab?: string; child?: string; saved?: string; error?: string; verify2fa?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.account' });
   const tab: SettingsTab = TABS.includes(searchParams.tab as SettingsTab) ? (searchParams.tab as SettingsTab) : 'personal';
@@ -73,13 +73,7 @@ async function ChildrenTab({
   parentId: string;
   selectedChildId: string;
 }) {
-  const kids = isFirebaseConfigured()
-    ? (await listFirebaseChildren(parentId)).map((child) => ({ ...child, enrollments: [] }))
-    : await prisma.child.findMany({
-        where: { parentId },
-        include: { enrollments: { include: { courseSession: true }, orderBy: { enrolledAt: 'desc' } } },
-        orderBy: { createdAt: 'asc' },
-      });
+  const kids = await listFirebaseChildrenWithEnrollments(parentId);
   const ageGroups = listAgeGroupEntries();
 
   return <ChildrenSection locale={locale} kids={kids} ageGroups={ageGroups} selectedChildId={selectedChildId} />;

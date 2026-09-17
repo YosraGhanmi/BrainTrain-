@@ -3,7 +3,7 @@ import { listTimeSlots } from '@/lib/scheduling/time-slots';
 import { upsertTimeSlot, deleteTimeSlot } from '@/lib/admin/time-slots-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import type { TimeSlot } from '@prisma/client';
+import type { TimeSlot } from '@/lib/scheduling/time-slots';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,7 +92,8 @@ function TimeSlotForm({ slot, isNew }: { slot: TimeSlot; isNew: boolean }) {
   );
 }
 
-export default async function AdminTimeSlotsPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
+export default async function AdminTimeSlotsPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireAdminOnly();
   const slots = await listTimeSlots();
 

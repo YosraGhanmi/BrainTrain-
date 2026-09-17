@@ -1,11 +1,11 @@
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { prisma } from '@/lib/db/prisma';
 import { requireTeacher } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
+import { listFirebaseSessionsWithCountsByTeacher } from '@/lib/firebase/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -21,22 +21,20 @@ function monthParam(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
 
-export default async function TeacherCalendarPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { month?: string };
-}) {
+export default async function TeacherCalendarPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ month?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const teacher = await requireTeacher(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.calendar' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const WEEKDAYS = tc.raw('daysShort') as string[];
   const MONTH_NAMES = tc.raw('months') as string[];
-  const sessions = await prisma.courseSession.findMany({
-    where: { teacherId: teacher.teacherId },
-    include: { _count: { select: { enrollments: { where: { status: { in: ['PENDING', 'ACTIVE'] } } } } } },
-  });
+  const sessions = await listFirebaseSessionsWithCountsByTeacher(teacher.teacherId);
 
   const byDayOfWeek = new Map<number, typeof sessions>();
   for (const s of sessions) {
@@ -159,7 +157,7 @@ export default async function TeacherCalendarPage({
                               href={`/teacher/sessions/${s.id}`}
                               className="group flex max-w-[8rem] items-center gap-1 rounded-full px-2 py-1 text-[0.65rem] font-bold leading-none transition hover:shadow-md"
                               style={{ backgroundColor: `${course.color}1a`, color: course.color }}
-                              title={`${localized(course.title, params.locale)} · ${s.startTime}–${s.endTime} · ${s.location} · ${t('studentsCount', { count: s._count.enrollments })}`}
+                              title={`${localized(course.title, params.locale)} · ${s.startTime}–${s.endTime} · ${s.location} · ${t('studentsCount', { count: s.enrollmentCount })}`}
                             >
                               <Icon className="h-3 w-3 shrink-0 transition group-hover:scale-110" strokeWidth={2.5} />
                               <span className="min-w-0 truncate">{localized(course.title, params.locale)}</span>

@@ -5,13 +5,14 @@ import BrandedAuthPanel from '@/components/portal/BrandedAuthPanel';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
-export default async function TeacherLoginPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: AppLocale };
-  searchParams: { error?: string };
-}) {
+export default async function TeacherLoginPage(
+  props: {
+    params: Promise<{ locale: AppLocale }>;
+    searchParams: Promise<{ error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.login' });
   return (
     <BrandedAuthPanel

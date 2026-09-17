@@ -118,7 +118,7 @@ export async function loginTeacher(formData: FormData): Promise<void> {
 
     // Step 2: if a PIN hash exists, require the PIN step
     if (profile!.teacherSecretCodeHash) {
-      cookies().set(PENDING_TEACHER_COOKIE_NAME, createPendingTeacherToken(credentials!.uid), {
+      (await cookies()).set(PENDING_TEACHER_COOKIE_NAME, createPendingTeacherToken(credentials!.uid), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -140,7 +140,7 @@ export async function verifyTeacherSecretCode(formData: FormData): Promise<void>
   const locale = getLocale(formData);
   const code = field(formData, 'code');
 
-  const uid = verifyPendingTeacherToken(cookies().get(PENDING_TEACHER_COOKIE_NAME)?.value);
+  const uid = verifyPendingTeacherToken((await cookies()).get(PENDING_TEACHER_COOKIE_NAME)?.value);
   if (!uid) redirect(localizedPath(locale, '/teacher/login?error=1'));
 
   if (isFirebaseConfigured()) {
@@ -153,7 +153,7 @@ export async function verifyTeacherSecretCode(formData: FormData): Promise<void>
       (await verifyPassword(code, profile.teacherSecretCodeHash));
     if (!ok) redirect(localizedPath(locale, '/teacher/verify?error=1'));
 
-    cookies().delete(PENDING_TEACHER_COOKIE_NAME);
+    (await cookies()).delete(PENDING_TEACHER_COOKIE_NAME);
     // Re-sign-in is not needed here — we already have the uid; create Firebase
     // session cookie using a freshly minted custom token.
     const customToken = await firebaseAdminAuth.createCustomToken(uid!);
@@ -194,7 +194,7 @@ export async function loginSecretary(formData: FormData): Promise<void> {
     if (profile!.isFrozen) redirect('/admin/login?role=secretary&error=frozen');
 
     // Clear any leftover admin env-cookie so it doesn't take priority
-    cookies().delete(SESSION_COOKIE_NAME);
+    (await cookies()).delete(SESSION_COOKIE_NAME);
     await createPortalSession(profile!.id, credentials!.idToken);
     redirect('/admin');
   }
@@ -222,7 +222,7 @@ export async function selectChild(formData: FormData): Promise<void> {
     if (!child || child.parentId !== user.parentId) return;
   }
 
-  cookies().set(SELECTED_CHILD_COOKIE, childId, {
+  (await cookies()).set(SELECTED_CHILD_COOKIE, childId, {
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
     sameSite: 'lax',

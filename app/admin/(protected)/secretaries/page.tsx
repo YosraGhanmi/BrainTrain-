@@ -7,7 +7,8 @@ import { listFirebaseSecretaries } from '@/lib/firebase/secretaries';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminSecretariesPage({ searchParams }: { searchParams: { error?: string; saved?: string } }) {
+export default async function AdminSecretariesPage(props: { searchParams: Promise<{ error?: string; saved?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireAdminOnly();
   const secretaries = await listFirebaseSecretaries();
 

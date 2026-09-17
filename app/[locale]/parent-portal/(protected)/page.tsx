@@ -1,7 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { PlusCircle } from 'lucide-react';
-import { prisma } from '@/lib/db/prisma';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
@@ -12,17 +11,18 @@ import TeacherNotesCard from '@/components/portal/TeacherNotesCard';
 import BadgesCard from '@/components/portal/BadgesCard';
 import ChildProfileCard from '@/components/portal/ChildProfileCard';
 import type { AppLocale } from '@/i18n/routing';
+import { listFirebaseBadgesByChild } from '@/lib/firebase/badges';
+import { listFirebaseChildren } from '@/lib/firebase/children';
+import { listFirebasePaymentsWithRelationsByChild, listFirebaseEnrollmentsWithSessionsByChild, listTeacherNotesForDashboard } from '@/lib/firebase/read-models';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ParentDashboardPage({ params }: { params: { locale: AppLocale } }) {
+export default async function ParentDashboardPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.dashboard' });
-  const children = await prisma.child.findMany({
-    where: { parentId: parent.parentId },
-    orderBy: { createdAt: 'asc' },
-  });
-  const selected = resolveSelectedChild(children);
+  const children = await listFirebaseChildren(parent.parentId);
+  const selected = await resolveSelectedChild(children);
   const { news } = readContent();
 
   if (!selected) {
@@ -45,33 +45,18 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     );
   }
 
-  const child = await prisma.child.findUnique({
-    where: { id: selected.id },
-    include: {
-      badges: { orderBy: { awardedAt: 'desc' } },
-      notes: {
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-        include: { teacher: { include: { user: true } }, courseSession: true },
-      },
-      enrollments: {
-        where: { status: { in: ['PENDING', 'ACTIVE'] } },
-        include: { courseSession: true },
-      },
-    },
-  });
+  const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
+  const [enrollments, badges, notes, duePayments] = await Promise.all([
+    listFirebaseEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']),
+    listFirebaseBadgesByChild(child.id),
+    listTeacherNotesForDashboard(child.id),
+    listFirebasePaymentsWithRelationsByChild(child.id).then((payments) =>
+      payments.filter((payment) => ['PENDING', 'OVERDUE'].includes(payment.status) && payment.enrollment),
+    ),
+  ]);
 
-  const duePayments = await prisma.payment.findMany({
-    where: {
-      status: { in: ['PENDING', 'OVERDUE'] },
-      enrollment: { childId: child.id },
-    },
-    include: { enrollment: { include: { courseSession: true } } },
-    orderBy: { dueDate: 'desc' },
-  });
-
-  const enrolledCourseSlugs = new Set(child.enrollments.map((e) => e.courseSession.courseSlug));
+  const enrolledCourseSlugs = new Set(enrollments.map((e) => e.courseSession.courseSlug));
   const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
   const courseTitles = [...enrolledCourseSlugs].map((slug) => localized(getCourseEntryOrThrow(slug).title, params.locale));
   const visibleNews = news.filter(
@@ -90,18 +75,18 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     ...duePayments.map((p) => ({
       id: `pay-${p.id}`,
       type: 'reminder' as const,
-      title: t('paymentDue', { course: localized(getCourseEntryOrThrow(p.enrollment.courseSession.courseSlug).title, params.locale) }),
+      title: t('paymentDue', { course: localized(getCourseEntryOrThrow(p.enrollment!.courseSession.courseSlug).title, params.locale) }),
       date: p.dueDate.toISOString(),
       href: '/parent-portal/payments',
     })),
-    ...child.badges.map((b) => ({
+    ...badges.map((b) => ({
       id: `badge-${b.id}`,
       type: 'notification' as const,
       title: t('badgeEarned', { badge: b.title }),
       date: b.awardedAt.toISOString(),
       href: '/parent-portal#badges',
     })),
-    ...child.notes.map((n) => ({
+    ...notes.map((n) => ({
       id: `note-${n.id}`,
       type: 'notification' as const,
       title: t('noteAdded'),
@@ -114,7 +99,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
     <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-3 lg:[grid-template-rows:1fr]">
       <div className="flex flex-col gap-6 lg:col-span-2">
         <NewsCard items={feed} />
-        <TeacherNotesCard notes={child.notes} locale={params.locale} />
+        <TeacherNotesCard notes={notes} locale={params.locale} />
       </div>
       <div className="flex flex-col gap-6">
         <ChildProfileCard
@@ -127,7 +112,7 @@ export default async function ParentDashboardPage({ params }: { params: { locale
           courseTitles={courseTitles}
         />
         <div className="flex-1">
-          <BadgesCard badges={child.badges} />
+          <BadgesCard badges={badges} />
         </div>
       </div>
     </div>
