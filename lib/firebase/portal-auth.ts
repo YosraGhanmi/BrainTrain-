@@ -21,7 +21,12 @@ export type FirebasePortalProfile = {
 };
 
 export function isFirebaseConfigured(): boolean {
-  return Boolean(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY);
+  return Boolean(
+    (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) ||
+      process.env.FIREBASE_CONFIG ||
+      process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+      process.env.K_SERVICE,
+  );
 }
 
 export async function signInWithFirebasePassword(email: string, password: string): Promise<{ idToken: string; uid: string } | null> {

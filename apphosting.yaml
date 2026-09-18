@@ -1,0 +1,96 @@
+# Firebase App Hosting configuration for the Next.js web application.
+# Secret values are stored in Google Cloud Secret Manager, not in this file.
+
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  - variable: ADMIN_EMAIL
+    secret: ADMIN_EMAIL
+    availability:
+      - RUNTIME
+
+  - variable: ADMIN_PASSWORD
+    secret: ADMIN_PASSWORD
+    availability:
+      - RUNTIME
+
+  - variable: ADMIN_SESSION_SECRET
+    secret: ADMIN_SESSION_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: PORTAL_SESSION_SECRET
+    secret: PORTAL_SESSION_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://braintrain.cloudplay.tech
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: SMTP_HOST
+    value: ssl0.ovh.net
+    availability:
+      - RUNTIME
+
+  - variable: SMTP_PORT
+    value: "465"
+    availability:
+      - RUNTIME
+
+  - variable: SMTP_USER
+    secret: SMTP_USER
+    availability:
+      - RUNTIME
+
+  - variable: SMTP_PASS
+    secret: SMTP_PASS
+    availability:
+      - RUNTIME
+
+  - variable: EMAIL_FROM
+    secret: EMAIL_FROM
+    availability:
+      - RUNTIME
+
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+    availability:
+      - RUNTIME
+
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: SMS_PROVIDER
+    value: twilio
+    availability:
+      - RUNTIME
+
+  - variable: TWILIO_ACCOUNT_SID
+    secret: TWILIO_ACCOUNT_SID
+    availability:
+      - RUNTIME
+
+  - variable: TWILIO_AUTH_TOKEN
+    secret: TWILIO_AUTH_TOKEN
+    availability:
+      - RUNTIME
+
+  - variable: TWILIO_FROM_NUMBER
+    secret: TWILIO_FROM_NUMBER
+    availability:
+      - RUNTIME
+
+  - variable: CRON_SECRET
+    secret: CRON_SECRET
+    availability:
+      - RUNTIME

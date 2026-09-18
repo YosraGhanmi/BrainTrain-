@@ -6,48 +6,27 @@ import crypto from 'crypto';
 export const SESSION_COOKIE_NAME = 'braintrain_admin_session';
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-let warnedSecret = false;
-let warnedPassword = false;
-let warnedEmail = false;
-
-function getSecret(): string {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (secret) return secret;
-  if (!warnedSecret) {
-    console.warn(
-      '[admin] ADMIN_SESSION_SECRET is not set — using an insecure default. Set it in your environment before deploying.'
-    );
-    warnedSecret = true;
-  }
-  return 'braintrain-dev-secret-change-me';
+function envValue(name: 'ADMIN_SESSION_SECRET' | 'ADMIN_PASSWORD' | 'ADMIN_EMAIL'): string | null {
+  const value = process.env[name]?.trim();
+  return value ? value : null;
 }
 
-function getAdminPassword(): string {
-  const pw = process.env.ADMIN_PASSWORD;
-  if (pw) return pw;
-  if (!warnedPassword) {
-    console.warn(
-      '[admin] ADMIN_PASSWORD is not set — using the insecure default "braintrain-admin". Set it in your environment before deploying.'
-    );
-    warnedPassword = true;
-  }
-  return 'braintrain-admin';
+function getSecret(): string | null {
+  return envValue('ADMIN_SESSION_SECRET');
 }
 
-function getAdminEmail(): string {
-  const email = process.env.ADMIN_EMAIL;
-  if (email) return email;
-  if (!warnedEmail) {
-    console.warn(
-      '[admin] ADMIN_EMAIL is not set — using the insecure default "admin@braintrain.tn". Set it in your environment before deploying.'
-    );
-    warnedEmail = true;
-  }
-  return 'admin@braintrain.tn';
+function getAdminPassword(): string | null {
+  return envValue('ADMIN_PASSWORD');
 }
 
-function sign(payload: string): string {
-  return crypto.createHmac('sha256', getSecret()).update(payload).digest('hex');
+function getAdminEmail(): string | null {
+  return envValue('ADMIN_EMAIL');
+}
+
+function sign(payload: string): string | null {
+  const secret = getSecret();
+  if (!secret) return null;
+  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
 }
 
 function timingSafeStringEqual(a: string, b: string): boolean {
@@ -58,12 +37,17 @@ function timingSafeStringEqual(a: string, b: string): boolean {
 }
 
 export function checkCredentials(email: string, password: string): boolean {
-  const emailOk = timingSafeStringEqual(email.trim().toLowerCase(), getAdminEmail().trim().toLowerCase());
-  const passwordOk = timingSafeStringEqual(password, getAdminPassword());
+  const configuredEmail = getAdminEmail();
+  const configuredPassword = getAdminPassword();
+  if (!configuredEmail || !configuredPassword || !getSecret()) return false;
+
+  const emailOk = timingSafeStringEqual(email.trim().toLowerCase(), configuredEmail.trim().toLowerCase());
+  const passwordOk = timingSafeStringEqual(password, configuredPassword);
   return emailOk && passwordOk;
 }
 
 export function createSessionToken(): string {
+  if (!getSecret()) throw new Error('ADMIN_SESSION_SECRET is not configured.');
   const payload = JSON.stringify({ exp: Date.now() + SESSION_TTL_MS });
   const encoded = Buffer.from(payload).toString('base64url');
   return `${encoded}.${sign(encoded)}`;
@@ -75,6 +59,7 @@ export function verifySessionToken(token: string | undefined | null): boolean {
   if (!encoded || !sig) return false;
 
   const expectedSig = sign(encoded);
+  if (!expectedSig) return false;
   const a = Buffer.from(sig);
   const b = Buffer.from(expectedSig);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;

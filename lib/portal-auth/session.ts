@@ -47,7 +47,9 @@ export const PENDING_TEACHER_COOKIE_NAME = 'braintrain_teacher_pending';
 const PENDING_TEACHER_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 function pendingSecret(): string {
-  return process.env.ADMIN_SESSION_SECRET || 'braintrain-dev-secret-change-me';
+  const secret = process.env.ADMIN_SESSION_SECRET?.trim();
+  if (!secret) throw new Error('ADMIN_SESSION_SECRET is not configured.');
+  return secret;
 }
 
 function signPending(payload: string): string {
@@ -65,7 +67,12 @@ export function verifyPendingTeacherToken(token: string | undefined | null): str
   const [encoded, sig] = token.split('.');
   if (!encoded || !sig) return null;
 
-  const expectedSig = signPending(encoded);
+  let expectedSig: string;
+  try {
+    expectedSig = signPending(encoded);
+  } catch {
+    return null;
+  }
   const a = Buffer.from(sig);
   const b = Buffer.from(expectedSig);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;

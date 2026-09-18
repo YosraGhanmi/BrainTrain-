@@ -1,0 +1,9 @@
+.firebase/
+.next/cache/
+playwright-report/
+test-results/
+*.log
+firebase-debug.log
+NEXTJS_SECURITY_AUDIT.md
+FIREBASE_MIGRATION.md
+README.md

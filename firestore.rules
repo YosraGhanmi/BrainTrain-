@@ -15,28 +15,41 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
 
+    function isParentOfChild(childId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/children/$(childId))
+        && get(/databases/$(database)/documents/children/$(childId)).data.parentId == request.auth.uid;
+    }
+
+    function isParentOfEnrollment(enrollmentId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/enrollments/$(enrollmentId))
+        && isParentOfChild(get(/databases/$(database)/documents/enrollments/$(enrollmentId)).data.childId);
+    }
+
     // ---------------------------------------------------------------------------
     // Users (parents, teachers, secretaries)
     // ---------------------------------------------------------------------------
 
-    // A user can read/write their own profile; nobody else can access it
-    // from the browser. All privileged operations go through the Firebase
-    // Admin SDK (server actions) which bypasses these rules.
+    // Browser clients may read their own profile, but profile writes are
+    // server-only. Role, approval, ownership, frozen-state, 2FA, and reset
+    // fields are security-sensitive and are trusted by Server Actions.
     match /users/{userId} {
-      allow read, write: if isSignedIn() && isOwner(userId);
+      allow read: if isSignedIn() && isOwner(userId);
+      allow create, update, delete: if false;
     }
 
     // ---------------------------------------------------------------------------
     // Children
     // ---------------------------------------------------------------------------
 
-    // A parent can only read/write children whose parentId matches their uid.
+    // Parents may read only their own children from the browser. Child writes
+    // are server-only to prevent ownership transfer/corruption.
     match /children/{childId} {
-      allow read, write: if isSignedIn()
+      allow read: if isSignedIn()
         && resource != null
         && resource.data.parentId == request.auth.uid;
-      allow create: if isSignedIn()
-        && request.resource.data.parentId == request.auth.uid;
+      allow create, update, delete: if false;
     }
 
     // ---------------------------------------------------------------------------
@@ -74,17 +87,22 @@ service cloud.firestore {
 
     match /enrollments/{id} {
       allow read: if isSignedIn()
-        && (resource == null || resource.data.childId in getUserChildIds());
+        && resource != null
+        && isParentOfChild(resource.data.childId);
       allow write: if false; // Admin SDK only
     }
 
     match /payment_plans/{id} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn()
+        && resource != null
+        && isParentOfEnrollment(resource.data.enrollmentId);
       allow write: if false; // Admin SDK only
     }
 
     match /payments/{id} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn()
+        && resource != null
+        && isParentOfEnrollment(resource.data.enrollmentId);
       allow write: if false; // Admin SDK only
     }
 
@@ -127,21 +145,5 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ---------------------------------------------------------------------------
-    // Helper functions requiring data access (defined at bottom to avoid
-    // forward-reference issues in some Firestore rule evaluators)
-    // ---------------------------------------------------------------------------
-
-    function getUserChildIds() {
-      // Returns the set of childIds owned by the requesting user.
-      // NOTE: Firestore rules cannot execute arbitrary queries; this is
-      // evaluated by the security rules engine — keep it simple.
-      return [];  // Browser-side enrollment reads should go through the Admin SDK
-                  // via server components / server actions for security.
-    }
-
-    function isParentOfChild(childId) {
-      return get(/databases/$(database)/documents/children/$(childId)).data.parentId == request.auth.uid;
-    }
   }
 }
