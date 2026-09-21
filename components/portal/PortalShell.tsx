@@ -39,7 +39,7 @@ export default async function PortalShell({
     <>
       {isLight ? (
         <Link href={homeHref} className="relative block h-10 w-full">
-          <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill className="object-contain object-left" />
+          <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill sizes="160px" className="object-contain object-left" />
         </Link>
       ) : (
         <Link href={homeHref} className="block h-10 w-full">

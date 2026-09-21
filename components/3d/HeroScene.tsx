@@ -8,6 +8,19 @@ import * as THREE from 'three';
 const MODEL_URL = '/robot.glb';
 const MAX_YAW = 0.55; // radians either side of center
 
+if (typeof window !== 'undefined' && THREE.setConsoleFunction) {
+  THREE.setConsoleFunction((type, message, ...params) => {
+    if (
+      type === 'warn' &&
+      typeof message === 'string' &&
+      (message.includes('Clock') || message.includes('PCFSoftShadowMap'))
+    ) {
+      return;
+    }
+    console[type](message, ...params);
+  });
+}
+
 function RobotModel() {
   const group = useRef<THREE.Group>(null);
   const targetYaw = useRef(0);
@@ -86,7 +99,7 @@ useGLTF.preload(MODEL_URL);
 export default function HeroScene() {
   return (
     <div className="h-full w-full">
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [3.2, 2.1, 5], fov: 32 }} gl={{ alpha: true, antialias: true }}>
+      <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 2]} camera={{ position: [3.2, 2.1, 5], fov: 32 }} gl={{ alpha: true, antialias: true }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 8, 5]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} />
         <directionalLight position={[-4, 3, -4]} intensity={0.4} />

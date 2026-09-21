@@ -286,23 +286,23 @@ export default function ParentAuthScreen({
             mixing an animated `y` onto an element that also needs a fixed
             translate(-50%,-50%) for positioning is a recipe for the two
             fighting over the same CSS property). */}
-        <div className="absolute w-max max-w-[85vw] px-6" style={{ left: '38%', top: '36%', transform: 'translate(-50%, -50%)' }}>
+        <div className="absolute w-[320px] max-w-[85vw] px-6 lg:w-[360px] xl:w-[440px] 2xl:w-[640px]" style={{ left: '38%', top: '36%', transform: 'translate(-50%, -50%)' }}>
           <div ref={loginBladeTextRef} style={{ opacity: loginActive ? 1 : 0 }}>
             <span className="text-base font-bold uppercase tracking-[0.3em] text-[#ff8c42]">BrainTrain</span>
-            <h2 className="mt-6 whitespace-nowrap font-display text-6xl font-bold leading-[0.95] text-white xl:text-7xl">
+            <h2 className="mt-6 font-display text-4xl font-bold leading-[0.95] text-white lg:text-5xl xl:text-6xl 2xl:text-7xl">
               {t('welcomeBack')} <span className="text-[#ff8c42]">{t('welcomeBackAccent')}</span>
             </h2>
           </div>
         </div>
-        <div className="absolute w-max max-w-[85vw] px-6" style={{ left: '62%', top: '36%', transform: 'translate(-50%, -50%)' }}>
+        <div className="absolute w-[320px] max-w-[85vw] px-6 lg:w-[360px] xl:w-[440px] 2xl:w-[640px]" style={{ left: '62%', top: '36%', transform: 'translate(-50%, -50%)' }}>
           <div ref={signupBladeTextRef} style={{ opacity: loginActive ? 0 : 1 }}>
             <span className="text-sm font-bold uppercase tracking-[0.3em] text-[#ff8c42]">BrainTrain</span>
-            <h2 className="mt-5 whitespace-nowrap font-display text-6xl font-bold leading-[0.95] text-white xl:text-7xl">
+            <h2 className="mt-5 font-display text-4xl font-bold leading-[0.95] text-white lg:text-5xl xl:text-6xl 2xl:text-7xl">
               {t('joinThe')}
               <br />
               <span className="text-[#ff8c42]">{t('joinTheAccent')}</span>
             </h2>
-            <p className="mt-8 text-lg leading-relaxed text-white/60">{t('joinSubtext')}</p>
+            <p className="mt-8 text-base leading-relaxed text-white/60 xl:text-lg">{t('joinSubtext')}</p>
           </div>
         </div>
       </div>

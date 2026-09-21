@@ -46,22 +46,42 @@ export type AdminNotifications = {
 export async function getAdminNotifications(): Promise<AdminNotifications> {
   if (isFirebaseConfigured()) {
     const [pendingParentSnap, expenseNotices, preinscriptionNotices, overduePaymentSnap] = await Promise.all([
-      firestore.collection('users').where('role', '==', 'PARENT').where('parentStatus', '==', 'PENDING').orderBy('createdAt', 'desc').limit(20).get(),
-      listUnreadFirebaseNotifications('EXPENSE_ADDED'),
-      listUnreadFirebaseNotifications('PREINSCRIPTION_SUBMITTED'),
-      firestore.collection('payments').where('status', '==', 'OVERDUE').orderBy('dueDate', 'asc').limit(20).get(),
+      firestore
+        .collection('users')
+        .where('role', '==', 'PARENT')
+        .where('parentStatus', '==', 'PENDING')
+        .get()
+        .catch(() => ({ docs: [] })),
+      listUnreadFirebaseNotifications('EXPENSE_ADDED').catch(() => []),
+      listUnreadFirebaseNotifications('PREINSCRIPTION_SUBMITTED').catch(() => []),
+      firestore
+        .collection('payments')
+        .where('status', '==', 'OVERDUE')
+        .get()
+        .catch(() => ({ docs: [] })),
     ]);
 
-    const pendingParents: PendingParentNotice[] = pendingParentSnap.docs.map((doc) => ({
-      id: doc.id,
-      fullName: String(doc.data().fullName ?? ''),
-      email: String(doc.data().email ?? ''),
-      createdAt: doc.data().createdAt?.toDate?.() ?? new Date(),
-    }));
+    const pendingParents: PendingParentNotice[] = pendingParentSnap.docs
+      .map((doc) => ({
+        id: doc.id,
+        fullName: String(doc.data().fullName ?? ''),
+        email: String(doc.data().email ?? ''),
+        createdAt: doc.data().createdAt?.toDate?.() ?? new Date(),
+      }))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 20);
+
+    const sortedOverdueDocs = overduePaymentSnap.docs
+      .sort((a, b) => {
+        const tA = a.data().dueDate?.toDate?.()?.getTime() ?? 0;
+        const tB = b.data().dueDate?.toDate?.()?.getTime() ?? 0;
+        return tA - tB;
+      })
+      .slice(0, 20);
 
     // Enrich overdue payments with child name
     const overduePayments: OverduePaymentNotice[] = await Promise.all(
-      overduePaymentSnap.docs.map(async (doc) => {
+      sortedOverdueDocs.map(async (doc) => {
         const data = doc.data();
         const enrollmentDoc = await firestore.collection('enrollments').doc(String(data.enrollmentId)).get();
         const childId = enrollmentDoc.data()?.childId as string | undefined;

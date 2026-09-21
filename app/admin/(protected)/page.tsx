@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Users2, CreditCard, Wallet, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users2, CreditCard, Wallet, Landmark, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { firestore } from '@/lib/firebase/admin';
+import { monthNav } from '@/lib/admin/month';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,10 +70,15 @@ function MoneyStatCard({
   currency: string;
   href: string;
   icon: typeof Wallet;
-  tone: 'emerald' | 'amber';
+  tone: 'emerald' | 'amber' | 'blue' | 'violet';
 }) {
-  const toneClasses =
-    tone === 'emerald' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
+  const TONE_CLASSES = {
+    emerald: 'bg-emerald-100 text-emerald-700',
+    amber: 'bg-amber-100 text-amber-700',
+    blue: 'bg-blue-100 text-blue-700',
+    violet: 'bg-violet-100 text-violet-700',
+  } as const;
+  const toneClasses = TONE_CLASSES[tone];
   return (
     <Link
       href={href}
@@ -100,38 +106,15 @@ function MoneyStatCard({
 // as enrollment counts change, which breaks "color follows the entity."
 const AGE_GROUP_COLORS = ['#2563eb', '#d97706', '#0d9488', '#9333ea'];
 
-// "YYYY-MM" <-> the first-of-month Date it names, used to scope the
-// Payments card to one month at a time via the ?month= query param.
-function parseMonthParam(month: string | undefined): { year: number; monthIndex: number } {
-  const match = month?.match(/^(\d{4})-(\d{2})$/);
-  if (match) {
-    const year = Number(match[1]);
-    const monthIndex = Number(match[2]) - 1;
-    if (monthIndex >= 0 && monthIndex <= 11) return { year, monthIndex };
-  }
-  const now = new Date();
-  return { year: now.getFullYear(), monthIndex: now.getMonth() };
-}
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: { month?: string };
+}) {
+  const session = await requireAdmin();
+  const isSecretary = session.kind === 'secretary';
 
-function monthParamFor(year: number, monthIndex: number): string {
-  return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
-}
-
-export default async function AdminDashboardPage(
-  props: {
-    searchParams: Promise<{ month?: string }>;
-  }
-) {
-  const searchParams = await props.searchParams;
-  await requireAdmin();
-
-  const { year, monthIndex } = parseMonthParam(searchParams.month);
-  const monthStart = new Date(year, monthIndex, 1);
-  const monthEnd = new Date(year, monthIndex + 1, 1);
-  const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const prevMonthParam = monthParamFor(monthIndex === 0 ? year - 1 : year, monthIndex === 0 ? 11 : monthIndex - 1);
-  const nextMonthParam = monthParamFor(monthIndex === 11 ? year + 1 : year, monthIndex === 11 ? 0 : monthIndex + 1);
-  const isCurrentMonth = monthParamFor(year, monthIndex) === monthParamFor(new Date().getFullYear(), new Date().getMonth());
+  const { monthStart, monthEnd, monthLabel, prevMonthParam, nextMonthParam, isCurrentMonth } = monthNav(searchParams.month);
 
   const [parentSnap, teacherSnap, childSnap, enrollmentSnap, childGroupSnap, paidSnap, unpaidSnap, earningsSnap, dispensesSnap] =
     await Promise.all([
@@ -142,8 +125,8 @@ export default async function AdminDashboardPage(
       firestore.collection('children').get(),
       firestore.collection('payments').where('status', '==', 'PAID').where('paidAt', '>=', monthStart).where('paidAt', '<', monthEnd).count().get(),
       firestore.collection('payments').where('status', '!=', 'PAID').where('dueDate', '>=', monthStart).where('dueDate', '<', monthEnd).count().get(),
-      firestore.collection('payments').where('status', '==', 'PAID').get(),
-      firestore.collection('expenses').get(),
+      firestore.collection('payments').where('status', '==', 'PAID').where('paidAt', '>=', monthStart).where('paidAt', '<', monthEnd).get(),
+      firestore.collection('expenses').where('date', '>=', monthStart).where('date', '<', monthEnd).get(),
     ]);
 
   const parentsCount = parentSnap.data().count;
@@ -154,7 +137,13 @@ export default async function AdminDashboardPage(
   const unpaidPayments = unpaidSnap.data().count;
 
   const totalEarnings = earningsSnap.docs.reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
-  const totalDispenses = dispensesSnap.docs.reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
+  const fixedDispenses = dispensesSnap.docs
+    .filter((doc) => doc.data().chargeType === 'FIXED')
+    .reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
+  const variableDispenses = dispensesSnap.docs
+    .filter((doc) => doc.data().chargeType !== 'FIXED')
+    .reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
+  const totalDispenses = fixedDispenses + variableDispenses;
 
   // Build age group breakdown from the children collection
   const countByAgeGroupSlug = new Map<string, number>();
@@ -177,15 +166,43 @@ export default async function AdminDashboardPage(
       <h1 className="font-display text-3xl font-semibold text-ink">Dashboard</h1>
       <p className="mt-1 text-sm text-stone">An overview of parent-portal accounts, enrollments and activity.</p>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${isSecretary ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         <StatCard label="Parent accounts" value={parentsCount} href="/admin/parents" theme="blue" />
-        <StatCard label="Teacher accounts" value={teachersCount} href="/admin/teachers" theme="violet" />
+        {isSecretary ? (
+          <StatCard label="Teacher accounts" value={teachersCount} href="/admin/teachers" theme="violet" />
+        ) : null}
         <StatCard label="Children enrolled" value={childrenCount} href="/admin/children" theme="emerald" />
         <StatCard label="Active enrollments" value={activeEnrollments} href="/admin/enrollments" theme="amber" />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-stone">Earnings &amp; dispenses</p>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/admin?month=${prevMonthParam}`}
+            aria-label="Previous month"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone transition hover:bg-slate-100 hover:text-ink"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Link>
+          <p className="text-sm font-semibold text-ink">
+            {monthLabel}
+            {isCurrentMonth ? <span className="ml-2 text-xs font-normal text-stone">(current)</span> : null}
+          </p>
+          <Link
+            href={`/admin?month=${nextMonthParam}`}
+            aria-label="Next month"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone transition hover:bg-slate-100 hover:text-ink"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MoneyStatCard label="Total earnings" amount={totalEarnings} currency="TND" href="/admin/payments" icon={TrendingUp} tone="emerald" />
+        <MoneyStatCard label="Fixed charges" amount={fixedDispenses} currency="TND" href="/admin/dispenses" icon={Landmark} tone="blue" />
+        <MoneyStatCard label="Variable charges" amount={variableDispenses} currency="TND" href="/admin/dispenses" icon={Wallet} tone="violet" />
         <MoneyStatCard label="Total dispenses" amount={totalDispenses} currency="TND" href="/admin/dispenses" icon={Wallet} tone="amber" />
       </div>
 

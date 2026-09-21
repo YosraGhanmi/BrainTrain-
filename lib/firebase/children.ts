@@ -59,11 +59,8 @@ export async function listAllFirebaseChildren(): Promise<Array<FirebaseChild & {
   return Promise.all(
     snapshot.docs.map(async (doc) => {
       const child = mapChild(doc.id, doc.data());
-      const [parent, enrollments] = await Promise.all([
-        firestore.collection('users').doc(child.parentId).get(),
-        firestore.collection('enrollments').where('childId', '==', child.id).count().get(),
-      ]);
-      return { ...child, parentName: String(parent.data()?.fullName ?? ''), enrollmentCount: enrollments.data().count };
+      const parent = await firestore.collection('users').doc(child.parentId).get();
+      return { ...child, parentName: String(parent.data()?.fullName ?? ''), enrollmentCount: 0 };
     }),
   );
 }

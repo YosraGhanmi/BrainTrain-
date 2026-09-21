@@ -28,6 +28,7 @@ import {
 import {
   deleteFirebasePortalProfile,
   getFirebasePortalProfile,
+  isFirebaseConfigured,
   updateFirebasePortalProfile,
 } from '@/lib/firebase/portal-auth';
 import { deleteFirebaseChild } from '@/lib/firebase/children';
@@ -40,19 +41,23 @@ import {
 } from '@/lib/firebase/sessions';
 import {
   getFirebaseEnrollment,
+  listFirebaseEnrollmentsByCourseSession,
   updateFirebaseEnrollmentStatus,
   moveFirebaseEnrollment,
 } from '@/lib/firebase/enrollments';
-import { updateFirebasePayment } from '@/lib/firebase/enrollments';
+import { getFirebasePayment, updateFirebasePayment } from '@/lib/firebase/enrollments';
 import {
   upsertFirebasePricingRule,
+  deleteFirebasePricingRulesByAgeGroup,
   deleteFirebasePricingRulesByCourse,
 } from '@/lib/firebase/pricing';
 import {
   markFirebaseNotificationRead,
   markAllFirebaseNotificationsRead,
 } from '@/lib/firebase/notifications';
-import { firestore } from '@/lib/firebase/admin';
+import { listFirebaseCourseSessions as _listSessions } from '@/lib/firebase/sessions';
+import { getFirebaseTimeSlot } from '@/lib/firebase/time-slots';
+import { firestore, firebaseAdminAuth } from '@/lib/firebase/admin';
 import type { EnrollmentStatus, PlanType } from '@/lib/firebase/enrollments';
 
 const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];

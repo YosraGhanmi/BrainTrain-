@@ -14,8 +14,7 @@ const STATUS_BADGE: Record<string, string> = {
   REJECTED: 'bg-red-100 text-red-600',
 };
 
-export default async function AdminParentsPage(props: { searchParams: Promise<{ saved?: string }> }) {
-  const searchParams = await props.searchParams;
+export default async function AdminParentsPage({ searchParams }: { searchParams: { saved?: string } }) {
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
   const parents = await listFirebaseParentProfiles();

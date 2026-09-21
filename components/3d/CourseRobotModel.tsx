@@ -51,10 +51,13 @@ function StaticRobotModel() {
     perspective.updateProjectionMatrix();
   }, [scene, camera]);
 
+  const elapsedTime = useRef(0);
+
   // Slow vertical bob so the robot reads as hovering in place.
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (!group.current) return;
-    group.current.position.y = baseY.current + Math.sin(clock.elapsedTime * 1.2) * 0.12;
+    elapsedTime.current += delta;
+    group.current.position.y = baseY.current + Math.sin(elapsedTime.current * 1.2) * 0.12;
   });
 
   return (

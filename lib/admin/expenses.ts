@@ -19,6 +19,7 @@ export async function createExpense(formData: FormData): Promise<void> {
   const category = field(formData, 'category');
   const note = field(formData, 'note');
   const dateRaw = field(formData, 'date');
+  const chargeType = field(formData, 'chargeType') === 'FIXED' ? 'FIXED' : 'VARIABLE';
 
   const amount = Number(amountRaw);
   if (!label || !Number.isFinite(amount) || amount <= 0) {
@@ -34,6 +35,7 @@ export async function createExpense(formData: FormData): Promise<void> {
     category: category || null,
     note: note || null,
     date: dateRaw ? new Date(dateRaw) : new Date(),
+    chargeType,
     createdByName,
     createdByRole: session.kind === 'admin' ? 'ADMIN' : 'SECRETARY',
   });

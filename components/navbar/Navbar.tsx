@@ -33,18 +33,18 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
     <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${shrink ? 'bg-white/80 border-white/30 shadow-soft' : 'bg-white/10 border-white/10'} backdrop-blur-3xl`}>
       <div className="relative flex items-center px-6 py-2.5 xl:px-8">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-0">
-          <Link className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
+          <Link className="flex shrink-0 items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
             <span className="relative h-12 w-32 overflow-hidden">
-              <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill className="object-contain object-left opacity-90" />
+              <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill sizes="128px" className="object-contain object-left opacity-90" />
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-10 md:flex md:flex-1 md:justify-center">
+          <nav className="hidden items-center gap-6 lg:flex lg:flex-1 lg:justify-center xl:gap-10">
             {navItems.map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
-                className="group relative text-sm uppercase tracking-[0.2em] text-stone transition hover:text-ink"
+                className="group relative whitespace-nowrap text-sm uppercase tracking-[0.2em] text-stone transition hover:text-ink"
               >
                 {item.label}
                 <span
@@ -56,15 +56,15 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden md:block">
+        <div className="flex shrink-0 items-center gap-4">
+          <div className="hidden lg:block">
             <LanguageSwitcher />
           </div>
-          <div className="hidden md:inline-flex">
+          <div className="hidden lg:inline-flex">
             <RadialReveal
               href="/parent-portal/login"
               boxClassName="rounded-full border border-ink/15 bg-white/90 shadow-sm"
-              faceClassName="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em]"
+              faceClassName="inline-flex items-center gap-2 whitespace-nowrap px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em]"
               restColorClassName="text-ink"
               hoverColorClassName="bg-ink text-white"
             >
@@ -73,7 +73,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
             </RadialReveal>
           </div>
           <button
-            className="inline-flex items-center rounded-full border border-ink/10 bg-white/90 p-3 text-ink transition hover:border-ink/30 md:hidden"
+            className="inline-flex items-center rounded-full border border-ink/10 bg-white/90 p-3 text-ink transition hover:border-ink/30 lg:hidden"
             onClick={() => setOpen(!open)}
             aria-label={open ? 'Close menu' : 'Open menu'}
           >
@@ -83,7 +83,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
       </div>
 
       {open ? (
-        <div className="mx-auto mt-4 max-w-7xl px-6 xl:px-8 md:hidden">
+        <div className="mx-auto mt-4 max-w-7xl px-6 xl:px-8 lg:hidden">
           <div className="rounded-3xl border border-stone/10 bg-white/90 p-5 shadow-soft">
             <div className="grid gap-4">
               {navItems.map((item) => (
@@ -94,7 +94,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
               <div className="flex items-center justify-center py-1">
                 <LanguageSwitcher />
               </div>
-              <Link href="/parent-portal/login" className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone">
+              <Link href="/parent-portal/login" className="inline-flex items-center justify-center whitespace-nowrap rounded-full bg-ink px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone">
                 {t('login')}
               </Link>
             </div>
