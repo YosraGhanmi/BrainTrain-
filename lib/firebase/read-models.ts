@@ -126,7 +126,7 @@ export async function listFirebasePaymentsWithRelationsByChild(childId: string):
       ]);
       const withSession = enrollment ? await enrollmentWithSession(enrollment) : null;
       const child = withSession ? await getFirebaseChild(withSession.childId) : null;
-      const parent = child ? await firestore.collection('users').doc(child.parentId).get() : null;
+      const parent = child?.parentId ? await firestore.collection('users').doc(child.parentId).get() : null;
       return {
         ...payment,
         paymentPlan,

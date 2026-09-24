@@ -11,6 +11,7 @@ import {
 } from '@/lib/firebase/enrollments';
 import { getFirebaseCourseSession } from '@/lib/firebase/sessions';
 import { getFirebaseChild } from '@/lib/firebase/children';
+import { createFirebaseNotification } from '@/lib/firebase/notifications';
 import type { AppLocale } from '@/i18n/routing';
 import type { PlanType, PaymentMethod } from '@/lib/firebase/enrollments';
 
@@ -71,6 +72,20 @@ export async function enrollChild(formData: FormData): Promise<void> {
     if (err instanceof Error && err.message === 'SCHEDULE_CONFLICT') fail('conflict');
     if (err instanceof Error && err.message === 'DUPLICATE') fail('duplicate');
     throw err;
+  }
+
+  if (paymentMethod !== 'CARD') {
+    const methodLabel = paymentMethod === 'CASH' ? 'cash' : 'cheque';
+    try {
+      await createFirebaseNotification({
+        type: 'OFFLINE_PAYMENT_DECLARED',
+        title: `${parent.fullName} will pay in ${methodLabel}`,
+        body: `${child!.fullName}, ${course.title.en}: ${amount.toFixed(2)} ${currency} (added to payments as pending)`,
+        link: '/admin/payments',
+      });
+    } catch {
+      // Best-effort: the pending payment row is already in the payments table
+    }
   }
 
   redirect(localizedPath(locale, `/parent-portal/children/${childId}/courses/${enrollmentId}?saved=1`));

@@ -28,6 +28,8 @@ import {
   Megaphone,
   CalendarDays,
   Receipt,
+  TrendingUp,
+  Landmark,
 } from 'lucide-react';
 
 const customizationItems = [
@@ -51,39 +53,81 @@ const ADMIN_ONLY_HREFS = new Set([
   '/admin/news',
 ]);
 
-const portalItems = [
-  { label: 'Parents', href: '/admin/parents', icon: UserSquare2 },
-  { label: 'Children', href: '/admin/children', icon: Users },
-  { label: 'Teachers', href: '/admin/teachers', icon: GraduationCap },
-  { label: 'Reception', href: '/admin/secretaries', icon: IdCard },
-  { label: 'Course sessions', href: '/admin/sessions', icon: CalendarClock },
-  { label: 'Time slots', href: '/admin/time-slots', icon: Clock4 },
-  { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
-  { label: 'Preinscriptions', href: '/admin/preinscriptions', icon: FilePenLine },
-  { label: 'Payments', href: '/admin/payments', icon: CreditCard },
-  { label: 'Dispenses', href: '/admin/dispenses', icon: Receipt },
-  { label: 'Pricing', href: '/admin/pricing', icon: Tag },
-  { label: 'News', href: '/admin/news', icon: Megaphone },
-  { label: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
+const portalSections = [
+  {
+    key: 'accounts',
+    title: 'Accounts',
+    icon: UserSquare2,
+    items: [
+      { label: 'Parents', href: '/admin/parents', icon: UserSquare2 },
+      { label: 'Children', href: '/admin/children', icon: Users },
+      { label: 'Teachers', href: '/admin/teachers', icon: GraduationCap },
+      { label: 'Reception', href: '/admin/secretaries', icon: IdCard },
+    ],
+  },
+  {
+    key: 'classes',
+    title: 'Classes',
+    icon: CalendarClock,
+    items: [
+      { label: 'Course sessions', href: '/admin/sessions', icon: CalendarClock },
+      { label: 'Time slots', href: '/admin/time-slots', icon: Clock4 },
+      { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
+      { label: 'Preinscriptions', href: '/admin/preinscriptions', icon: FilePenLine },
+      { label: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
+    ],
+  },
+  {
+    key: 'payments',
+    title: 'Payments',
+    icon: CreditCard,
+    items: [
+      { label: 'Payments', href: '/admin/payments', icon: CreditCard },
+      { label: 'Earnings', href: '/admin/earnings', icon: TrendingUp },
+      { label: 'Fixed charges', href: '/admin/dispenses/fixed', icon: Landmark },
+      { label: 'Variable charges', href: '/admin/dispenses/variable', icon: Receipt },
+      { label: 'Pricing', href: '/admin/pricing', icon: Tag },
+    ],
+  },
+  {
+    key: 'news',
+    title: 'News',
+    icon: Megaphone,
+    items: [{ label: 'News', href: '/admin/news', icon: Megaphone }],
+  },
 ];
 
 export default function SidebarNav({
   role = 'admin',
   unreadMessages = 0,
   pendingEnrollments = 0,
-  unreadExpenseNotices = 0,
+  noticeBadges = {},
 }: {
   role?: 'admin' | 'secretary';
   unreadMessages?: number;
   pendingEnrollments?: number;
-  unreadExpenseNotices?: number;
+  // Unread bell notifications per page href (payments, earnings, charges)
+  noticeBadges?: Record<string, number>;
 }) {
   const pathname = usePathname();
-  const visiblePortalItems = role === 'secretary' ? portalItems.filter((item) => !ADMIN_ONLY_HREFS.has(item.href)) : portalItems;
+  // Secretaries don't see admin-only pages; a section left empty is hidden
+  const visibleSections = portalSections
+    .map((section) => ({
+      ...section,
+      items: role === 'secretary' ? section.items.filter((item) => !ADMIN_ONLY_HREFS.has(item.href)) : section.items,
+    }))
+    .filter((section) => section.items.length > 0);
   const isChildActive = customizationItems.some((item) => pathname?.startsWith(item.href));
-  const isPortalActive = visiblePortalItems.some((item) => pathname?.startsWith(item.href));
   const [open, setOpen] = useState(true);
-  const [portalOpen, setPortalOpen] = useState(true);
+  const [closedSections, setClosedSections] = useState<Set<string>>(new Set());
+  const toggleSection = (key: string) =>
+    setClosedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  const badgeFor = (href: string) => (href === '/admin/enrollments' ? pendingEnrollments : (noticeBadges[href] ?? 0));
 
   const linkClass = (active: boolean) =>
     `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 font-display text-sm font-semibold tracking-wide transition ${
@@ -166,47 +210,60 @@ export default function SidebarNav({
         </>
       ) : null}
 
-      <button
-        type="button"
-        onClick={() => setPortalOpen((v) => !v)}
-        className={`mt-6 flex w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-left text-[0.65rem] font-bold uppercase tracking-[0.15em] transition ${
-          isPortalActive ? 'bg-emerald-100 text-emerald-700' : 'text-emerald-700/80 hover:bg-emerald-100 hover:text-emerald-700'
-        }`}
-      >
-        <span className="flex items-center gap-2">
-          <GraduationCap className="h-3.5 w-3.5" />
-          Parent portal
-        </span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${portalOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {portalOpen && (
-        <div className="mt-1 flex flex-col gap-1 border-l border-emerald-200 pl-2">
-          {visiblePortalItems.map((item) => {
-            const active = pathname?.startsWith(item.href) ?? false;
-            const Icon = item.icon;
-            const badge =
-              item.href === '/admin/enrollments'
-                ? pendingEnrollments
-                : item.href === '/admin/dispenses'
-                  ? unreadExpenseNotices
-                  : 0;
-            return (
-              <Link key={item.href} href={item.href} className={linkClass(active)}>
-                <span className={sectionIconClass(active, 'emerald')}>
-                  <Icon className="h-4 w-4" />
-                </span>
-                {item.label}
-                {badge > 0 ? (
-                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-white">
-                    {badge}
+      {visibleSections.map((section) => {
+        const sectionOpen = !closedSections.has(section.key);
+        const sectionActive = section.items.some((item) => pathname?.startsWith(item.href));
+        // While collapsed, surface the section's unread count on its header
+        const sectionBadge = section.items.reduce((sum, item) => sum + badgeFor(item.href), 0);
+        const SectionIcon = section.icon;
+        return (
+          <div key={section.key}>
+            <button
+              type="button"
+              onClick={() => toggleSection(section.key)}
+              className={`mt-6 flex w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-left text-[0.65rem] font-bold uppercase tracking-[0.15em] transition ${
+                sectionActive ? 'bg-emerald-100 text-emerald-700' : 'text-emerald-700/80 hover:bg-emerald-100 hover:text-emerald-700'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <SectionIcon className="h-3.5 w-3.5" />
+                {section.title}
+              </span>
+              <span className="flex items-center gap-2">
+                {!sectionOpen && sectionBadge > 0 ? (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold tracking-normal text-white">
+                    {sectionBadge}
                   </span>
                 ) : null}
-              </Link>
-            );
-          })}
-        </div>
-      )}
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${sectionOpen ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+
+            {sectionOpen && (
+              <div className="mt-1 flex flex-col gap-1 border-l border-emerald-200 pl-2">
+                {section.items.map((item) => {
+                  const active = pathname?.startsWith(item.href) ?? false;
+                  const Icon = item.icon;
+                  const badge = badgeFor(item.href);
+                  return (
+                    <Link key={item.href} href={item.href} className={linkClass(active)}>
+                      <span className={sectionIconClass(active, 'emerald')}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      {item.label}
+                      {badge > 0 ? (
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-white">
+                          {badge}
+                        </span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 }

@@ -184,6 +184,12 @@
     },
     "addChild": {
       "title": "Ajouter un enfant",
+      "haveCode": "Déjà inscrit chez nous ?",
+      "haveCodeBody": "Si votre enfant était déjà inscrit avant le portail, l'accueil peut vous donner un code. Saisissez-le pour retrouver ses cours, ses paiements et son historique.",
+      "codePlaceholder": "ex. AB3K-7QXM",
+      "codeSubmit": "Lier mon enfant",
+      "codeError": "Ce code ne correspond à aucun enfant. Vérifiez-le auprès de l'accueil.",
+      "orManual": "Ou ajoutez un nouvel enfant",
       "fullName": "Nom complet de l'enfant",
       "dateOfBirth": "Date de naissance",
       "ageGroup": "Tranche d'âge",
@@ -279,6 +285,7 @@
       "paymentOverdue": "Paiement en retard",
       "paymentDue": "Paiement à effectuer",
       "payNow": "Payer",
+      "payAtDesk": "À régler à l'accueil ({method})",
       "nextSession": "Prochaine séance",
       "location": "Lieu",
       "teacher": "Enseignant",
@@ -376,6 +383,8 @@
     },
     "dashboard": {
       "title": "Tableau de bord",
+      "haveCode": "J'ai un code",
+      "linked": "Votre enfant est lié. Ses cours, ses paiements et son historique sont maintenant ici.",
       "addChild": "Ajouter un enfant",
       "noChildrenYet": "Aucun enfant pour le moment. Ajoutez votre premier enfant pour commencer à l'inscrire à des cours.",
       "paymentDue": "Paiement à effectuer : {course}",
@@ -398,6 +407,7 @@
       },
       "profile": {
         "notEnrolled": "Pas encore inscrit à un cours.",
+        "previousYears": "Années précédentes",
         "changePhoto": "Changer la photo"
       }
     }

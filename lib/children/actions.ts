@@ -3,11 +3,14 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
-import { createFirebaseChild, getFirebaseChild, updateFirebaseChild } from '@/lib/firebase/children';
+import { claimFirebaseChild, createFirebaseChild, getFirebaseChild, updateFirebaseChild } from '@/lib/firebase/children';
+import { createFirebaseNotification } from '@/lib/firebase/notifications';
+import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -47,6 +50,34 @@ export async function addChild(formData: FormData): Promise<void> {
   });
 
   redirect(localizedPath(locale, '/parent-portal?saved=1'));
+}
+
+// Links a child the front desk created from the paper records, using the
+// code they gave the parent. Enrollments, payments and alerts all follow the
+// child, so they show up for this parent as soon as the link is made.
+export async function claimChild(formData: FormData): Promise<void> {
+  const locale = getLocale(formData);
+  const parent = await requireParent(locale);
+
+  const child = await claimFirebaseChild(field(formData, 'code'), parent.parentId);
+  if (!child) {
+    redirect(localizedPath(locale, '/parent-portal/children/new?codeError=1'));
+  }
+
+  try {
+    await createFirebaseNotification({
+      type: 'CHILD_LINKED',
+      title: `${parent.fullName} linked ${child!.fullName}`,
+      body: 'Used the code from the front desk',
+      link: `/admin/children/${child!.id}`,
+    });
+  } catch {
+    // Best-effort: the link itself already succeeded
+  }
+
+  (await cookies()).set(SELECTED_CHILD_COOKIE, child!.id, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
+  revalidatePath('/', 'layout');
+  redirect(localizedPath(locale, '/parent-portal?linked=1'));
 }
 
 export async function editChild(formData: FormData): Promise<void> {

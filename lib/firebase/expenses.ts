@@ -8,7 +8,6 @@ export type FirebaseExpense = {
   label: string;
   amount: number;
   currency: string;
-  category: string | null;
   note: string | null;
   date: Date;
   chargeType: ExpenseChargeType;
@@ -23,7 +22,6 @@ function mapExpense(id: string, data: DocumentData): FirebaseExpense {
     label: String(data.label ?? ''),
     amount: Number(data.amount ?? 0),
     currency: String(data.currency ?? 'TND'),
-    category: data.category ? String(data.category) : null,
     note: data.note ? String(data.note) : null,
     date: data.date?.toDate?.() ?? new Date(data.date ?? 0),
     // Older rows predate the fixed/variable split; treat them as variable

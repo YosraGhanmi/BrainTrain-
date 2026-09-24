@@ -15,6 +15,11 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
   const unreadMessages = readMessages().filter((m) => !m.read).length;
   const [pendingEnrollments, notifications] = await Promise.all([countPendingFirebaseEnrollments(), getAdminNotifications()]);
 
+  const noticeBadges: Record<string, number> = {};
+  for (const notice of [...notifications.paymentNotices, ...notifications.expenseNotices]) {
+    if (notice.link) noticeBadges[notice.link] = (noticeBadges[notice.link] ?? 0) + 1;
+  }
+
   const sidebar = (
     <>
       <div className="relative h-10 w-full px-2">
@@ -25,7 +30,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
         role={session.kind}
         unreadMessages={unreadMessages}
         pendingEnrollments={pendingEnrollments}
-        unreadExpenseNotices={notifications.expenseNotices.length}
+        noticeBadges={noticeBadges}
       />
 
       <div className="mt-auto pt-8">

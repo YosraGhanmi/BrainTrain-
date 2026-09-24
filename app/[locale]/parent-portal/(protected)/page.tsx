@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, KeyRound } from 'lucide-react';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
@@ -17,8 +17,11 @@ import { listFirebasePaymentsWithRelationsByChild, listFirebaseEnrollmentsWithSe
 
 export const dynamic = 'force-dynamic';
 
-export default async function ParentDashboardPage(props: { params: Promise<{ locale: AppLocale }> }) {
-  const params = await props.params;
+export default async function ParentDashboardPage(props: {
+  params: Promise<{ locale: AppLocale }>;
+  searchParams: Promise<{ linked?: string }>;
+}) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.dashboard' });
   const children = await listFirebaseChildren(parent.parentId);
@@ -30,13 +33,22 @@ export default async function ParentDashboardPage(props: { params: Promise<{ loc
       <div>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-display text-3xl font-bold text-ink">{t('title')}</h1>
-          <Link
-            href="/parent-portal/children/new"
-            className="flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
-          >
-            <PlusCircle className="h-4 w-4" />
-            {t('addChild')}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/parent-portal/children/new#code"
+              className="flex items-center gap-2 rounded-full border border-ink/15 bg-white px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-ink transition hover:border-accent hover:text-accent"
+            >
+              <KeyRound className="h-4 w-4" />
+              {t('haveCode')}
+            </Link>
+            <Link
+              href="/parent-portal/children/new"
+              className="flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
+            >
+              <PlusCircle className="h-4 w-4" />
+              {t('addChild')}
+            </Link>
+          </div>
         </div>
         <p className="mt-10 rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
           {t('noChildrenYet')}
@@ -96,25 +108,31 @@ export default async function ParentDashboardPage(props: { params: Promise<{ loc
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-3 lg:[grid-template-rows:1fr]">
-      <div className="flex flex-col gap-6 lg:col-span-2">
-        <NewsCard items={feed} />
-        <TeacherNotesCard notes={notes} locale={params.locale} />
-      </div>
-      <div className="flex flex-col gap-6">
-        <ChildProfileCard
-          locale={params.locale}
-          childId={child.id}
-          fullName={child.fullName}
-          photoUrl={child.photoUrl}
-          photoColor={child.photoColor}
-          ageGroupLabel={localized(ageGroup.label, params.locale)}
-          courseTitles={courseTitles}
-        />
-        <div className="flex-1">
-          <BadgesCard badges={badges} />
+    <>
+      {searchParams.linked ? (
+        <p className="mb-6 rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">{t('linked')}</p>
+      ) : null}
+      <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-3 lg:[grid-template-rows:1fr]">
+        <div className="flex flex-col gap-6 lg:col-span-2">
+          <NewsCard items={feed} />
+          <TeacherNotesCard notes={notes} locale={params.locale} />
+        </div>
+        <div className="flex flex-col gap-6">
+          <ChildProfileCard
+            locale={params.locale}
+            childId={child.id}
+            fullName={child.fullName}
+            photoUrl={child.photoUrl}
+            photoColor={child.photoColor}
+            ageGroupLabel={localized(ageGroup.label, params.locale)}
+            courseTitles={courseTitles}
+            pastClasses={child.pastClasses}
+          />
+          <div className="flex-1">
+            <BadgesCard badges={badges} />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

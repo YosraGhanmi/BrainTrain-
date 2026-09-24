@@ -136,6 +136,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /earnings/{id} {
+      allow read, write: if false;
+    }
+
     match /sms_notifications/{id} {
       allow read, write: if false;
     }

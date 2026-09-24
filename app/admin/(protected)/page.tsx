@@ -106,17 +106,14 @@ function MoneyStatCard({
 // as enrollment counts change, which breaks "color follows the entity."
 const AGE_GROUP_COLORS = ['#2563eb', '#d97706', '#0d9488', '#9333ea'];
 
-export default async function AdminDashboardPage({
-  searchParams,
-}: {
-  searchParams: { month?: string };
-}) {
+export default async function AdminDashboardPage(props: { searchParams: Promise<{ month?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await requireAdmin();
   const isSecretary = session.kind === 'secretary';
 
   const { monthStart, monthEnd, monthLabel, prevMonthParam, nextMonthParam, isCurrentMonth } = monthNav(searchParams.month);
 
-  const [parentSnap, teacherSnap, childSnap, enrollmentSnap, childGroupSnap, paidSnap, unpaidSnap, earningsSnap, dispensesSnap] =
+  const [parentSnap, teacherSnap, childSnap, enrollmentSnap, childGroupSnap, paidSnap, unpaidSnap, earningsSnap, manualEarningsSnap, dispensesSnap] =
     await Promise.all([
       firestore.collection('users').where('role', '==', 'PARENT').count().get(),
       firestore.collection('users').where('role', '==', 'TEACHER').count().get(),
@@ -126,6 +123,7 @@ export default async function AdminDashboardPage({
       firestore.collection('payments').where('status', '==', 'PAID').where('paidAt', '>=', monthStart).where('paidAt', '<', monthEnd).count().get(),
       firestore.collection('payments').where('status', '!=', 'PAID').where('dueDate', '>=', monthStart).where('dueDate', '<', monthEnd).count().get(),
       firestore.collection('payments').where('status', '==', 'PAID').where('paidAt', '>=', monthStart).where('paidAt', '<', monthEnd).get(),
+      firestore.collection('earnings').where('date', '>=', monthStart).where('date', '<', monthEnd).get(),
       firestore.collection('expenses').where('date', '>=', monthStart).where('date', '<', monthEnd).get(),
     ]);
 
@@ -136,7 +134,11 @@ export default async function AdminDashboardPage({
   const paidPayments = paidSnap.data().count;
   const unpaidPayments = unpaidSnap.data().count;
 
-  const totalEarnings = earningsSnap.docs.reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
+  // Paid tuition plus income logged by hand on the Earnings page
+  const totalEarnings = [...earningsSnap.docs, ...manualEarningsSnap.docs].reduce(
+    (sum, doc) => sum + Number(doc.data().amount ?? 0),
+    0,
+  );
   const fixedDispenses = dispensesSnap.docs
     .filter((doc) => doc.data().chargeType === 'FIXED')
     .reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
@@ -200,10 +202,10 @@ export default async function AdminDashboardPage({
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MoneyStatCard label="Total earnings" amount={totalEarnings} currency="TND" href="/admin/payments" icon={TrendingUp} tone="emerald" />
-        <MoneyStatCard label="Fixed charges" amount={fixedDispenses} currency="TND" href="/admin/dispenses" icon={Landmark} tone="blue" />
-        <MoneyStatCard label="Variable charges" amount={variableDispenses} currency="TND" href="/admin/dispenses" icon={Wallet} tone="violet" />
-        <MoneyStatCard label="Total dispenses" amount={totalDispenses} currency="TND" href="/admin/dispenses" icon={Wallet} tone="amber" />
+        <MoneyStatCard label="Total earnings" amount={totalEarnings} currency="TND" href="/admin/earnings" icon={TrendingUp} tone="emerald" />
+        <MoneyStatCard label="Fixed charges" amount={fixedDispenses} currency="TND" href="/admin/dispenses/fixed" icon={Landmark} tone="blue" />
+        <MoneyStatCard label="Variable charges" amount={variableDispenses} currency="TND" href="/admin/dispenses/variable" icon={Wallet} tone="violet" />
+        <MoneyStatCard label="Total dispenses" amount={totalDispenses} currency="TND" href="/admin/dispenses/fixed" icon={Wallet} tone="amber" />
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">

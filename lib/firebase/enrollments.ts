@@ -236,6 +236,8 @@ export type CreateEnrollmentInput = {
   paymentMethod: PaymentMethod;
   amount: number;
   currency: string;
+  // Staff entering an existing enrollment (paper records) activate it directly
+  forceActive?: boolean;
 };
 
 export async function createFirebaseEnrollment(input: CreateEnrollmentInput): Promise<{ enrollmentId: string; paymentId: string }> {
@@ -263,11 +265,14 @@ export async function createFirebaseEnrollment(input: CreateEnrollmentInput): Pr
 
   const batch = firestore.batch();
 
+  // Cash/cheque parents just declare they'll pay at the desk, so the seat is
+  // theirs right away and the payment stays PENDING until staff mark it paid.
+  // Card enrollments stay PENDING until the Stripe webhook activates them.
   const enrollmentRef = enrollments().doc();
   batch.set(enrollmentRef, {
     childId: input.childId,
     courseSessionId: input.courseSessionId,
-    status: 'PENDING',
+    status: input.paymentMethod === 'CARD' && !input.forceActive ? 'PENDING' : 'ACTIVE',
     enrolledAt: FieldValue.serverTimestamp(),
   });
 

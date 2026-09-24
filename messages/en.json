@@ -184,6 +184,12 @@
     },
     "addChild": {
       "title": "Add a child",
+      "haveCode": "Already enrolled with us?",
+      "haveCodeBody": "If your child was already enrolled before the portal, the front desk can give you a code. Enter it to link your child with their classes, payments and history.",
+      "codePlaceholder": "e.g. AB3K-7QXM",
+      "codeSubmit": "Link my child",
+      "codeError": "This code doesn't match any child. Check it with the front desk.",
+      "orManual": "Or add a new child",
       "fullName": "Child's full name",
       "dateOfBirth": "Date of birth",
       "ageGroup": "Age group",
@@ -279,6 +285,7 @@
       "paymentOverdue": "Payment overdue",
       "paymentDue": "Payment due",
       "payNow": "Pay now",
+      "payAtDesk": "Pay at the front desk ({method})",
       "nextSession": "Next session",
       "location": "Location",
       "teacher": "Teacher",
@@ -376,6 +383,8 @@
     },
     "dashboard": {
       "title": "Dashboard",
+      "haveCode": "I have a code",
+      "linked": "Your child is linked. Their classes, payments and history are all here now.",
       "addChild": "Add a child",
       "noChildrenYet": "No children yet. Add your first child to start enrolling in courses.",
       "paymentDue": "Payment due: {course}",
@@ -398,6 +407,7 @@
       },
       "profile": {
         "notEnrolled": "Not enrolled in any course yet.",
+        "previousYears": "Previous years",
         "changePhoto": "Change photo"
       }
     }

@@ -1,7 +1,12 @@
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { firestore } from '@/lib/firebase/admin';
 
-export type NotificationType = 'EXPENSE_ADDED' | 'PREINSCRIPTION_SUBMITTED';
+export type NotificationType =
+  | 'EXPENSE_ADDED'
+  | 'EARNING_ADDED'
+  | 'PREINSCRIPTION_SUBMITTED'
+  | 'OFFLINE_PAYMENT_DECLARED'
+  | 'CHILD_LINKED';
 
 export type FirebaseNotification = {
   id: string;

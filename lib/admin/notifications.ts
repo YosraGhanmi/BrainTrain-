@@ -1,5 +1,5 @@
 import { firestore } from '@/lib/firebase/admin';
-import { listUnreadFirebaseNotifications } from '@/lib/firebase/notifications';
+import { listUnreadFirebaseNotifications, type FirebaseNotification } from '@/lib/firebase/notifications';
 import { isFirebaseConfigured } from '@/lib/firebase/portal-auth';
 
 export type PendingParentNotice = {
@@ -17,13 +17,9 @@ export type ExpenseNotice = {
   createdAt: Date;
 };
 
-export type PreinscriptionNotice = {
-  id: string;
-  title: string;
-  body: string | null;
-  link: string | null;
-  createdAt: Date;
-};
+export type PreinscriptionNotice = ExpenseNotice;
+
+export type PaymentNotice = ExpenseNotice;
 
 export type OverduePaymentNotice = {
   id: string;
@@ -35,7 +31,12 @@ export type OverduePaymentNotice = {
 
 export type AdminNotifications = {
   pendingParents: PendingParentNotice[];
+  // Earnings and dispenses logged by a secretary
   expenseNotices: ExpenseNotice[];
+  // Parents who picked cash/cheque and will pay at the desk
+  paymentNotices: PaymentNotice[];
+  // Parents who linked a child from the paper records with its code
+  childNotices: ExpenseNotice[];
   preinscriptionNotices: PreinscriptionNotice[];
   overduePayments: OverduePaymentNotice[];
   totalCount: number;
@@ -45,7 +46,7 @@ export type AdminNotifications = {
 // Firestore user/payment documents rather than stored notifications.
 export async function getAdminNotifications(): Promise<AdminNotifications> {
   if (isFirebaseConfigured()) {
-    const [pendingParentSnap, expenseNotices, preinscriptionNotices, overduePaymentSnap] = await Promise.all([
+    const [pendingParentSnap, expenseOnlyNotices, earningNotices, paymentNotices, childNotices, preinscriptionNotices, overduePaymentSnap] = await Promise.all([
       firestore
         .collection('users')
         .where('role', '==', 'PARENT')
@@ -53,6 +54,9 @@ export async function getAdminNotifications(): Promise<AdminNotifications> {
         .get()
         .catch(() => ({ docs: [] })),
       listUnreadFirebaseNotifications('EXPENSE_ADDED').catch(() => []),
+      listUnreadFirebaseNotifications('EARNING_ADDED').catch(() => []),
+      listUnreadFirebaseNotifications('OFFLINE_PAYMENT_DECLARED').catch(() => []),
+      listUnreadFirebaseNotifications('CHILD_LINKED').catch(() => []),
       listUnreadFirebaseNotifications('PREINSCRIPTION_SUBMITTED').catch(() => []),
       firestore
         .collection('payments')
@@ -96,15 +100,23 @@ export async function getAdminNotifications(): Promise<AdminNotifications> {
       }),
     );
 
+    const toNotice = (n: FirebaseNotification) => ({ id: n.id, title: n.title, body: n.body, link: n.link, createdAt: n.createdAt });
+    const expenseNotices = [...expenseOnlyNotices, ...earningNotices]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map(toNotice);
+
     return {
       pendingParents,
-      expenseNotices: expenseNotices.map((n) => ({ id: n.id, title: n.title, body: n.body, link: n.link, createdAt: n.createdAt })),
-      preinscriptionNotices: preinscriptionNotices.map((n) => ({ id: n.id, title: n.title, body: n.body, link: n.link, createdAt: n.createdAt })),
+      expenseNotices,
+      paymentNotices: paymentNotices.map(toNotice),
+      childNotices: childNotices.map(toNotice),
+      preinscriptionNotices: preinscriptionNotices.map(toNotice),
       overduePayments,
-      totalCount: pendingParents.length + expenseNotices.length + preinscriptionNotices.length + overduePayments.length,
+      totalCount:
+        pendingParents.length + expenseNotices.length + paymentNotices.length + childNotices.length + preinscriptionNotices.length + overduePayments.length,
     };
   }
 
   // Firebase not configured — return empty
-  return { pendingParents: [], expenseNotices: [], preinscriptionNotices: [], overduePayments: [], totalCount: 0 };
+  return { pendingParents: [], expenseNotices: [], paymentNotices: [], childNotices: [], preinscriptionNotices: [], overduePayments: [], totalCount: 0 };
 }

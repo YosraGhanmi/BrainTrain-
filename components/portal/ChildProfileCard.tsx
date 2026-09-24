@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { uploadChildPhoto } from '@/lib/children/actions';
 import { rotateHue } from '@/lib/color';
 import ChildAvatarUploader from '@/components/portal/ChildAvatarUploader';
+import type { PastClass } from '@/lib/firebase/children';
 import type { AppLocale } from '@/i18n/routing';
 
 const MAX_VISIBLE_COURSES = 3;
@@ -15,6 +16,7 @@ export default async function ChildProfileCard({
   photoColor,
   ageGroupLabel,
   courseTitles,
+  pastClasses = [],
 }: {
   locale: AppLocale;
   childId: string;
@@ -23,6 +25,7 @@ export default async function ChildProfileCard({
   photoColor: string | null;
   ageGroupLabel: string;
   courseTitles: string[];
+  pastClasses?: PastClass[];
 }) {
   const t = await getTranslations({ locale, namespace: 'parentPortal.dashboard.profile' });
   const visibleCourses = courseTitles.slice(0, MAX_VISIBLE_COURSES);
@@ -65,6 +68,23 @@ export default async function ChildProfileCard({
             ) : null}
           </div>
         )}
+
+        {pastClasses.length > 0 ? (
+          <div className="mt-5 border-t border-ink/5 pt-4 text-left">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-stone">{t('previousYears')}</p>
+            <ul className="mt-2 space-y-1.5">
+              {pastClasses.map((c, i) => (
+                <li key={`${i}-${c.course}`} className="text-sm">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="font-semibold text-ink">{c.course}</span>
+                    {c.schoolYear ? <span className="shrink-0 text-xs text-stone">{c.schoolYear}</span> : null}
+                  </div>
+                  {c.note ? <p className="text-xs text-stone">{c.note}</p> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     </div>
   );

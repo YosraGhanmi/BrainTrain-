@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import { addChild } from '@/lib/children/actions';
+import { KeyRound } from 'lucide-react';
+import { addChild, claimChild } from '@/lib/children/actions';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { listAgeGroupEntries } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function AddChildPage(
   props: {
     params: Promise<{ locale: AppLocale }>;
-    searchParams: Promise<{ error?: string }>;
+    searchParams: Promise<{ error?: string; codeError?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -24,7 +25,35 @@ export default async function AddChildPage(
     <div className="mx-auto max-w-xl">
       <h1 className="font-display text-3xl font-bold text-ink">{t('title')}</h1>
 
-      <form action={addChild} className="mt-8 space-y-5 rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
+      <form
+        id="code"
+        action={claimChild}
+        className="mt-8 scroll-mt-24 rounded-2xl border border-accent/20 bg-accent/5 p-5 shadow-soft sm:p-8"
+      >
+        <input type="hidden" name="locale" value={params.locale} />
+        <div className="flex items-center gap-2 text-accent">
+          <KeyRound className="h-5 w-5" />
+          <h2 className="font-display text-lg font-bold text-ink">{t('haveCode')}</h2>
+        </div>
+        <p className="mt-2 text-sm text-stone">{t('haveCodeBody')}</p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <input
+            name="code"
+            required
+            autoComplete="off"
+            placeholder={t('codePlaceholder')}
+            className="w-full rounded-xl border border-ink/10 bg-white px-5 py-3.5 font-mono uppercase tracking-widest outline-none focus:border-accent"
+          />
+          <PendingSubmitButton className="shrink-0 rounded-full bg-ink px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+            {t('codeSubmit')}
+          </PendingSubmitButton>
+        </div>
+        {searchParams.codeError ? <p className="mt-3 text-sm font-semibold text-red-600">{t('codeError')}</p> : null}
+      </form>
+
+      <p className="mt-8 text-center text-xs font-bold uppercase tracking-wide text-stone">{t('orManual')}</p>
+
+      <form action={addChild} className="mt-4 space-y-5 rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
         <input type="hidden" name="locale" value={params.locale} />
 
         <div className="space-y-1.5">

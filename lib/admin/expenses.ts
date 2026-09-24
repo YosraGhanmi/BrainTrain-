@@ -3,8 +3,12 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
-import { createFirebaseExpense, deleteFirebaseExpense } from '@/lib/firebase/expenses';
+import { createFirebaseExpense, deleteFirebaseExpense, type ExpenseChargeType } from '@/lib/firebase/expenses';
 import { createFirebaseNotification } from '@/lib/firebase/notifications';
+
+function dispensePath(chargeType: ExpenseChargeType): string {
+  return chargeType === 'FIXED' ? '/admin/dispenses/fixed' : '/admin/dispenses/variable';
+}
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -16,14 +20,14 @@ export async function createExpense(formData: FormData): Promise<void> {
   const label = field(formData, 'label');
   const amountRaw = field(formData, 'amount');
   const currency = field(formData, 'currency') || 'TND';
-  const category = field(formData, 'category');
   const note = field(formData, 'note');
   const dateRaw = field(formData, 'date');
   const chargeType = field(formData, 'chargeType') === 'FIXED' ? 'FIXED' : 'VARIABLE';
+  const pagePath = dispensePath(chargeType);
 
   const amount = Number(amountRaw);
   if (!label || !Number.isFinite(amount) || amount <= 0) {
-    redirect('/admin/dispenses?error=1');
+    redirect(`${pagePath}?error=1`);
   }
 
   const createdByName = session.kind === 'admin' ? 'Admin' : session.fullName;
@@ -32,7 +36,6 @@ export async function createExpense(formData: FormData): Promise<void> {
     label,
     amount,
     currency,
-    category: category || null,
     note: note || null,
     date: dateRaw ? new Date(dateRaw) : new Date(),
     chargeType,
@@ -45,19 +48,20 @@ export async function createExpense(formData: FormData): Promise<void> {
     await createFirebaseNotification({
       type: 'EXPENSE_ADDED',
       title: `${session.fullName} logged a dispense`,
-      body: `${label} — ${amount.toFixed(2)} ${currency}`,
-      link: '/admin/dispenses',
+      body: `${label}: ${amount.toFixed(2)} ${currency}`,
+      link: pagePath,
     });
   }
 
-  revalidatePath('/admin/dispenses');
+  revalidatePath(pagePath);
   revalidatePath('/admin');
-  redirect('/admin/dispenses?saved=1');
+  redirect(`${pagePath}?saved=1`);
 }
 
 export async function deleteExpense(id: string): Promise<void> {
   await requireAdminOnly();
   await deleteFirebaseExpense(id);
-  revalidatePath('/admin/dispenses');
+  revalidatePath('/admin/dispenses/fixed');
+  revalidatePath('/admin/dispenses/variable');
   revalidatePath('/admin');
 }

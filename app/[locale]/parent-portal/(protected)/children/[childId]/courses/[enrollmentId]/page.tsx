@@ -211,19 +211,29 @@ export default async function EnrolledCoursePage(
       </div>
 
       {outstandingPayment ? (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
+        <div
+          className={`mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 text-sm font-semibold ${
+            outstandingPayment.status === 'OVERDUE' ? 'border-red-100 bg-red-50 text-red-600' : 'border-amber-100 bg-amber-50 text-amber-700'
+          }`}
+        >
           <span className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             {outstandingPayment.status === 'OVERDUE' ? t('paymentOverdue') : t('paymentDue')}: {Number(outstandingPayment.amount)} {outstandingPayment.currency}
           </span>
-          <form action={payNow}>
-            <input type="hidden" name="locale" value={params.locale} />
-            <input type="hidden" name="paymentId" value={outstandingPayment.id} />
-            <input type="hidden" name="childId" value={child.id} />
-            <PendingSubmitButton className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
-              {t('payNow')}
-            </PendingSubmitButton>
-          </form>
+          {outstandingPayment.paymentPlan?.method === 'CARD' ? (
+            <form action={payNow}>
+              <input type="hidden" name="locale" value={params.locale} />
+              <input type="hidden" name="paymentId" value={outstandingPayment.id} />
+              <input type="hidden" name="childId" value={child.id} />
+              <PendingSubmitButton className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+                {t('payNow')}
+              </PendingSubmitButton>
+            </form>
+          ) : (
+            <span className="text-xs font-semibold">
+              {t('payAtDesk', { method: t(`methods.${outstandingPayment.paymentPlan?.method ?? 'CASH'}`) })}
+            </span>
+          )}
         </div>
       ) : null}
 

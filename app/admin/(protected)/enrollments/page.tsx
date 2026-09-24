@@ -76,8 +76,8 @@ export default async function AdminEnrollmentsPage(
       }
       const child = await getFirebaseChild(enrollment.childId);
       if (!child) return null;
-      const parent = await firestore.collection('users').doc(child.parentId).get();
-      return { ...enrollment, courseSession, child, parentName: String(parent.data()?.fullName ?? '') };
+      const parent = child.parentId ? await firestore.collection('users').doc(child.parentId).get() : null;
+      return { ...enrollment, courseSession, child, parentName: String(parent?.data()?.fullName ?? 'Not linked yet') };
     }),
   );
 
@@ -101,7 +101,7 @@ export default async function AdminEnrollmentsPage(
       {pendingCount > 0 ? (
         <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
           <Clock3 className="h-4 w-4 shrink-0" />
-          {pendingCount} enrollment{pendingCount > 1 ? 's' : ''} awaiting approval — confirm payment was received, then hit Approve.
+          {pendingCount} enrollment{pendingCount > 1 ? 's' : ''} awaiting online card payment. Cash and cheque enrollments are active right away and tracked in Payments.
         </div>
       ) : null}
 

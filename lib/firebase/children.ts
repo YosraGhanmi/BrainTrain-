@@ -1,8 +1,14 @@
+import crypto from 'crypto';
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { firestore } from '@/lib/firebase/admin';
 
+// A class the child took before the portal existed (from the paper records).
+export type PastClass = { schoolYear: string; course: string; note: string | null };
+
 export type FirebaseChild = {
   id: string;
+  // '' while a child imported from the paper records has not been claimed by
+  // a parent yet (stored as null in Firestore)
   parentId: string;
   fullName: string;
   dateOfBirth: Date;
@@ -11,6 +17,9 @@ export type FirebaseChild = {
   specialNeeds: string | null;
   photoUrl: string | null;
   photoColor: string | null;
+  // One-time code the front desk hands to the parent to link this child
+  claimCode: string | null;
+  pastClasses: PastClass[];
   createdAt: Date;
 };
 
@@ -19,7 +28,7 @@ const children = () => firestore.collection('children');
 function mapChild(id: string, data: DocumentData): FirebaseChild {
   return {
     id,
-    parentId: String(data.parentId),
+    parentId: data.parentId ? String(data.parentId) : '',
     fullName: String(data.fullName ?? ''),
     dateOfBirth: data.dateOfBirth?.toDate?.() ?? new Date(data.dateOfBirth ?? 0),
     ageGroupSlug: String(data.ageGroupSlug ?? ''),
@@ -27,6 +36,14 @@ function mapChild(id: string, data: DocumentData): FirebaseChild {
     specialNeeds: data.specialNeeds ? String(data.specialNeeds) : null,
     photoUrl: data.photoUrl ? String(data.photoUrl) : null,
     photoColor: data.photoColor ? String(data.photoColor) : null,
+    claimCode: data.claimCode ? String(data.claimCode) : null,
+    pastClasses: Array.isArray(data.pastClasses)
+      ? data.pastClasses.map((c: DocumentData) => ({
+          schoolYear: String(c?.schoolYear ?? ''),
+          course: String(c?.course ?? ''),
+          note: c?.note ? String(c.note) : null,
+        }))
+      : [],
     createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt ?? 0),
   };
 }
@@ -41,9 +58,62 @@ export async function getFirebaseChild(childId: string): Promise<FirebaseChild |
   return snapshot.exists ? mapChild(snapshot.id, snapshot.data() ?? {}) : null;
 }
 
-export async function createFirebaseChild(data: Omit<FirebaseChild, 'id' | 'createdAt' | 'photoUrl' | 'photoColor'>): Promise<string> {
-  const reference = await children().add({ ...data, photoUrl: null, photoColor: null, createdAt: FieldValue.serverTimestamp() });
+export async function createFirebaseChild(
+  data: Omit<FirebaseChild, 'id' | 'createdAt' | 'photoUrl' | 'photoColor' | 'claimCode' | 'pastClasses'> &
+    Partial<Pick<FirebaseChild, 'claimCode' | 'pastClasses'>>,
+): Promise<string> {
+  const reference = await children().add({
+    ...data,
+    parentId: data.parentId || null,
+    claimCode: data.claimCode ?? null,
+    pastClasses: data.pastClasses ?? [],
+    photoUrl: null,
+    photoColor: null,
+    createdAt: FieldValue.serverTimestamp(),
+  });
   return reference.id;
+}
+
+// ---------------------------------------------------------------------------
+// Claim codes: children imported from the paper records are created without a
+// parent; the parent types the code the front desk gives them to link it.
+// ---------------------------------------------------------------------------
+
+// No 0/O, 1/I/L so codes can be read out loud or copied from paper safely
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const CODE_LENGTH = 8;
+
+export function normalizeClaimCode(input: string): string {
+  return input.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+export function formatClaimCode(code: string): string {
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
+export async function generateUniqueClaimCode(): Promise<string> {
+  for (;;) {
+    const bytes = crypto.randomBytes(CODE_LENGTH);
+    const code = Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
+    const clash = await children().where('claimCode', '==', code).limit(1).get();
+    if (clash.empty) return code;
+  }
+}
+
+// Links the child to the parent and burns the code. Returns null when the
+// code does not match an unclaimed child.
+export async function claimFirebaseChild(rawCode: string, parentId: string): Promise<FirebaseChild | null> {
+  const code = normalizeClaimCode(rawCode);
+  if (code.length !== CODE_LENGTH) return null;
+
+  return firestore.runTransaction(async (tx) => {
+    const snapshot = await tx.get(children().where('claimCode', '==', code).limit(1));
+    if (snapshot.empty) return null;
+    const doc = snapshot.docs[0];
+    if (doc.data().parentId) return null;
+    tx.update(doc.ref, { parentId, claimCode: null, claimedAt: FieldValue.serverTimestamp() });
+    return mapChild(doc.id, { ...doc.data(), parentId, claimCode: null });
+  });
 }
 
 export async function updateFirebaseChild(childId: string, data: Partial<Omit<FirebaseChild, 'id' | 'parentId' | 'createdAt'>>): Promise<void> {
@@ -59,8 +129,11 @@ export async function listAllFirebaseChildren(): Promise<Array<FirebaseChild & {
   return Promise.all(
     snapshot.docs.map(async (doc) => {
       const child = mapChild(doc.id, doc.data());
-      const parent = await firestore.collection('users').doc(child.parentId).get();
-      return { ...child, parentName: String(parent.data()?.fullName ?? ''), enrollmentCount: 0 };
+      const [parent, enrollments] = await Promise.all([
+        child.parentId ? firestore.collection('users').doc(child.parentId).get() : null,
+        firestore.collection('enrollments').where('childId', '==', child.id).where('status', 'in', ['PENDING', 'ACTIVE']).count().get(),
+      ]);
+      return { ...child, parentName: String(parent?.data()?.fullName ?? ''), enrollmentCount: enrollments.data().count };
     }),
   );
 }

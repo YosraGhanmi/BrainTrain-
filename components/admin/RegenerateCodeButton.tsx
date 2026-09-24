@@ -7,20 +7,22 @@ import { KeyRound, Loader2 } from 'lucide-react';
 export default function RegenerateCodeButton({
   action,
   className = '',
+  confirmMessage = "Issue a new 4-digit secret code? The teacher's current code will stop working.",
 }: {
   action: (formData: FormData) => void;
   className?: string;
+  confirmMessage?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <form ref={formRef} action={action} className={className}>
-      <RegenerateButton onRequestSubmit={() => formRef.current?.requestSubmit()} />
+      <RegenerateButton confirmMessage={confirmMessage} onRequestSubmit={() => formRef.current?.requestSubmit()} />
     </form>
   );
 }
 
-function RegenerateButton({ onRequestSubmit }: { onRequestSubmit: () => void }) {
+function RegenerateButton({ confirmMessage, onRequestSubmit }: { confirmMessage: string; onRequestSubmit: () => void }) {
   const { pending } = useFormStatus();
 
   return (
@@ -32,7 +34,7 @@ function RegenerateButton({ onRequestSubmit }: { onRequestSubmit: () => void }) 
       disabled={pending}
       onClick={(e) => {
         e.preventDefault();
-        if (confirm("Issue a new 4-digit secret code? The teacher's current code will stop working.")) {
+        if (confirm(confirmMessage)) {
           onRequestSubmit();
         }
       }}
