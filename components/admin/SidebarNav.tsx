@@ -30,6 +30,7 @@ import {
   Receipt,
   TrendingUp,
   Landmark,
+  CalendarRange,
 } from 'lucide-react';
 
 const customizationItems = [
@@ -43,15 +44,13 @@ const customizationItems = [
   { label: 'Timeline', href: '/admin/timeline', icon: Milestone },
 ];
 
-// Restricted to the real Admin — not shown to, and not reachable by, a
-// Secretary session (see requireAdminOnly() gating each of these pages).
-const ADMIN_ONLY_HREFS = new Set([
-  '/admin/secretaries',
-  '/admin/sessions',
-  '/admin/time-slots',
-  '/admin/pricing',
-  '/admin/news',
-]);
+// Reception gets a short, flat menu: just the day-to-day front-desk pages.
+// Admin-only pages stay gated server-side by requireAdminOnly().
+const secretaryAccountItems = [
+  { label: 'Parents', href: '/admin/parents', icon: UserSquare2 },
+  { label: 'Children', href: '/admin/children', icon: Users },
+  { label: 'Teachers', href: '/admin/teachers', icon: GraduationCap },
+];
 
 const portalSections = [
   {
@@ -75,6 +74,7 @@ const portalSections = [
       { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
       { label: 'Preinscriptions', href: '/admin/preinscriptions', icon: FilePenLine },
       { label: 'Calendar', href: '/admin/calendar', icon: CalendarDays },
+      { label: 'Group timetable', href: '/admin/timetable', icon: CalendarRange },
     ],
   },
   {
@@ -110,13 +110,6 @@ export default function SidebarNav({
   noticeBadges?: Record<string, number>;
 }) {
   const pathname = usePathname();
-  // Secretaries don't see admin-only pages; a section left empty is hidden
-  const visibleSections = portalSections
-    .map((section) => ({
-      ...section,
-      items: role === 'secretary' ? section.items.filter((item) => !ADMIN_ONLY_HREFS.has(item.href)) : section.items,
-    }))
-    .filter((section) => section.items.length > 0);
   const isChildActive = customizationItems.some((item) => pathname?.startsWith(item.href));
   const [open, setOpen] = useState(true);
   const [closedSections, setClosedSections] = useState<Set<string>>(new Set());
@@ -153,6 +146,55 @@ export default function SidebarNav({
         : 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200';
     return `flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition ${tintClasses}`;
   };
+
+  if (role === 'secretary') {
+    const flatLink = (href: string, label: string, Icon: typeof Inbox, badge = 0, badgeClass = 'bg-amber-500') => {
+      const active = href === '/admin' ? pathname === '/admin' : (pathname?.startsWith(href) ?? false);
+      return (
+        <Link key={href} href={href} className={linkClass(active)}>
+          <span className={iconClass(active)}>
+            <Icon className="h-4 w-4" />
+          </span>
+          {label}
+          {badge > 0 ? (
+            <span className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white ${badgeClass}`}>
+              {badge}
+            </span>
+          ) : null}
+        </Link>
+      );
+    };
+
+    return (
+      <nav className="mt-6 flex flex-col gap-1">
+        {flatLink('/admin', 'Dashboard', LayoutDashboard)}
+        {flatLink('/admin/messages', 'Messages', Inbox, unreadMessages, 'bg-accent')}
+        {flatLink('/admin/payments', 'Payments', CreditCard, badgeFor('/admin/payments'))}
+        {flatLink('/admin/enrollments', 'Enrollments', ClipboardList, pendingEnrollments)}
+
+        <p className="mt-4 flex items-center gap-2 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-emerald-700/80">
+          <UserSquare2 className="h-3.5 w-3.5" />
+          Accounts
+        </p>
+        <div className="flex flex-col gap-1 border-l border-emerald-200 pl-2">
+          {secretaryAccountItems.map((item) => {
+            const active = pathname?.startsWith(item.href) ?? false;
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href} className={linkClass(active)}>
+                <span className={sectionIconClass(active, 'emerald')}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mt-4">{flatLink('/admin/timetable', 'Calendar', CalendarDays)}</div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="mt-6 flex flex-col gap-1">
@@ -210,7 +252,7 @@ export default function SidebarNav({
         </>
       ) : null}
 
-      {visibleSections.map((section) => {
+      {portalSections.map((section) => {
         const sectionOpen = !closedSections.has(section.key);
         const sectionActive = section.items.some((item) => pathname?.startsWith(item.href));
         // While collapsed, surface the section's unread count on its header
