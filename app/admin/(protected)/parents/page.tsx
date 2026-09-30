@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Check, X } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { deleteParent, setParentFrozen, approveParent, rejectParent } from '@/lib/admin/portal-actions';
@@ -14,16 +15,29 @@ const STATUS_BADGE: Record<string, string> = {
   REJECTED: 'bg-red-100 text-red-600',
 };
 
-export default async function AdminParentsPage(props: { searchParams: Promise<{ saved?: string }> }) {
+export default async function AdminParentsPage(props: { searchParams: Promise<{ saved?: string; highlight?: string }> }) {
   const searchParams = await props.searchParams;
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
   const parents = await listFirebaseParentProfiles();
   const pendingCount = parents.filter((p) => p.parentStatus === 'PENDING').length;
+  // Set by the "parent" links on the children pages
+  const highlighted = parents.find((p) => p.id === searchParams.highlight);
 
   return (
     <div>
-      <h1 className="font-display text-3xl font-semibold text-ink">Parents</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-semibold text-ink">Parents</h1>
+        {highlighted ? (
+          <Link
+            href="/admin/parents"
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition hover:bg-accent/20"
+          >
+            Showing {highlighted.fullName}
+            <X className="h-3 w-3" />
+          </Link>
+        ) : null}
+      </div>
 
       {pendingCount > 0 ? (
         <p className="mt-2 text-sm font-semibold text-amber-700">
@@ -49,7 +63,11 @@ export default async function AdminParentsPage(props: { searchParams: Promise<{ 
             {parents.map((p) => {
               const status = p.parentStatus ?? 'APPROVED';
               return (
-                <tr key={p.id} className="border-b border-ink/5 last:border-0">
+                <tr
+                  key={p.id}
+                  id={`parent-${p.id}`}
+                  className={`scroll-mt-24 border-b border-ink/5 last:border-0 ${p.id === highlighted?.id ? 'row-glow' : ''}`}
+                >
                   <td className="px-5 py-4 font-semibold text-ink">
                     <div className="flex items-center gap-2">
                       {p.fullName}

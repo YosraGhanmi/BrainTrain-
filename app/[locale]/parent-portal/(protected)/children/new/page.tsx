@@ -5,6 +5,7 @@ import { requireParent } from '@/lib/portal-auth/guard';
 import { listAgeGroupEntries } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -61,22 +62,21 @@ export default async function AddChildPage(
           <input name="fullName" required className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 outline-none focus:border-accent" />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-stone">{t('dateOfBirth')}</label>
-          <input name="dateOfBirth" type="date" required className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 outline-none focus:border-accent" />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-stone">{t('ageGroup')}</label>
-          <select name="ageGroupSlug" required className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 outline-none focus:border-accent">
-            <option value="">{t('selectAgeGroup')}</option>
-            {ageGroups.map((g) => (
-              <option key={g.slug} value={g.slug}>
-                {localized(g.label, params.locale)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BirthDateAgeGroupFields
+          groups={ageGroups.map((g) => ({ slug: g.slug, label: localized(g.label, params.locale), minAge: g.minAge, maxAge: g.maxAge }))}
+          labels={{
+            dateOfBirth: t('dateOfBirth'),
+            ageGroup: t('ageGroup'),
+            empty: t('ageGroupAuto'),
+            // {age} is filled in live by the component
+            detected: t('ageGroupDetected', { age: '{age}' }),
+            noMatch: t('ageGroupNoMatch', { age: '{age}' }),
+            select: t('selectAgeGroup'),
+          }}
+          fieldClassName="block space-y-1.5"
+          labelClassName="block text-sm font-semibold text-stone"
+          inputClassName="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 outline-none focus:border-accent"
+        />
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-stone">{t('institution')}</label>

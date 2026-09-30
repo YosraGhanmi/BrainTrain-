@@ -1,4 +1,5 @@
 import { readContent } from './store';
+import { detectAgeGroupSlug } from './age-range';
 import type { CourseEntry, AgeGroupEntry } from './types';
 
 // Validates references from the new relational system (Child.ageGroupSlug,
@@ -19,6 +20,16 @@ export function getAgeGroupEntryOrThrow(slug: string): AgeGroupEntry {
 
 export function listAgeGroupEntries(): AgeGroupEntry[] {
   return readContent().ageGroups;
+}
+
+// The age group a child belongs to this school year, or null when no group
+// covers their age
+export function ageGroupSlugForBirthDate(dateOfBirth: Date, ageGroups: AgeGroupEntry[] = listAgeGroupEntries()): string | null {
+  return detectAgeGroupSlug(ageGroups, dateOfBirth);
+}
+
+export function listCourseEntries(): CourseEntry[] {
+  return readContent().courses;
 }
 
 export function listCourseEntriesForAgeGroup(ageGroupSlug: string): CourseEntry[] {

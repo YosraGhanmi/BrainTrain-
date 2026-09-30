@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
-import { getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
+import { ageGroupSlugForBirthDate, getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
 import { claimFirebaseChild, createFirebaseChild, getFirebaseChild, updateFirebaseChild } from '@/lib/firebase/children';
 import { createFirebaseNotification } from '@/lib/firebase/notifications';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
@@ -27,11 +27,14 @@ export async function addChild(formData: FormData): Promise<void> {
 
   const fullName = field(formData, 'fullName');
   const dateOfBirthRaw = field(formData, 'dateOfBirth');
-  const ageGroupSlug = field(formData, 'ageGroupSlug');
   const institution = field(formData, 'institution');
   const specialNeeds = field(formData, 'specialNeeds');
 
   const dateOfBirth = new Date(dateOfBirthRaw);
+  // Detected from the date of birth; the picked one only when no group fits
+  const ageGroupSlug = Number.isNaN(dateOfBirth.getTime())
+    ? ''
+    : (ageGroupSlugForBirthDate(dateOfBirth) ?? field(formData, 'ageGroupSlug'));
   if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
     redirect(localizedPath(locale, '/parent-portal/children/new?error=1'));
   }
@@ -87,7 +90,6 @@ export async function editChild(formData: FormData): Promise<void> {
   const childId = field(formData, 'childId');
   const fullName = field(formData, 'fullName');
   const dateOfBirthRaw = field(formData, 'dateOfBirth');
-  const ageGroupSlug = field(formData, 'ageGroupSlug');
   const institution = field(formData, 'institution');
   const specialNeeds = field(formData, 'specialNeeds');
 
@@ -97,6 +99,9 @@ export async function editChild(formData: FormData): Promise<void> {
   }
 
   const dateOfBirth = new Date(dateOfBirthRaw);
+  const ageGroupSlug = Number.isNaN(dateOfBirth.getTime())
+    ? ''
+    : (ageGroupSlugForBirthDate(dateOfBirth) ?? field(formData, 'ageGroupSlug'));
   if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
     redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&error=1`));
   }

@@ -5,6 +5,7 @@ import { editChild } from '@/lib/children/actions';
 import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
 import type { AppLocale } from '@/i18n/routing';
 import type { AgeGroupEntry } from '@/lib/content/types';
 type ChildWithEnrollments = {
@@ -95,32 +96,24 @@ export default async function ChildrenSection({
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-stone">{t('dateOfBirth')}</label>
-                <input
-                  name="dateOfBirth"
-                  type="date"
-                  required
-                  defaultValue={selected.dateOfBirth.toISOString().slice(0, 10)}
-                  className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3 outline-none focus:border-accent"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-stone">{t('ageGroup')}</label>
-                <select
-                  name="ageGroupSlug"
-                  required
-                  defaultValue={selected.ageGroupSlug}
-                  className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3 outline-none focus:border-accent"
-                >
-                  {ageGroups.map((g) => (
-                    <option key={g.slug} value={g.slug}>
-                      {localized(g.label, locale)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <BirthDateAgeGroupFields
+                key={selected.id}
+                groups={ageGroups.map((g) => ({ slug: g.slug, label: localized(g.label, locale), minAge: g.minAge, maxAge: g.maxAge }))}
+                defaultDateOfBirth={selected.dateOfBirth.toISOString().slice(0, 10)}
+                defaultAgeGroupSlug={selected.ageGroupSlug}
+                labels={{
+                  dateOfBirth: t('dateOfBirth'),
+                  ageGroup: t('ageGroup'),
+                  empty: t('ageGroupAuto'),
+                  // {age} is filled in live by the component
+                  detected: t('ageGroupDetected', { age: '{age}' }),
+                  noMatch: t('ageGroupNoMatch', { age: '{age}' }),
+                  select: t('selectAgeGroup'),
+                }}
+                fieldClassName="block space-y-1.5"
+                labelClassName="block text-sm font-semibold text-stone"
+                inputClassName="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3 outline-none focus:border-accent"
+              />
 
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-stone">{t('institution')}</label>

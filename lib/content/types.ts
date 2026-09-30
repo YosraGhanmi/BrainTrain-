@@ -48,6 +48,10 @@ export type AgeGroupEntry = {
   description: LocalizedString;
   icon: string;
   image: string;
+  // Ages covered, used to place children automatically from their date of
+  // birth. Read from the label ("6-9 years") when not set explicitly.
+  minAge: number | null;
+  maxAge: number | null;
 };
 
 export type SocialLink = { label: string; href: string };

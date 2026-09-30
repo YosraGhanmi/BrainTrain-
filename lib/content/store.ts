@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { parseAgeRange } from './age-range';
 import type { SiteContent, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent } from './types';
 
 // Everything the admin dashboard edits lives in one JSON file on disk. This
@@ -264,6 +265,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       icon: 'Baby',
       image: '/age/4-5.jpg',
+      minAge: 4,
+      maxAge: 5,
     },
     {
       slug: '6-9',
@@ -274,6 +277,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       icon: 'Puzzle',
       image: '/age/6-9.jpg',
+      minAge: 6,
+      maxAge: 9,
     },
     {
       slug: '10-13',
@@ -284,6 +289,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       icon: 'Cpu',
       image: '/age/10-13.png',
+      minAge: 10,
+      maxAge: 13,
     },
     {
       slug: '14-18',
@@ -294,6 +301,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       icon: 'GraduationCap',
       image: '/age/14-18.png',
+      minAge: 14,
+      maxAge: 18,
     },
   ],
   news: [],
@@ -335,11 +344,18 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     description: toLocalized(c.description, { en: '', fr: '' }),
   }));
 
-  const ageGroups: AgeGroupEntry[] = (raw.ageGroups ?? DEFAULT_CONTENT.ageGroups).map((g: any) => ({
-    ...g,
-    label: toLocalized(g.label, { en: '', fr: '' }),
-    description: toLocalized(g.description, { en: '', fr: '' }),
-  }));
+  const ageGroups: AgeGroupEntry[] = (raw.ageGroups ?? DEFAULT_CONTENT.ageGroups).map((g: any) => {
+    const label = toLocalized(g.label, { en: '', fr: '' });
+    // Groups saved before age ranges existed: read the range off the label
+    const parsed = parseAgeRange(label.en) ?? parseAgeRange(String(g.slug ?? ''));
+    return {
+      ...g,
+      label,
+      description: toLocalized(g.description, { en: '', fr: '' }),
+      minAge: typeof g.minAge === 'number' ? g.minAge : (parsed?.minAge ?? null),
+      maxAge: typeof g.maxAge === 'number' ? g.maxAge : (parsed?.maxAge ?? null),
+    };
+  });
 
   const news: NewsPost[] = (raw.news ?? DEFAULT_CONTENT.news).map((n: any) => ({
     ...n,

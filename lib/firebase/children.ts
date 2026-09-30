@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
 import { firestore } from '@/lib/firebase/admin';
+import { ageGroupSlugForBirthDate, listAgeGroupEntries } from '@/lib/content/lookup';
+import type { AgeGroupEntry } from '@/lib/content/types';
 
 // A class the child took before the portal existed (from the paper records).
 export type PastClass = { schoolYear: string; course: string; note: string | null };
@@ -20,18 +22,36 @@ export type FirebaseChild = {
   // One-time code the front desk hands to the parent to link this child
   claimCode: string | null;
   pastClasses: PastClass[];
+  // Parent contact from the paper records, for children with no linked
+  // account yet. Once linked, the account's own details take precedence.
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  // Original registration date from the paper records (null = createdAt)
+  registeredAt: Date | null;
   createdAt: Date;
 };
 
+// Front-desk details staff can set on an imported child
+export type ChildContactFields = Pick<FirebaseChild, 'contactName' | 'contactPhone' | 'contactEmail' | 'registeredAt'>;
+
+function optionalString(value: unknown): string | null {
+  return value ? String(value) : null;
+}
+
 const children = () => firestore.collection('children');
 
-function mapChild(id: string, data: DocumentData): FirebaseChild {
+// The age group is derived from the date of birth on every read, so children
+// move up automatically each school year. The stored slug is only a fallback
+// for ages no group covers.
+function mapChild(id: string, data: DocumentData, ageGroups: AgeGroupEntry[] = listAgeGroupEntries()): FirebaseChild {
+  const dateOfBirth: Date = data.dateOfBirth?.toDate?.() ?? new Date(data.dateOfBirth ?? 0);
   return {
     id,
     parentId: data.parentId ? String(data.parentId) : '',
     fullName: String(data.fullName ?? ''),
-    dateOfBirth: data.dateOfBirth?.toDate?.() ?? new Date(data.dateOfBirth ?? 0),
-    ageGroupSlug: String(data.ageGroupSlug ?? ''),
+    dateOfBirth,
+    ageGroupSlug: ageGroupSlugForBirthDate(dateOfBirth, ageGroups) ?? String(data.ageGroupSlug ?? ''),
     institution: data.institution ? String(data.institution) : null,
     specialNeeds: data.specialNeeds ? String(data.specialNeeds) : null,
     photoUrl: data.photoUrl ? String(data.photoUrl) : null,
@@ -44,13 +64,18 @@ function mapChild(id: string, data: DocumentData): FirebaseChild {
           note: c?.note ? String(c.note) : null,
         }))
       : [],
+    contactName: optionalString(data.contactName),
+    contactPhone: optionalString(data.contactPhone),
+    contactEmail: optionalString(data.contactEmail),
+    registeredAt: data.registeredAt ? (data.registeredAt.toDate?.() ?? new Date(data.registeredAt)) : null,
     createdAt: data.createdAt?.toDate?.() ?? new Date(data.createdAt ?? 0),
   };
 }
 
 export async function listFirebaseChildren(parentId: string): Promise<FirebaseChild[]> {
   const snapshot = await children().where('parentId', '==', parentId).get();
-  return snapshot.docs.map((doc) => mapChild(doc.id, doc.data())).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const ageGroups = listAgeGroupEntries();
+  return snapshot.docs.map((doc) => mapChild(doc.id, doc.data(), ageGroups)).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 }
 
 export async function getFirebaseChild(childId: string): Promise<FirebaseChild | null> {
@@ -59,14 +84,18 @@ export async function getFirebaseChild(childId: string): Promise<FirebaseChild |
 }
 
 export async function createFirebaseChild(
-  data: Omit<FirebaseChild, 'id' | 'createdAt' | 'photoUrl' | 'photoColor' | 'claimCode' | 'pastClasses'> &
-    Partial<Pick<FirebaseChild, 'claimCode' | 'pastClasses'>>,
+  data: Omit<FirebaseChild, 'id' | 'createdAt' | 'photoUrl' | 'photoColor' | 'claimCode' | 'pastClasses' | keyof ChildContactFields> &
+    Partial<Pick<FirebaseChild, 'claimCode' | 'pastClasses'> & ChildContactFields>,
 ): Promise<string> {
   const reference = await children().add({
     ...data,
     parentId: data.parentId || null,
     claimCode: data.claimCode ?? null,
     pastClasses: data.pastClasses ?? [],
+    contactName: data.contactName ?? null,
+    contactPhone: data.contactPhone ?? null,
+    contactEmail: data.contactEmail ?? null,
+    registeredAt: data.registeredAt ?? null,
     photoUrl: null,
     photoColor: null,
     createdAt: FieldValue.serverTimestamp(),
@@ -124,18 +153,37 @@ export async function deleteFirebaseChild(childId: string): Promise<void> {
   await children().doc(childId).delete();
 }
 
-export async function listAllFirebaseChildren(): Promise<Array<FirebaseChild & { parentName: string; enrollmentCount: number }>> {
-  const snapshot = await children().orderBy('createdAt', 'desc').get();
-  return Promise.all(
+export type AdminChildRow = FirebaseChild & {
+  parentName: string;
+  parentPhone: string;
+  parentEmail: string;
+  enrollmentCount: number;
+};
+
+// Oldest registration first, like the paper register. Parent columns come
+// from the linked account, falling back to the contact typed in by staff.
+export async function listAllFirebaseChildren(): Promise<AdminChildRow[]> {
+  const snapshot = await children().get();
+  const ageGroups = listAgeGroupEntries();
+  const rows = await Promise.all(
     snapshot.docs.map(async (doc) => {
-      const child = mapChild(doc.id, doc.data());
+      const child = mapChild(doc.id, doc.data(), ageGroups);
       const [parent, enrollments] = await Promise.all([
         child.parentId ? firestore.collection('users').doc(child.parentId).get() : null,
         firestore.collection('enrollments').where('childId', '==', child.id).where('status', 'in', ['PENDING', 'ACTIVE']).count().get(),
       ]);
-      return { ...child, parentName: String(parent?.data()?.fullName ?? ''), enrollmentCount: enrollments.data().count };
+      const account = parent?.data();
+      return {
+        ...child,
+        parentName: String(account?.fullName || child.contactName || ''),
+        parentPhone: String(account?.phone || child.contactPhone || ''),
+        parentEmail: String(account?.email || child.contactEmail || ''),
+        enrollmentCount: enrollments.data().count,
+      };
     }),
   );
+  const registered = (c: FirebaseChild) => (c.registeredAt ?? c.createdAt).getTime();
+  return rows.sort((a, b) => registered(a) - registered(b));
 }
 
 export function isFirebaseConfigured(): boolean {

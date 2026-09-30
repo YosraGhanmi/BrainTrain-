@@ -155,3 +155,49 @@ section {
       0 0 30px 6px rgba(59, 130, 246, 0.18);
   }
 }
+
+/* Admin tables: the row a link pointed at (e.g. a child's parent) pulses */
+@keyframes row-glow {
+  0%,
+  100% {
+    background-color: rgba(61, 127, 255, 0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(61, 127, 255, 0.45),
+      inset 0 -1px 0 rgba(61, 127, 255, 0.45);
+  }
+  50% {
+    background-color: rgba(61, 127, 255, 0.2);
+    box-shadow:
+      inset 0 2px 0 rgba(61, 127, 255, 0.9),
+      inset 0 -2px 0 rgba(61, 127, 255, 0.9);
+  }
+}
+
+.row-glow > td {
+  animation: row-glow 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-glow > td {
+    animation: none;
+    background-color: rgba(61, 127, 255, 0.14);
+  }
+}
+
+/* Admin FormSteps: each step panel slides in when shown */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[step-in_300ms_ease-out\] {
+    animation: none;
+  }
+}

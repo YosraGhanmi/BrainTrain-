@@ -3,18 +3,26 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/admin/guard';
-import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { ageGroupSlugForBirthDate, getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
+import { getFirebaseTimeSlot } from '@/lib/firebase/time-slots';
 import { resolvePrice } from '@/lib/pricing/compute';
 import {
   createFirebaseChild,
   generateUniqueClaimCode,
   getFirebaseChild,
   updateFirebaseChild,
+  type ChildContactFields,
   type FirebaseChild,
   type PastClass,
 } from '@/lib/firebase/children';
 import { createFirebaseEnrollment, getFirebasePayment, updateFirebasePayment, type PaymentMethod, type PlanType } from '@/lib/firebase/enrollments';
-import { getFirebaseCourseSession } from '@/lib/firebase/sessions';
+import {
+  createFirebaseCourseSession,
+  getFirebaseCourseSession,
+  listFirebaseCourseSessionsByCourse,
+  type FirebaseCourseSession,
+} from '@/lib/firebase/sessions';
 
 const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
 const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'CHEQUE', 'CARD'];
@@ -33,28 +41,64 @@ function parsePastClasses(formData: FormData): PastClass[] {
     .filter((c) => c.course);
 }
 
+function parseContactFields(formData: FormData): ChildContactFields {
+  const registeredAt = new Date(field(formData, 'registeredAt'));
+  return {
+    contactName: field(formData, 'contactName') || null,
+    contactPhone: field(formData, 'contactPhone') || null,
+    contactEmail: field(formData, 'contactEmail').toLowerCase() || null,
+    registeredAt: Number.isNaN(registeredAt.getTime()) ? null : registeredAt,
+  };
+}
+
+// The group for a course at a timetable slot. Staff import children from the
+// paper records mid-year, so a group that hasn't been set up on the Course
+// sessions page yet is created on the spot (no teacher, default capacity).
+async function findOrCreateSession(courseSlug: string, timeSlotId: string): Promise<FirebaseCourseSession | null> {
+  const slot = timeSlotId ? await getFirebaseTimeSlot(timeSlotId) : null;
+  if (!slot) return null;
+  const sameSlot = (s: FirebaseCourseSession) =>
+    s.dayOfWeek === slot.dayOfWeek && s.startTime === slot.startTime && s.endTime === slot.endTime;
+
+  const existing = (await listFirebaseCourseSessionsByCourse(courseSlug)).find(sameSlot);
+  if (existing) return existing;
+
+  const id = await createFirebaseCourseSession({
+    courseSlug,
+    teacherId: null,
+    dayOfWeek: slot.dayOfWeek,
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    location: '',
+    capacity: DEFAULT_SESSION_CAPACITY,
+    term: DEFAULT_SESSION_TERM,
+  });
+  revalidatePath('/admin/sessions');
+  return getFirebaseCourseSession(id);
+}
+
 // Enrolls the child in a group as staff: always active, and the first
 // payment is either recorded as already paid or left pending so the usual
 // overdue alerts and SMS reminders pick it up once a parent is linked.
+// Unlike parents, staff may pick a course outside the child's age group.
 async function enrollAsStaff(child: FirebaseChild, formData: FormData): Promise<'ok' | string> {
-  const courseSessionId = field(formData, 'courseSessionId');
+  const courseSlug = field(formData, 'courseSlug');
   const planType = field(formData, 'planType') as PlanType;
   const paymentMethod = field(formData, 'paymentMethod') as PaymentMethod;
   const paid = field(formData, 'paymentStatus') === 'PAID';
 
-  if (!PLAN_TYPES.includes(planType) || !PAYMENT_METHODS.includes(paymentMethod)) return 'enroll';
+  if (!courseSlug || !PLAN_TYPES.includes(planType) || !PAYMENT_METHODS.includes(paymentMethod)) return 'enroll';
+  const course = getCourseEntryOrThrow(courseSlug);
 
-  const session = await getFirebaseCourseSession(courseSessionId);
+  const session = await findOrCreateSession(courseSlug, field(formData, 'timeSlotId'));
   if (!session) return 'enroll';
-  const course = getCourseEntryOrThrow(session.courseSlug);
-  if (course.ageGroupSlug !== child.ageGroupSlug) return 'ineligible';
 
   const { amount, currency } = await resolvePrice(planType, session.courseSlug, course.ageGroupSlug);
 
   try {
     const { paymentId } = await createFirebaseEnrollment({
       childId: child.id,
-      courseSessionId,
+      courseSessionId: session.id,
       session,
       planType,
       paymentMethod,
@@ -82,13 +126,15 @@ export async function createExistingChild(formData: FormData): Promise<void> {
 
   const fullName = field(formData, 'fullName');
   const dateOfBirth = new Date(field(formData, 'dateOfBirth'));
-  const ageGroupSlug = field(formData, 'ageGroupSlug');
   const institution = field(formData, 'institution');
   const specialNeeds = field(formData, 'specialNeeds');
 
-  if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
+  if (!fullName || Number.isNaN(dateOfBirth.getTime())) {
     redirect('/admin/children/new?error=required');
   }
+  // Detected from the date of birth; the picked one only when no group fits
+  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth) ?? field(formData, 'ageGroupSlug');
+  if (!ageGroupSlug) redirect('/admin/children/new?error=required');
   getAgeGroupEntryOrThrow(ageGroupSlug);
 
   const claimCode = await generateUniqueClaimCode();
@@ -101,18 +147,43 @@ export async function createExistingChild(formData: FormData): Promise<void> {
     specialNeeds: specialNeeds || null,
     claimCode,
     pastClasses: parsePastClasses(formData),
+    ...parseContactFields(formData),
   });
 
   // The child exists either way; an enrollment problem is reported on the
   // child's page where staff can retry with another group.
   let enrollResult = 'ok';
-  if (field(formData, 'courseSessionId')) {
+  if (field(formData, 'courseSlug')) {
     const child = await getFirebaseChild(childId);
     enrollResult = await enrollAsStaff(child!, formData);
   }
 
   revalidatePath('/admin/children');
   redirect(`/admin/children/${childId}?${enrollResult === 'ok' ? 'created=1' : `created=1&error=${enrollResult}`}`);
+}
+
+export async function updateChildDetails(childId: string, formData: FormData): Promise<void> {
+  await requireAdmin();
+  const child = await getFirebaseChild(childId);
+  if (!child) redirect('/admin/children');
+
+  const fullName = field(formData, 'fullName');
+  const dateOfBirth = new Date(field(formData, 'dateOfBirth'));
+  if (!fullName || Number.isNaN(dateOfBirth.getTime())) redirect(`/admin/children/${childId}/edit?error=details`);
+  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth) ?? (field(formData, 'ageGroupSlug') || child!.ageGroupSlug);
+  getAgeGroupEntryOrThrow(ageGroupSlug);
+
+  await updateFirebaseChild(childId, {
+    fullName,
+    dateOfBirth,
+    ageGroupSlug,
+    institution: field(formData, 'institution') || null,
+    specialNeeds: field(formData, 'specialNeeds') || null,
+    ...parseContactFields(formData),
+  });
+  revalidatePath('/admin/children');
+  revalidatePath(`/admin/children/${childId}`);
+  redirect(`/admin/children/${childId}?saved=1`);
 }
 
 export async function addChildEnrollment(childId: string, formData: FormData): Promise<void> {

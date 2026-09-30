@@ -49,6 +49,35 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
           />
         </Field>
 
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="From age">
+            <input
+              name="minAge"
+              type="number"
+              min={0}
+              max={30}
+              required
+              defaultValue={group.minAge ?? ''}
+              className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+          <Field label="To age (included)">
+            <input
+              name="maxAge"
+              type="number"
+              min={0}
+              max={30}
+              required
+              defaultValue={group.maxAge ?? ''}
+              className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+          <p className="col-span-2 -mt-2 text-xs text-stone">
+            Children are placed in this group automatically from their date of birth, using their age on September 1st of the
+            current school year.
+          </p>
+        </div>
+
         <Field label="Description (English)">
           <textarea
             name="description_en"
@@ -99,6 +128,8 @@ export default async function AdminAgeGroupsPage() {
     description: { en: '', fr: '' },
     icon: 'Puzzle',
     image: '',
+    minAge: null,
+    maxAge: null,
   };
 
   return (

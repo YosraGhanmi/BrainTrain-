@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Clock3, X } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { updateEnrollmentStatus, approveEnrollment, moveEnrollment } from '@/lib/admin/portal-actions';
-import { getCourseEntryOrThrow, listAgeGroupEntries, listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
+import { getCourseEntryOrThrow, listAgeGroupEntries, listCourseEntries, listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
 import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import { firestore } from '@/lib/firebase/admin';
@@ -23,17 +23,21 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default async function AdminEnrollmentsPage(
   props: {
-    searchParams: Promise<{ saved?: string; error?: string; ageGroup?: string; group?: string }>;
+    searchParams: Promise<{ saved?: string; error?: string; ageGroup?: string; course?: string; group?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
   await requireAdmin();
 
   const ageGroups = listAgeGroupEntries();
+  const allCourses = listCourseEntries();
   const timeSlots = await listTimeSlots();
 
   const selectedAgeGroup = searchParams.ageGroup ?? '';
+  const selectedCourse = searchParams.course ?? '';
   const selectedGroup = searchParams.group ?? '';
+  // With an age group picked, the course dropdown only offers that group's courses
+  const courseOptions = selectedAgeGroup ? allCourses.filter((c) => c.ageGroupSlug === selectedAgeGroup) : allCourses;
 
   let courseSlugFilter: Set<string> | null = null;
   let slotFilter: { dayOfWeek: number; startTime: string; endTime: string } | null = null;
@@ -66,6 +70,7 @@ export default async function AdminEnrollmentsPage(
       const courseSession = sessionById.get(enrollment.courseSessionId);
       if (!courseSession) return null;
       if (courseSlugFilter && !courseSlugFilter.has(courseSession.courseSlug)) return null;
+      if (selectedCourse && courseSession.courseSlug !== selectedCourse) return null;
       if (
         slotFilter &&
         (courseSession.dayOfWeek !== slotFilter.dayOfWeek ||
@@ -90,9 +95,16 @@ export default async function AdminEnrollmentsPage(
 
   const ageGroupLabelBySlug = new Map(ageGroups.map((g) => [g.slug, g.label.en]));
   const pendingCount = enrollments.filter((e) => e.status === 'PENDING').length;
-  const hasFilters = Boolean(selectedAgeGroup || selectedGroup);
-  const withoutAgeGroupHref = selectedGroup ? `/admin/enrollments?group=${encodeURIComponent(selectedGroup)}` : '/admin/enrollments';
-  const withoutGroupHref = selectedAgeGroup ? `/admin/enrollments?ageGroup=${encodeURIComponent(selectedAgeGroup)}` : '/admin/enrollments';
+  const courseTitleBySlug = new Map(allCourses.map((c) => [c.slug, c.title.en]));
+  const activeFilters = { ageGroup: selectedAgeGroup, course: selectedCourse, group: selectedGroup };
+  const hasFilters = Object.values(activeFilters).some(Boolean);
+  // Link that drops one filter chip while keeping the others applied
+  const hrefWithout = (key: keyof typeof activeFilters) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(activeFilters)) if (k !== key && v) params.set(k, v);
+    const query = params.toString();
+    return query ? `/admin/enrollments?${query}` : '/admin/enrollments';
+  };
 
   return (
     <div>
@@ -145,6 +157,23 @@ export default async function AdminEnrollmentsPage(
           </label>
 
           <label className="block">
+            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone">Course</span>
+            <select
+              key={selectedCourse}
+              name="course"
+              defaultValue={selectedCourse}
+              className="w-full min-w-[12rem] rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
+            >
+              <option value="">All courses</option>
+              {courseOptions.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.title.en}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone">Group</span>
             <select
               key={selectedGroup}
@@ -173,16 +202,25 @@ export default async function AdminEnrollmentsPage(
             <span className="text-xs font-semibold uppercase tracking-wide text-stone">Active</span>
             {selectedAgeGroup ? (
               <Link
-                href={withoutAgeGroupHref}
+                href={hrefWithout('ageGroup')}
                 className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent transition hover:bg-accent/20"
               >
                 {ageGroupLabelBySlug.get(selectedAgeGroup) ?? selectedAgeGroup}
                 <X className="h-3 w-3" />
               </Link>
             ) : null}
+            {selectedCourse ? (
+              <Link
+                href={hrefWithout('course')}
+                className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent transition hover:bg-accent/20"
+              >
+                {courseTitleBySlug.get(selectedCourse) ?? selectedCourse}
+                <X className="h-3 w-3" />
+              </Link>
+            ) : null}
             {selectedGroup ? (
               <Link
-                href={withoutGroupHref}
+                href={hrefWithout('group')}
                 className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent transition hover:bg-accent/20"
               >
                 {selectedGroup}

@@ -440,8 +440,10 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
   const label = localizedField(formData, 'label');
   const description = localizedField(formData, 'description');
   const imageFile = formData.get('image') as File | null;
+  const minAge = Number.parseInt(String(formData.get('minAge') ?? ''), 10);
+  const maxAge = Number.parseInt(String(formData.get('maxAge') ?? ''), 10);
 
-  if (!label.en) redirect('/admin/age-groups?error=1');
+  if (!label.en || Number.isNaN(minAge) || Number.isNaN(maxAge) || minAge > maxAge) redirect('/admin/age-groups?error=1');
 
   const content = readContent();
   const otherSlugs = content.ageGroups.filter((g) => g.slug !== existingSlug).map((g) => g.slug);
@@ -450,12 +452,12 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
     const idx = content.ageGroups.findIndex((g) => g.slug === existingSlug);
     if (idx >= 0) {
       const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'age') : content.ageGroups[idx].image;
-      content.ageGroups[idx] = { ...content.ageGroups[idx], label, description, image };
+      content.ageGroups[idx] = { ...content.ageGroups[idx], label, description, image, minAge, maxAge };
     }
   } else {
     const slug = uniqueSlug(slugify(label.en), otherSlugs);
     const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'age') : '';
-    content.ageGroups.push({ slug, label, description, icon: 'Puzzle', image });
+    content.ageGroups.push({ slug, label, description, icon: 'Puzzle', image, minAge, maxAge });
   }
 
   writeContent(content);

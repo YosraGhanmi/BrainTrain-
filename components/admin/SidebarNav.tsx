@@ -171,6 +171,7 @@ export default function SidebarNav({
         {flatLink('/admin/messages', 'Messages', Inbox, unreadMessages, 'bg-accent')}
         {flatLink('/admin/payments', 'Payments', CreditCard, badgeFor('/admin/payments'))}
         {flatLink('/admin/enrollments', 'Enrollments', ClipboardList, pendingEnrollments)}
+        {flatLink('/admin/preinscriptions', 'Preinscriptions', FilePenLine, badgeFor('/admin/preinscriptions'))}
 
         <p className="mt-4 flex items-center gap-2 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.15em] text-emerald-700/80">
           <UserSquare2 className="h-3.5 w-3.5" />

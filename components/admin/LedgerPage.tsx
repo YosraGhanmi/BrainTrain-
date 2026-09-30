@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
+import RevealForm from '@/components/admin/RevealForm';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 // One month of a money ledger (fixed charges, variable charges, earnings):
@@ -87,31 +88,36 @@ export default function LedgerPage({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-2 sm:justify-start">
-        <Link
-          href={`${basePath}?month=${month.prevMonthParam}`}
-          aria-label="Previous month"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone transition hover:bg-slate-100 hover:text-ink"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Link>
-        <p className="text-sm font-semibold text-ink">
-          {month.monthLabel}
-          {month.isCurrentMonth ? <span className="ml-2 text-xs font-normal text-stone">(current)</span> : null}
-        </p>
-        <Link
-          href={`${basePath}?month=${month.nextMonthParam}`}
-          aria-label="Next month"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone transition hover:bg-slate-100 hover:text-ink"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </div>
-
       {saved ? <p className="mt-4 text-sm font-semibold text-emerald-600">Saved.</p> : null}
       {error ? <p className="mt-4 text-sm font-semibold text-red-600">Please fill in a label and a valid amount.</p> : null}
 
-      <div className="mt-6 rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-6">
+      {/* Form stays open after a failed save so the entry can be retried */}
+      <RevealForm
+        buttonLabel={addLabel}
+        defaultOpen={Boolean(error)}
+        toolbar={
+          <div className="flex items-center gap-2">
+            <Link
+              href={`${basePath}?month=${month.prevMonthParam}`}
+              aria-label="Previous month"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone transition hover:bg-slate-100 hover:text-ink"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+            <p className="text-sm font-semibold text-ink">
+              {month.monthLabel}
+              {month.isCurrentMonth ? <span className="ml-2 text-xs font-normal text-stone">(current)</span> : null}
+            </p>
+            <Link
+              href={`${basePath}?month=${month.nextMonthParam}`}
+              aria-label="Next month"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-stone transition hover:bg-slate-100 hover:text-ink"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+        }
+      >
         <form action={createAction} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(hiddenFields).map(([name, value]) => (
             <input key={name} type="hidden" name={name} value={value} />
@@ -119,7 +125,7 @@ export default function LedgerPage({
 
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone">Label</span>
-            <input name="label" required placeholder={labelPlaceholder} className={inputClassName} />
+            <input name="label" required autoFocus placeholder={labelPlaceholder} className={inputClassName} />
           </label>
 
           <label className="block">
@@ -148,7 +154,7 @@ export default function LedgerPage({
             </PendingSubmitButton>
           </div>
         </form>
-      </div>
+      </RevealForm>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-soft">
         <table className="w-full min-w-[760px] text-left text-sm">

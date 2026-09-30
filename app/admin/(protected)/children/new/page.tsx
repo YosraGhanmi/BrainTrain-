@@ -1,12 +1,13 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Baby, CalendarClock, History, KeyRound, Users } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { createExistingChild } from '@/lib/admin/children-actions';
-import { listAgeGroupEntries } from '@/lib/content/lookup';
 import { readContent } from '@/lib/content/store';
-import StaffEnrollmentFields, { listGroupOptions } from '@/components/admin/StaffEnrollmentFields';
+import { ADMIN_BIRTH_DATE_LABELS, adminAgeGroupOptions, loadStaffEnrollmentOptions } from '@/lib/admin/staff-enrollment';
+import StaffEnrollmentFields from '@/components/admin/StaffEnrollmentFields';
+import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
 import PastClassesFields from '@/components/admin/PastClassesFields';
-import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import FormSteps from '@/components/admin/FormSteps';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,80 +17,108 @@ const labelClassName = 'mb-1.5 block text-xs font-semibold uppercase tracking-wi
 export default async function NewExistingChildPage(props: { searchParams: Promise<{ error?: string }> }) {
   const searchParams = await props.searchParams;
   await requireAdmin();
-  const [ageGroups, groups] = await Promise.all([listAgeGroupEntries(), listGroupOptions()]);
+  const enrollmentOptions = await loadStaffEnrollmentOptions();
   const courseSuggestions = [...new Set(readContent().courses.map((c) => c.title.en))];
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <Link href="/admin/children" className="inline-flex items-center gap-1.5 text-sm font-semibold text-stone transition hover:text-ink">
         <ArrowLeft className="h-4 w-4" />
         Children
       </Link>
-      <h1 className="mt-3 font-display text-3xl font-semibold text-ink">Add an existing child</h1>
-      <p className="mt-1 text-sm text-stone">
-        For children already enrolled on paper. A code is generated for the child: give it to the parent and they link the child to
-        their account by typing it in the parent portal.
-      </p>
+
+      <div className="mt-2 text-center">
+        <h1 className="font-display text-3xl font-semibold text-ink">Add an existing child</h1>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-stone">
+          For children already enrolled on paper. At the end you get a{' '}
+          <span className="inline-flex items-center gap-1 font-semibold text-ink">
+            <KeyRound className="h-3.5 w-3.5 text-accent" />
+            parent code
+          </span>{' '}
+          to hand to the parent, so they can link the child to their account.
+        </p>
+      </div>
 
       {searchParams.error ? (
-        <p className="mt-4 text-sm font-semibold text-red-600">Please fill in the name, date of birth and age group.</p>
+        <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
+          Please fill in the name and date of birth (and the age group if none was detected).
+        </p>
       ) : null}
 
-      <form action={createExistingChild} className="mt-6 space-y-6">
-        <section className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-6">
-          <h2 className="font-display text-lg font-bold text-ink">Child</h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className={labelClassName}>Full name</span>
-              <input name="fullName" required className={inputClassName} />
-            </label>
-            <label className="block">
-              <span className={labelClassName}>Date of birth</span>
-              <input name="dateOfBirth" type="date" required className={inputClassName} />
-            </label>
-            <label className="block">
-              <span className={labelClassName}>Age group</span>
-              <select name="ageGroupSlug" required defaultValue="" className={inputClassName}>
-                <option value="">Select an age group</option>
-                {ageGroups.map((g) => (
-                  <option key={g.slug} value={g.slug}>
-                    {g.label.en}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className={labelClassName}>School (optional)</span>
-              <input name="institution" className={inputClassName} />
-            </label>
-            <label className="block sm:col-span-2">
-              <span className={labelClassName}>Special accommodations (optional)</span>
-              <input name="specialNeeds" className={inputClassName} />
-            </label>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-6">
-          <h2 className="font-display text-lg font-bold text-ink">This year</h2>
-          <p className="mt-1 text-sm text-stone">
-            The group they attend now. The group must be for the age group picked above. You can add more groups from the child&apos;s
-            page afterwards.
-          </p>
-          <div className="mt-4">
-            <StaffEnrollmentFields groups={groups} optional />
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-ink/10 bg-white p-5 shadow-soft sm:p-6">
-          <h2 className="font-display text-lg font-bold text-ink">Previous years (optional)</h2>
-          <p className="mt-1 text-sm text-stone">Classes the child took before this year, from the paper records.</p>
-          <PastClassesFields courseSuggestions={courseSuggestions} />
-        </section>
-
-        <PendingSubmitButton className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
-          Create child and generate code
-        </PendingSubmitButton>
-      </form>
+      <FormSteps
+        action={createExistingChild}
+        submitLabel="Create child and generate code"
+        steps={[
+          {
+            title: 'Child',
+            description: 'Who the child is.',
+            icon: <Baby />,
+            content: (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className={labelClassName}>Full name</span>
+                  <input name="fullName" required autoFocus className={inputClassName} />
+                </label>
+                <BirthDateAgeGroupFields
+                  groups={adminAgeGroupOptions()}
+                  labels={ADMIN_BIRTH_DATE_LABELS}
+                  labelClassName={labelClassName}
+                  inputClassName={inputClassName}
+                />
+                <label className="block">
+                  <span className={labelClassName}>School (optional)</span>
+                  <input name="institution" className={inputClassName} />
+                </label>
+                <label className="block">
+                  <span className={labelClassName}>Registration date</span>
+                  <input name="registeredAt" type="date" defaultValue={today} className={inputClassName} />
+                </label>
+                <label className="block">
+                  <span className={labelClassName}>Special accommodations (optional)</span>
+                  <input name="specialNeeds" className={inputClassName} />
+                </label>
+              </div>
+            ),
+          },
+          {
+            title: 'Parent',
+            description: 'From the paper records. Shown in the children list until the parent links the child.',
+            icon: <Users />,
+            optional: true,
+            content: (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="block sm:col-span-2">
+                  <span className={labelClassName}>Full name</span>
+                  <input name="contactName" className={inputClassName} />
+                </label>
+                <label className="block">
+                  <span className={labelClassName}>Phone</span>
+                  <input name="contactPhone" type="tel" className={inputClassName} />
+                </label>
+                <label className="block">
+                  <span className={labelClassName}>Email</span>
+                  <input name="contactEmail" type="email" className={inputClassName} />
+                </label>
+              </div>
+            ),
+          },
+          {
+            title: 'This year',
+            description: "The course and time slot they attend now. Skip it to enroll later; more can be added from the child's page.",
+            icon: <CalendarClock />,
+            optional: true,
+            content: <StaffEnrollmentFields options={enrollmentOptions} optional />,
+          },
+          {
+            title: 'Past years',
+            description: 'Classes the child took before this year, from the paper records.',
+            icon: <History />,
+            optional: true,
+            content: <PastClassesFields courseSuggestions={courseSuggestions} />,
+          },
+        ]}
+      />
     </div>
   );
 }
