@@ -37,6 +37,7 @@ const config: Config = {
         marquee: 'marquee 32s linear infinite',
         aurora: 'aurora 18s ease-in-out infinite',
         float: 'float 8s ease-in-out infinite',
+        bob: 'bob 6s ease-in-out infinite',
       },
       keyframes: {
         marquee: {
@@ -51,6 +52,10 @@ const config: Config = {
         float: {
           '0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' },
           '50%': { transform: 'translate(0, -22px) rotate(6deg)' },
+        },
+        bob: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
         },
       },
     },

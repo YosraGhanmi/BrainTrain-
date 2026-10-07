@@ -10,6 +10,7 @@ import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
 import { resolvePrice } from '@/lib/pricing/compute';
+import { applyDiscount, getFamilyDiscountPercent } from '@/lib/pricing/family-discount';
 import { enrollChild } from '@/lib/enrollment/actions';
 import { sessionsConflict } from '@/lib/scheduling/slots';
 import { findSlotLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
@@ -109,9 +110,14 @@ export default async function CourseDetailPage(
 
   const dayNumbers = Array.from(new Set(groups.map((g) => g.dayOfWeek))).sort((a, b) => a - b);
 
-  const prices = await Promise.all(
-    PLAN_INFO.map(async (plan) => ({ ...plan, ...(await resolvePrice(plan.type, params.slug, course.ageGroupSlug)) }))
-  );
+  const [basePrices, discountPercent] = await Promise.all([
+    Promise.all(
+      PLAN_INFO.map(async (plan) => ({ ...plan, ...(await resolvePrice(plan.type, params.slug, course.ageGroupSlug)) }))
+    ),
+    getFamilyDiscountPercent(child),
+  ]);
+  // Same discount enrollChild applies, so the wizard shows what will be billed
+  const prices = basePrices.map((plan) => ({ ...plan, amount: applyDiscount(plan.amount, discountPercent) }));
 
   const media = course.image ? (
     <div className="relative h-56 w-full overflow-hidden rounded-2xl">
@@ -144,9 +150,17 @@ export default async function CourseDetailPage(
         <div>
           <h2 className="font-display text-lg font-bold text-ink">{td('startingFrom')}</h2>
           <p className="mt-2 font-display text-3xl font-bold text-ink">
+            {discountPercent ? (
+              <span className="mr-2 text-xl font-semibold text-stone line-through">{basePrices[0].amount}</span>
+            ) : null}
             {prices[0].amount} {prices[0].currency}
             <span className="text-base font-semibold text-stone"> {td('perMonth')}</span>
           </p>
+          {discountPercent ? (
+            <p className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+              {td('familyDiscount', { percent: discountPercent })}
+            </p>
+          ) : null}
           <p className="mt-1 text-sm text-stone">{td('otherPlansHint')}</p>
         </div>
       </div>

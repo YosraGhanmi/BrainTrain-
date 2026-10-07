@@ -1,6 +1,6 @@
 import { requireAdminOnly } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
-import { upsertAgeGroupPricing, clearCoursePricingOverride } from '@/lib/admin/portal-actions';
+import { upsertAgeGroupPricing, clearCoursePricingOverride, updatePricingSettings } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import { listFirebasePricingRules, type PlanType } from '@/lib/firebase/pricing';
@@ -13,10 +13,24 @@ const PLAN_FIELDS: { type: PlanType; label: string }[] = [
   { type: 'YEARLY', label: 'Full year (15 Sep – 15 Jun)' },
 ];
 
+function SettingField({ label, ...input }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone">{label}</span>
+      <input
+        required
+        {...input}
+        className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent"
+      />
+    </label>
+  );
+}
+
 export default async function AdminPricingPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const searchParams = await props.searchParams;
   await requireAdminOnly();
   const [rules, content] = await Promise.all([listFirebasePricingRules(), Promise.resolve(readContent())]);
+  const format = content.classFormat;
 
   const ageGroupDefaults: Record<string, Partial<Record<PlanType, number>> & { currency: string }> = {};
   const courseOverrides: Record<string, Partial<Record<PlanType, number>> & { currency: string }> = {};
@@ -40,6 +54,37 @@ export default async function AdminPricingPage(props: { searchParams: Promise<{ 
 
       {searchParams.saved ? <p className="mt-4 text-sm font-semibold text-emerald-600">Saved.</p> : null}
       {searchParams.error ? <p className="mt-4 text-sm font-semibold text-red-600">Something went wrong.</p> : null}
+
+      <form action={updatePricingSettings} className="mt-6 rounded-2xl border border-ink/10 bg-white p-6 shadow-soft">
+        <h2 className="font-display text-lg font-bold text-ink">Class format and family discount</h2>
+        <p className="mt-1 text-sm text-stone">Shown on every course page. A course can set its own session length on the Courses page.</p>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <SettingField label="Sessions per week" name="sessionsPerWeek" type="number" min={1} step="1" defaultValue={format.sessionsPerWeek} />
+          <SettingField label="Hours per session" name="sessionHours" type="number" min={0.5} step="0.5" defaultValue={format.sessionHours} />
+          <SettingField label="Max kids per group" name="maxGroupSize" type="number" min={1} step="1" defaultValue={format.maxGroupSize} />
+          <SettingField
+            label="Family discount (%)"
+            name="familyDiscountPercent"
+            type="number"
+            min={0}
+            max={100}
+            step="0.5"
+            defaultValue={content.familyDiscountPercent}
+          />
+        </div>
+        <p className="mt-2 text-xs text-stone">
+          The family discount applies automatically to every child after a parent's first enrolled child (0 turns it off).
+        </p>
+
+        <div className="mt-4 flex justify-end">
+          <PendingSubmitButton
+            className="rounded-full bg-ink px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent"
+          >
+            Save
+          </PendingSubmitButton>
+        </div>
+      </form>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {content.ageGroups.map((group) => {

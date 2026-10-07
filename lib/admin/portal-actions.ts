@@ -13,6 +13,7 @@ import { absoluteUrl } from '@/lib/seo';
 import { routing } from '@/i18n/routing';
 import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM, sessionsConflict } from '@/lib/scheduling/slots';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { readContent, writeContent } from '@/lib/content/store';
 import { parseTeacherCourseSlugs, stringifyTeacherCourseSlugs } from '@/lib/teachers/course-slugs';
 import {
   createFirebaseTeacherProfile,
@@ -395,6 +396,36 @@ export async function upsertAgeGroupPricing(formData: FormData): Promise<void> {
     }),
   );
 
+  revalidatePath('/[locale]', 'layout');
+  redirect('/admin/pricing?saved=1');
+}
+
+// Class format and family discount shown on the course pages; the
+// discount percent is also what enrollments apply to a family's later children.
+export async function updatePricingSettings(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const positive = (name: string) => {
+    const value = Number(formData.get(name));
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
+  const sessionsPerWeek = positive('sessionsPerWeek');
+  const sessionHours = positive('sessionHours');
+  const maxGroupSize = positive('maxGroupSize');
+  const discount = Number(formData.get('familyDiscountPercent'));
+  if (!sessionsPerWeek || !sessionHours || !maxGroupSize || !Number.isFinite(discount) || discount < 0 || discount > 100) {
+    redirect('/admin/pricing?error=1');
+  }
+
+  const content = readContent();
+  content.classFormat = {
+    sessionsPerWeek: sessionsPerWeek!,
+    sessionHours: sessionHours!,
+    maxGroupSize: maxGroupSize!,
+  };
+  content.familyDiscountPercent = discount;
+  writeContent(content);
+
+  revalidatePath('/[locale]', 'layout');
   redirect('/admin/pricing?saved=1');
 }
 

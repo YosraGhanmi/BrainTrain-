@@ -18,7 +18,7 @@ import { useTranslations } from 'next-intl';
 import { getIcon } from '@/lib/content/icons';
 import ArrowRevealButton from '@/components/buttons/ArrowRevealButton';
 
-type AgeGroupCard = { slug: string; label: string; description: string; icon: string; image: string };
+type AgeGroupCard = { slug: string; label: string; stage: string; description: string; icon: string; image: string };
 
 type Sizing = {
   restWidth: number;
@@ -134,7 +134,10 @@ function Card({
 
         <motion.div style={{ opacity: overlayOpacity }} className="absolute inset-x-0 bottom-0 p-6">
           <Icon className="h-7 w-7 text-[#ff8c42]" strokeWidth={1.75} />
-          <h3 className="mt-3 text-xl font-bold text-white sm:text-2xl">{group.label}</h3>
+          {group.stage ? (
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff8c42]">{group.stage}</p>
+          ) : null}
+          <h3 className={`${group.stage ? 'mt-1' : 'mt-3'} text-xl font-bold text-white sm:text-2xl`}>{group.label}</h3>
           <p className="mt-2 line-clamp-2 max-w-sm text-sm text-white/70">{group.description}</p>
           <ArrowRevealButton
             label={t('seeCourses')}

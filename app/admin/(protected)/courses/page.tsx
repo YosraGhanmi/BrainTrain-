@@ -30,6 +30,11 @@ export default async function AdminCoursesPage() {
     sessions: 0,
     price: 0,
     ageGroupSlug: ageGroups[0]?.slug ?? '',
+    tagline: { en: '', fr: '' },
+    highlights: [],
+    outcome: { en: '', fr: '' },
+    skills: [],
+    tools: [],
   };
 
   const groupedCourses = ageGroups.map((group, i) => ({

@@ -15,6 +15,8 @@ export type FirebasePaymentPlan = {
   method: PaymentMethod;
   amount: number;
   currency: string;
+  // Family (siblings) discount already included in amount, 0 when none
+  discountPercent: number;
   startDate: Date;
   createdAt: Date;
 };
@@ -60,6 +62,7 @@ function mapPlan(id: string, data: DocumentData): FirebasePaymentPlan {
     method: (data.method as PaymentMethod) ?? 'CASH',
     amount: Number(data.amount ?? 0),
     currency: String(data.currency ?? 'TND'),
+    discountPercent: Number(data.discountPercent ?? 0),
     startDate: data.startDate?.toDate?.() ?? new Date(),
     createdAt: data.createdAt?.toDate?.() ?? new Date(),
   };
@@ -236,6 +239,7 @@ export type CreateEnrollmentInput = {
   paymentMethod: PaymentMethod;
   amount: number;
   currency: string;
+  discountPercent?: number;
   // Staff entering an existing enrollment (paper records) activate it directly
   forceActive?: boolean;
 };
@@ -283,6 +287,7 @@ export async function createFirebaseEnrollment(input: CreateEnrollmentInput): Pr
     method: input.paymentMethod,
     amount: input.amount,
     currency: input.currency,
+    discountPercent: input.discountPercent ?? 0,
     startDate: FieldValue.serverTimestamp(),
     createdAt: FieldValue.serverTimestamp(),
   });

@@ -365,6 +365,34 @@ export async function upsertCourse(formData: FormData): Promise<void> {
   const icon = String(formData.get('icon') ?? 'Bot').trim();
   const videoUrl = String(formData.get('videoUrl') ?? '').trim();
   const imageFile = formData.get('image') as File | null;
+  // Empty = use the standard session length from the Pricing page
+  const sessionHoursValue = Number(formData.get('sessionHours'));
+  const sessionHours = sessionHoursValue > 0 ? sessionHoursValue : undefined;
+  const tagline = localizedField(formData, 'tagline');
+  const outcome = localizedField(formData, 'outcome');
+  const highlights = [0, 1, 2]
+    .map((i) => ({
+      icon: String(formData.get(`highlight${i}_icon`) ?? 'Lightbulb'),
+      title: localizedField(formData, `highlight${i}_title`),
+      text: localizedField(formData, `highlight${i}_text`),
+    }))
+    .filter((h) => h.title.en || h.title.fr);
+  // Two textareas, one skill per line, paired by line number
+  const skillLines = (lang: 'en' | 'fr') =>
+    String(formData.get(`skills_${lang}`) ?? '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  const skillsEn = skillLines('en');
+  const skillsFr = skillLines('fr');
+  const skills = Array.from({ length: Math.max(skillsEn.length, skillsFr.length) }, (_, i) => ({
+    en: skillsEn[i] ?? skillsFr[i],
+    fr: skillsFr[i] ?? skillsEn[i],
+  }));
+  const tools = String(formData.get('tools') ?? '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
 
   if (!title.en || !ageGroupSlug) redirect('/admin/courses?error=1');
 
@@ -382,6 +410,12 @@ export async function upsertCourse(formData: FormData): Promise<void> {
         title,
         description,
         sessions,
+        sessionHours,
+        tagline,
+        highlights,
+        outcome,
+        skills,
+        tools,
         ageGroupSlug,
         color,
         icon,
@@ -395,7 +429,24 @@ export async function upsertCourse(formData: FormData): Promise<void> {
     // Pricing lives in PricingRule (age-group default or the course override
     // handled below) — this legacy field is kept only because CourseEntry
     // still requires it; nothing reads it anymore.
-    content.courses.push({ slug, title, description, sessions, price: 0, ageGroupSlug, color, icon, videoUrl: videoUrl || undefined, image });
+    content.courses.push({
+      slug,
+      title,
+      description,
+      sessions,
+      sessionHours,
+      tagline,
+      highlights,
+      outcome,
+      skills,
+      tools,
+      price: 0,
+      ageGroupSlug,
+      color,
+      icon,
+      videoUrl: videoUrl || undefined,
+      image,
+    });
   }
 
   writeContent(content);
@@ -439,6 +490,7 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
   const existingSlug = String(formData.get('existingSlug') ?? '').trim();
   const label = localizedField(formData, 'label');
   const description = localizedField(formData, 'description');
+  const stage = localizedField(formData, 'stage');
   const imageFile = formData.get('image') as File | null;
   const minAge = Number.parseInt(String(formData.get('minAge') ?? ''), 10);
   const maxAge = Number.parseInt(String(formData.get('maxAge') ?? ''), 10);
@@ -452,12 +504,12 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
     const idx = content.ageGroups.findIndex((g) => g.slug === existingSlug);
     if (idx >= 0) {
       const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'age') : content.ageGroups[idx].image;
-      content.ageGroups[idx] = { ...content.ageGroups[idx], label, description, image, minAge, maxAge };
+      content.ageGroups[idx] = { ...content.ageGroups[idx], label, description, image, minAge, maxAge, stage };
     }
   } else {
     const slug = uniqueSlug(slugify(label.en), otherSlugs);
     const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'age') : '';
-    content.ageGroups.push({ slug, label, description, icon: 'Puzzle', image, minAge, maxAge });
+    content.ageGroups.push({ slug, label, description, icon: 'Puzzle', image, minAge, maxAge, stage });
   }
 
   writeContent(content);

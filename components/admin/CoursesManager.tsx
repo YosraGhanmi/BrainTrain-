@@ -6,7 +6,7 @@ import { upsertCourse, deleteCourse } from '@/lib/admin/actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import CourseIconPreview from '@/components/admin/CourseIconPreview';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { getIcon } from '@/lib/content/icons';
+import { getIcon, HIGHLIGHT_ICON_NAMES } from '@/lib/content/icons';
 import type { AgeGroupEntry, CourseEntry } from '@/lib/content/types';
 
 const NEW_KEY = '__new__';
@@ -19,6 +19,114 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone">{label}</span>
       {children}
     </label>
+  );
+}
+
+const HIGHLIGHT_SLOTS = [0, 1, 2];
+
+// Everything shown on the public course page beyond the title and
+// description. All optional: empty fields are hidden on the page.
+function CoursePageFields({ course }: { course: CourseEntry }) {
+  return (
+    <div className="space-y-4 rounded-xl border border-ink/10 bg-slate-50 p-4 sm:col-span-2">
+      <div>
+        <p className="text-sm font-semibold text-ink">Course page</p>
+        <p className="mt-1 text-xs text-stone">Optional. Empty fields are hidden on the public course page.</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Tagline (English, *stars* highlight words)">
+          <input
+            name="tagline_en"
+            defaultValue={course.tagline.en}
+            placeholder="Understanding emotions... *through play.*"
+            className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+          />
+        </Field>
+        <Field label="Tagline (French, *étoiles* = mots surlignés)">
+          <input
+            name="tagline_fr"
+            defaultValue={course.tagline.fr}
+            placeholder="Apprendre à comprendre ses émotions... *en jouant.*"
+            className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+          />
+        </Field>
+      </div>
+
+      {HIGHLIGHT_SLOTS.map((i) => {
+        const highlight = course.highlights[i];
+        return (
+          <div key={i} className="grid grid-cols-1 gap-3 rounded-xl border border-ink/10 bg-white/60 p-3 sm:grid-cols-[9rem_1fr_1fr]">
+            <Field label={`Floating label ${i + 1} (around the robot) icon`}>
+              <select name={`highlight${i}_icon`} defaultValue={highlight?.icon ?? 'Lightbulb'} className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30">
+                {HIGHLIGHT_ICON_NAMES.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div className="space-y-2">
+              <Field label="Title (English)">
+                <input name={`highlight${i}_title_en`} defaultValue={highlight?.title.en ?? ''} className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30" />
+              </Field>
+              <Field label="Short text (English)">
+                <input name={`highlight${i}_text_en`} defaultValue={highlight?.text.en ?? ''} className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30" />
+              </Field>
+            </div>
+            <div className="space-y-2">
+              <Field label="Title (French)">
+                <input name={`highlight${i}_title_fr`} defaultValue={highlight?.title.fr ?? ''} className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30" />
+              </Field>
+              <Field label="Short text (French)">
+                <input name={`highlight${i}_text_fr`} defaultValue={highlight?.text.fr ?? ''} className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30" />
+              </Field>
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="End-of-year outcome (English)">
+          <textarea
+            name="outcome_en"
+            defaultValue={course.outcome.en}
+            placeholder="Your child will be able to..."
+            rows={3}
+            className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30 resize-none"
+          />
+        </Field>
+        <Field label="End-of-year outcome (French)">
+          <textarea
+            name="outcome_fr"
+            defaultValue={course.outcome.fr}
+            placeholder="Votre enfant sera capable de..."
+            rows={3}
+            className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30 resize-none"
+          />
+        </Field>
+        <Field label="Skills checklist (English, one per line)">
+          <textarea
+            name="skills_en"
+            defaultValue={course.skills.map((skill) => skill.en).join('\n')}
+            rows={5}
+            className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30 resize-none"
+          />
+        </Field>
+        <Field label="Skills checklist (French, one per line, same order)">
+          <textarea
+            name="skills_fr"
+            defaultValue={course.skills.map((skill) => skill.fr).join('\n')}
+            rows={5}
+            className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30 resize-none"
+          />
+        </Field>
+      </div>
+
+      <Field label="Tools and kits (comma separated, e.g. Thymio, Scratch, Python)">
+        <input name="tools" defaultValue={course.tools.join(', ')} className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30" />
+      </Field>
+    </div>
   );
 }
 
@@ -81,6 +189,18 @@ function CourseFormFields({
           min={0}
           defaultValue={course.sessions}
           placeholder="Sessions"
+          className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+        />
+      </Field>
+
+      <Field label="Session length in hours (empty = standard length from the Pricing page)">
+        <input
+          name="sessionHours"
+          type="number"
+          min={0.5}
+          step="0.5"
+          defaultValue={course.sessionHours ?? ''}
+          placeholder="e.g. 2 or 1.5"
           className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
         />
       </Field>
@@ -158,6 +278,8 @@ function CourseFormFields({
           className="w-full resize-none rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
         />
       </Field>
+
+      <CoursePageFields course={course} />
 
       <div className="sm:col-span-2">
         <Field label="Video link (YouTube or Facebook, optional)">

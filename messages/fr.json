@@ -54,6 +54,27 @@
     "curriculum": "Programme du parcours",
     "phase": "Phase {number}"
   },
+  "pricing": {
+    "perWeek": "{count, plural, one {# séance} other {# séances}} par semaine",
+    "hours": "{hours} par séance",
+    "familyTitle": "Avantage famille :",
+    "familyBody": "-{percent}% pour le 2e enfant et les suivants.",
+    "tagLine1": "de remise",
+    "tagLine2": "dès le 2e enfant"
+  },
+  "coursePage": {
+    "hoursSub": "Durée de chaque séance",
+    "groupValue": "{count} enfants max",
+    "groupSub": "Par groupe",
+    "ageSub": "Groupe adapté à l'âge",
+    "outcomeHeading": "À la fin de l'année",
+    "planMonthly": "Mensuel",
+    "planMonthlyText": "Payez chaque mois",
+    "planTerm": "Trimestriel",
+    "planTermText": "Un paiement tous les 3 mois",
+    "planYearly": "Annuel",
+    "planYearlyText": "Un seul paiement pour l'année"
+  },
   "stats": {
     "heading": "Statistiques"
   },
@@ -210,7 +231,7 @@
     "schedule": {
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
-      "noActiveSessions": "Aucune séance active programmée pour le moment — le calendrier ci-dessous se remplira dès qu'une inscription sera activée."
+      "noActiveSessions": "Aucune séance active programmée pour le moment. Le calendrier ci-dessous se remplira dès qu'une inscription sera activée."
     },
     "enrollWizard": {
       "steps": { "group": "Groupe", "plan": "Formule", "method": "Paiement" },
@@ -246,7 +267,7 @@
       "backToWebsite": "Retour au site",
       "brand": "BrainTrain Parent",
       "title": "Compte créé !",
-      "body1": "Merci pour votre inscription. Un administrateur doit examiner votre compte avant que vous puissiez vous connecter — cela ne prend généralement pas longtemps.",
+      "body1": "Merci pour votre inscription. Un administrateur doit examiner votre compte avant que vous puissiez vous connecter, cela ne prend généralement pas longtemps.",
       "body2": "Nous vous enverrons un e-mail dès qu'il sera approuvé, avec un lien pour vous connecter.",
       "backToSignIn": "Retour à la connexion"
     },
@@ -283,7 +304,7 @@
       "backToCourses": "Retour aux cours",
       "pending": "En attente",
       "checkingWithAdmin": "Vérification en cours avec l'administration",
-      "pendingBody": "L'inscription de {name} à <strong>{course}</strong> est en cours — un administrateur doit encore confirmer votre paiement avant que la place ne soit validée. Vous recevrez un SMS dès que ce sera approuvé, et le cours se débloquera ici même.",
+      "pendingBody": "L'inscription de {name} à <strong>{course}</strong> est en cours : un administrateur doit encore confirmer votre paiement avant que la place ne soit validée. Vous recevrez un SMS dès que ce sera approuvé, et le cours se débloquera ici même.",
       "paymentMethod": "Paiement par {method}",
       "methods": { "CASH": "Espèces", "CHEQUE": "Chèque", "CARD": "Carte" },
       "backToDashboard": "Retour au tableau de bord",
@@ -298,7 +319,7 @@
       "teacher": "Enseignant",
       "notYetAssigned": "Pas encore assigné",
       "teacherUpdates": "Notes de l'enseignant",
-      "noUpdatesYet": "Aucune note pour le moment — votre enseignant publiera des notes ici après les cours.",
+      "noUpdatesYet": "Aucune note pour le moment. Votre enseignant publiera des notes ici après les cours.",
       "myBadges": "Mes badges",
       "viewAll": "Tout voir",
       "showLess": "Afficher moins",
@@ -322,12 +343,13 @@
       "backToCourses": "Retour aux cours",
       "startingFrom": "À partir de",
       "perMonth": "/ mois",
-      "otherPlansHint": "Formules 3 mois et année complète disponibles lors de l'inscription.",
+      "otherPlansHint": "Formules trimestre et année complète disponibles lors de l'inscription.",
+      "familyDiscount": "-{percent}% 2e enfant appliqué",
       "enrollHeading": "Inscription : groupe, formule et paiement",
       "noSessions": "Aucune séance n'est actuellement programmée pour ce cours.",
       "plans": {
         "monthly": { "label": "Mensuel", "hint": "Facturé chaque mois" },
-        "quarterly": { "label": "3 mois", "hint": "Facturé une fois pour 3 mois" },
+        "quarterly": { "label": "Trimestre (3 mois)", "hint": "Facturé une fois pour 3 mois" },
         "yearly": { "label": "Année complète", "hint": "Un seul paiement, du 15 sept. au 15 juin" }
       },
       "methods": {
@@ -475,7 +497,7 @@
     "calendar": {
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
-      "noGroups": "Aucun groupe assigné pour le moment — votre emploi du temps se remplira dès qu'un administrateur vous assignera une séance.",
+      "noGroups": "Aucun groupe assigné pour le moment. Votre emploi du temps se remplira dès qu'un administrateur vous assignera une séance.",
       "studentsCount": "{count} élèves"
     },
     "login": {
@@ -484,7 +506,7 @@
       "returnToWebsite": "Retour au site",
       "welcome": "Content de",
       "welcomeAccent": "vous revoir, Enseignant !",
-      "tagline": "Vos classes, vos élèves, leur progression — tout au même endroit.",
+      "tagline": "Vos classes, vos élèves, leur progression, tout au même endroit.",
       "email": "E-mail",
       "password": "Mot de passe",
       "accountSuspended": "Ce compte a été suspendu. Contactez BrainTrain pour obtenir de l'aide.",

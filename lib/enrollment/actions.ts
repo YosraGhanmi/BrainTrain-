@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { resolvePrice } from '@/lib/pricing/compute';
+import { applyDiscount, getFamilyDiscountPercent } from '@/lib/pricing/family-discount';
 import {
   createFirebaseEnrollment,
   updateFirebaseEnrollmentStatus,
@@ -53,7 +54,10 @@ export async function enrollChild(formData: FormData): Promise<void> {
   const course = getCourseEntryOrThrow(session!.courseSlug);
   if (course.ageGroupSlug !== child!.ageGroupSlug) fail('ineligible');
 
-  const { amount, currency } = await resolvePrice(planType, session!.courseSlug, course.ageGroupSlug);
+  const price = await resolvePrice(planType, session!.courseSlug, course.ageGroupSlug);
+  const discountPercent = await getFamilyDiscountPercent(child!);
+  const amount = applyDiscount(price.amount, discountPercent);
+  const { currency } = price;
 
   let enrollmentId = '';
   try {
@@ -65,6 +69,7 @@ export async function enrollChild(formData: FormData): Promise<void> {
       paymentMethod,
       amount,
       currency,
+      discountPercent,
     });
     enrollmentId = result.enrollmentId;
   } catch (err) {
@@ -80,7 +85,7 @@ export async function enrollChild(formData: FormData): Promise<void> {
       await createFirebaseNotification({
         type: 'OFFLINE_PAYMENT_DECLARED',
         title: `${parent.fullName} will pay in ${methodLabel}`,
-        body: `${child!.fullName}, ${course.title.en}: ${amount.toFixed(2)} ${currency} (added to payments as pending)`,
+        body: `${child!.fullName}, ${course.title.en}: ${amount.toFixed(2)} ${currency}${discountPercent ? ` (-${discountPercent}% sibling discount)` : ''} (added to payments as pending)`,
         link: '/admin/payments',
       });
     } catch {

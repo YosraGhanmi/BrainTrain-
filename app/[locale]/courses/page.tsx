@@ -39,6 +39,7 @@ export default async function CoursesPage(props: { params: Promise<{ locale: App
   const ageGroups = readContent().ageGroups.map((g) => ({
     slug: g.slug,
     label: g.label[params.locale] || g.label.en,
+    stage: g.stage[params.locale] || g.stage.en,
     description: g.description[params.locale] || g.description.en,
     icon: g.icon,
     image: g.image,

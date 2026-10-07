@@ -28,6 +28,14 @@ export type CurriculumPhase = {
   points: LocalizedString[];
 };
 
+// One of the three labels floating around the robot on a course page
+// ("Recognize"), with an icon name from HIGHLIGHT_ICON_NAMES
+export type CourseHighlight = {
+  icon: string;
+  title: LocalizedString;
+  text: LocalizedString;
+};
+
 export type CourseEntry = {
   slug: string;
   title: LocalizedString;
@@ -40,6 +48,18 @@ export type CourseEntry = {
   videoUrl?: string;
   image?: string;
   curriculum?: CurriculumPhase[];
+  // Session length in hours; falls back to the standard class format's
+  // when not set
+  sessionHours?: number;
+  // Course page content; empty values are hidden on the page.
+  // tagline: line under the title, words wrapped in *stars* get highlighted
+  // outcome: what the child can do by the end of the year
+  // skills: checklist next to the outcome; tools: kits / software used
+  tagline: LocalizedString;
+  highlights: CourseHighlight[];
+  outcome: LocalizedString;
+  skills: LocalizedString[];
+  tools: string[];
 };
 
 export type AgeGroupEntry = {
@@ -52,6 +72,17 @@ export type AgeGroupEntry = {
   // birth. Read from the label ("6-9 years") when not set explicitly.
   minAge: number | null;
   maxAge: number | null;
+  // Named stage shown above the label on public pages ("Little Explorers");
+  // hidden when empty
+  stage: LocalizedString;
+};
+
+// Standard class format shown on every course page (a course can override
+// its own session length)
+export type ClassFormat = {
+  sessionsPerWeek: number;
+  sessionHours: number;
+  maxGroupSize: number;
 };
 
 export type SocialLink = { label: string; href: string };
@@ -96,4 +127,7 @@ export type SiteContent = {
   ageGroups: AgeGroupEntry[];
   news: NewsPost[];
   calendarEvents: CalendarEvent[];
+  classFormat: ClassFormat;
+  // Percent off for every child after a family's first enrolled child
+  familyDiscountPercent: number;
 };

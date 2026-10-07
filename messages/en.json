@@ -54,6 +54,27 @@
     "curriculum": "Program curriculum",
     "phase": "Phase {number}"
   },
+  "pricing": {
+    "perWeek": "{count, plural, one {# session} other {# sessions}} per week",
+    "hours": "{hours} per session",
+    "familyTitle": "Family perk:",
+    "familyBody": "-{percent}% for the 2nd child and every one after.",
+    "tagLine1": "off from",
+    "tagLine2": "the 2nd child"
+  },
+  "coursePage": {
+    "hoursSub": "Length of each session",
+    "groupValue": "Max {count} kids",
+    "groupSub": "Per group",
+    "ageSub": "Age-appropriate group",
+    "outcomeHeading": "By the end of the year",
+    "planMonthly": "Monthly",
+    "planMonthlyText": "Pay every month",
+    "planTerm": "Per term",
+    "planTermText": "One payment every 3 months",
+    "planYearly": "Full year",
+    "planYearlyText": "One payment for the year"
+  },
   "stats": {
     "heading": "Statistics"
   },
@@ -210,7 +231,7 @@
     "schedule": {
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
-      "noActiveSessions": "No active sessions scheduled yet — the calendar below will fill in once an enrollment is activated."
+      "noActiveSessions": "No active sessions scheduled yet. The calendar below will fill in once an enrollment is activated."
     },
     "enrollWizard": {
       "steps": { "group": "Group", "plan": "Plan", "method": "Method" },
@@ -246,7 +267,7 @@
       "backToWebsite": "Back to website",
       "brand": "BrainTrain Parent",
       "title": "Account created!",
-      "body1": "Thanks for signing up. An admin needs to review your account before you can log in — this usually doesn't take long.",
+      "body1": "Thanks for signing up. An admin needs to review your account before you can log in, this usually doesn't take long.",
       "body2": "We'll email you as soon as it's approved, with a link to sign in.",
       "backToSignIn": "Back to sign in"
     },
@@ -283,7 +304,7 @@
       "backToCourses": "Back to courses",
       "pending": "Pending",
       "checkingWithAdmin": "We're checking with Admin",
-      "pendingBody": "{name}'s enrollment in <strong>{course}</strong> is on its way — an admin just needs to confirm your payment before the seat is locked in. You'll get a text message the moment it's approved, and the course will unlock right here.",
+      "pendingBody": "{name}'s enrollment in <strong>{course}</strong> is on its way: an admin just needs to confirm your payment before the seat is locked in. You'll get a text message the moment it's approved, and the course will unlock right here.",
       "paymentMethod": "{method} payment",
       "methods": { "CASH": "Cash", "CHEQUE": "Cheque", "CARD": "Card" },
       "backToDashboard": "Back to dashboard",
@@ -298,7 +319,7 @@
       "teacher": "Teacher",
       "notYetAssigned": "Not yet assigned",
       "teacherUpdates": "Teacher updates",
-      "noUpdatesYet": "No updates yet — your teacher will post notes here after class.",
+      "noUpdatesYet": "No updates yet. Your teacher will post notes here after class.",
       "myBadges": "My badges",
       "viewAll": "View all",
       "showLess": "Show less",
@@ -322,12 +343,13 @@
       "backToCourses": "Back to courses",
       "startingFrom": "Starting from",
       "perMonth": "/ month",
-      "otherPlansHint": "3 months and full-year plans available at enrollment.",
+      "otherPlansHint": "Term (3 months) and full-year plans available at enrollment.",
+      "familyDiscount": "-{percent}% sibling discount applied",
       "enrollHeading": "Enroll: group, plan & payment",
       "noSessions": "No sessions are currently scheduled for this course.",
       "plans": {
         "monthly": { "label": "Monthly", "hint": "Billed every month" },
-        "quarterly": { "label": "3 months", "hint": "Billed once for 3 months" },
+        "quarterly": { "label": "Term (3 months)", "hint": "Billed once for 3 months" },
         "yearly": { "label": "Full year", "hint": "One payment, 15 Sep – 15 Jun" }
       },
       "methods": {
@@ -475,7 +497,7 @@
     "calendar": {
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
-      "noGroups": "No groups assigned yet — your working hours will fill in once the admin assigns you a session.",
+      "noGroups": "No groups assigned yet. Your working hours will fill in once the admin assigns you a session.",
       "studentsCount": "{count} students"
     },
     "login": {
@@ -484,7 +506,7 @@
       "returnToWebsite": "Return to website",
       "welcome": "Welcome",
       "welcomeAccent": "back, Teacher!",
-      "tagline": "Your classes, your students, their progress — all in one place.",
+      "tagline": "Your classes, your students, their progress, all in one place.",
       "email": "Email",
       "password": "Password",
       "accountSuspended": "This account has been suspended. Contact BrainTrain for help.",

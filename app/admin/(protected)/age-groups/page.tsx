@@ -98,6 +98,15 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
           />
         </Field>
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Stage name (English, optional, e.g. Little Explorers)">
+            <input name="stage_en" defaultValue={group.stage.en} className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30" />
+          </Field>
+          <Field label="Stage name (French, optional, ex. Les petits explorateurs)">
+            <input name="stage_fr" defaultValue={group.stage.fr} className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30" />
+          </Field>
+        </div>
+
         <Field label="Image (shown on the age group's card, optional)">
           <div className="flex items-center gap-4">
             {group.image ? (
@@ -130,6 +139,7 @@ export default async function AdminAgeGroupsPage() {
     image: '',
     minAge: null,
     maxAge: null,
+    stage: { en: '', fr: '' },
   };
 
   return (

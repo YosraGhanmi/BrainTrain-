@@ -7,6 +7,7 @@ import { ageGroupSlugForBirthDate, getAgeGroupEntryOrThrow, getCourseEntryOrThro
 import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
 import { getFirebaseTimeSlot } from '@/lib/firebase/time-slots';
 import { resolvePrice } from '@/lib/pricing/compute';
+import { applyDiscount, getFamilyDiscountPercent } from '@/lib/pricing/family-discount';
 import {
   createFirebaseChild,
   generateUniqueClaimCode,
@@ -93,7 +94,10 @@ async function enrollAsStaff(child: FirebaseChild, formData: FormData): Promise<
   const session = await findOrCreateSession(courseSlug, field(formData, 'timeSlotId'));
   if (!session) return 'enroll';
 
-  const { amount, currency } = await resolvePrice(planType, session.courseSlug, course.ageGroupSlug);
+  const price = await resolvePrice(planType, session.courseSlug, course.ageGroupSlug);
+  const discountPercent = await getFamilyDiscountPercent(child);
+  const amount = applyDiscount(price.amount, discountPercent);
+  const { currency } = price;
 
   try {
     const { paymentId } = await createFirebaseEnrollment({
@@ -104,6 +108,7 @@ async function enrollAsStaff(child: FirebaseChild, formData: FormData): Promise<
       paymentMethod,
       amount,
       currency,
+      discountPercent,
       forceActive: true,
     });
     if (paid) {

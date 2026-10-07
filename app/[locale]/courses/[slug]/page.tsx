@@ -118,6 +118,9 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
             {t('allAgeGroups')}
           </Link>
 
+          {group.stage ? (
+            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-accent">{group.stage}</p>
+          ) : null}
           <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">
             {group.label}
           </h1>

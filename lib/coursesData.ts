@@ -8,6 +8,8 @@ export type CurriculumPhase = {
   points: string[];
 };
 
+export type CourseHighlight = { icon: string; title: string; text: string };
+
 export type Course = {
   slug: string;
   title: string;
@@ -20,6 +22,12 @@ export type Course = {
   videoUrl?: string;
   image?: string;
   curriculum?: CurriculumPhase[];
+  sessionHours?: number;
+  tagline: string;
+  highlights: CourseHighlight[];
+  outcome: string;
+  skills: string[];
+  tools: string[];
 };
 
 export type AgeGroup = {
@@ -28,6 +36,7 @@ export type AgeGroup = {
   description: string;
   icon: LucideIcon;
   image: string;
+  stage: string;
 };
 
 // A "kind" of course — e.g. "Robotique" — collapsed across every age group
@@ -65,6 +74,14 @@ export function getCourses(locale: AppLocale): Course[] {
     ...c,
     title: c.title[locale] || c.title.en,
     description: c.description[locale] || c.description.en,
+    tagline: c.tagline[locale] || c.tagline.en,
+    highlights: c.highlights.map((h) => ({
+      icon: h.icon,
+      title: h.title[locale] || h.title.en,
+      text: h.text[locale] || h.text.en,
+    })),
+    outcome: c.outcome[locale] || c.outcome.en,
+    skills: c.skills.map((s) => s[locale] || s.en).filter(Boolean),
     icon: getIcon(c.icon),
     curriculum: c.curriculum?.map((phase) => ({
       title: phase.title[locale] || phase.title.en,
@@ -78,6 +95,7 @@ export function getAgeGroups(locale: AppLocale): AgeGroup[] {
     ...g,
     label: g.label[locale] || g.label.en,
     description: g.description[locale] || g.description.en,
+    stage: g.stage[locale] || g.stage.en,
     icon: getIcon(g.icon),
   }));
 }
