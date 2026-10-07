@@ -55,18 +55,14 @@
     "phase": "Phase {number}"
   },
   "pricing": {
-    "perWeek": "{count, plural, one {# séance} other {# séances}} par semaine",
-    "hours": "{hours} par séance",
     "familyTitle": "Avantage famille :",
     "familyBody": "-{percent}% pour le 2e enfant et les suivants.",
     "tagLine1": "de remise",
     "tagLine2": "dès le 2e enfant"
   },
   "coursePage": {
-    "hoursSub": "Durée de chaque séance",
-    "groupValue": "{count} enfants max",
-    "groupSub": "Par groupe",
-    "ageSub": "Groupe adapté à l'âge",
+    "lengthLabel": "durée",
+    "groupLabel": "enfants max",
     "outcomeHeading": "À la fin de l'année",
     "planMonthly": "Mensuel",
     "planMonthlyText": "Payez chaque mois",

@@ -26,7 +26,8 @@ export default function ArrowRevealButton({
   fill = '#ffffff',
   textColor = '#0b1a3a',
   badgeColor = '#ff8c42',
-  iconColor = '#ffffff',
+  // Navy, not white: white on the orange badge is below WCAG's 3:1 for icons
+  iconColor = '#0b1a3a',
   badgeSize = 32,
   className,
   onClick,

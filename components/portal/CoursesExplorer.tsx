@@ -126,7 +126,7 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
               <h3 className="mt-5 text-lg font-extrabold text-ink">{course.title}</h3>
               <p className="mt-1 text-xs text-stone">{t('sessionsCount', { count: course.sessionsCount })}</p>
 
-              <span className="mt-4 block w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-white transition group-hover:opacity-90">
+              <span className="mt-4 block w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-[#0f1f4d] transition group-hover:opacity-90">
                 {course.status ? t('viewSessions') : t('enroll')}
               </span>
             </Link>

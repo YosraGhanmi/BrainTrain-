@@ -408,17 +408,15 @@ export async function updatePricingSettings(formData: FormData): Promise<void> {
     const value = Number(formData.get(name));
     return Number.isFinite(value) && value > 0 ? value : null;
   };
-  const sessionsPerWeek = positive('sessionsPerWeek');
   const sessionHours = positive('sessionHours');
   const maxGroupSize = positive('maxGroupSize');
   const discount = Number(formData.get('familyDiscountPercent'));
-  if (!sessionsPerWeek || !sessionHours || !maxGroupSize || !Number.isFinite(discount) || discount < 0 || discount > 100) {
+  if (!sessionHours || !maxGroupSize || !Number.isFinite(discount) || discount < 0 || discount > 100) {
     redirect('/admin/pricing?error=1');
   }
 
   const content = readContent();
   content.classFormat = {
-    sessionsPerWeek: sessionsPerWeek!,
     sessionHours: sessionHours!,
     maxGroupSize: maxGroupSize!,
   };

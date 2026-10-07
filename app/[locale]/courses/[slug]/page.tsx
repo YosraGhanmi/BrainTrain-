@@ -155,7 +155,7 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
                   </Link>
                   <Link
                     href="/parent-portal/register"
-                    className="w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
+                    className="w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-[#0f1f4d] transition hover:opacity-90"
                   >
                     {t('enroll')}
                   </Link>

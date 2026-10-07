@@ -59,9 +59,8 @@ export default async function AdminPricingPage(props: { searchParams: Promise<{ 
         <h2 className="font-display text-lg font-bold text-ink">Class format and family discount</h2>
         <p className="mt-1 text-sm text-stone">Shown on every course page. A course can set its own session length on the Courses page.</p>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SettingField label="Sessions per week" name="sessionsPerWeek" type="number" min={1} step="1" defaultValue={format.sessionsPerWeek} />
-          <SettingField label="Hours per session" name="sessionHours" type="number" min={0.5} step="0.5" defaultValue={format.sessionHours} />
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <SettingField label="Standard hours per session" name="sessionHours" type="number" min={0.5} step="0.5" defaultValue={format.sessionHours} />
           <SettingField label="Max kids per group" name="maxGroupSize" type="number" min={1} step="1" defaultValue={format.maxGroupSize} />
           <SettingField
             label="Family discount (%)"

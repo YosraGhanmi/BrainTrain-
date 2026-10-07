@@ -55,18 +55,14 @@
     "phase": "Phase {number}"
   },
   "pricing": {
-    "perWeek": "{count, plural, one {# session} other {# sessions}} per week",
-    "hours": "{hours} per session",
     "familyTitle": "Family perk:",
     "familyBody": "-{percent}% for the 2nd child and every one after.",
     "tagLine1": "off from",
     "tagLine2": "the 2nd child"
   },
   "coursePage": {
-    "hoursSub": "Length of each session",
-    "groupValue": "Max {count} kids",
-    "groupSub": "Per group",
-    "ageSub": "Age-appropriate group",
+    "lengthLabel": "length",
+    "groupLabel": "kids max",
     "outcomeHeading": "By the end of the year",
     "planMonthly": "Monthly",
     "planMonthlyText": "Pay every month",

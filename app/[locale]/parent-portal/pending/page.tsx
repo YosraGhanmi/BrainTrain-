@@ -29,7 +29,7 @@ export default async function ParentPendingPage(props: { params: Promise<{ local
 
         <Link
           href="/parent-portal/login"
-          className="mt-10 inline-block rounded-full bg-white px-8 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-[#0b1a3a] transition hover:bg-[#ff8c42] hover:text-white"
+          className="mt-10 inline-block rounded-full bg-white px-8 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-[#0b1a3a] transition hover:bg-[#ff8c42] hover:text-[#0b1a3a]"
         >
           {t('backToSignIn')}
         </Link>

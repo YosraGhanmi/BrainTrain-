@@ -80,7 +80,6 @@ export type AgeGroupEntry = {
 // Standard class format shown on every course page (a course can override
 // its own session length)
 export type ClassFormat = {
-  sessionsPerWeek: number;
   sessionHours: number;
   maxGroupSize: number;
 };

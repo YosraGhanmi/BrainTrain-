@@ -16,6 +16,9 @@ const config: Config = {
         stone: '#666b78',
         accent: '#3d7fff',
         accent2: '#6c5ce7',
+        // Headings on course pages and the orange call-to-action buttons
+        navy: '#0f1f4d',
+        cta: '#ff8c42',
         gold: '#b8860b',
       },
       boxShadow: {

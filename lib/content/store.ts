@@ -175,8 +175,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       tools: [],
       tagline: {
-        en: 'Build robots... *and bring them to life.*',
-        fr: 'Construire des robots... *et leur donner vie.*',
+        en: 'Dream up a robot... *then bring it to life.*',
+        fr: 'Imaginer un robot... *puis lui donner vie.*',
       },
       highlights: [
         {
@@ -221,8 +221,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       tools: [],
       tagline: {
-        en: 'Build robots... *and bring them to life.*',
-        fr: 'Construire des robots... *et leur donner vie.*',
+        en: 'Dream up a robot... *then bring it to life.*',
+        fr: 'Imaginer un robot... *puis lui donner vie.*',
       },
       highlights: [
         {
@@ -267,8 +267,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       tools: [],
       tagline: {
-        en: 'Build robots... *and bring them to life.*',
-        fr: 'Construire des robots... *et leur donner vie.*',
+        en: 'Dream up a robot... *then bring it to life.*',
+        fr: 'Imaginer un robot... *puis lui donner vie.*',
       },
       highlights: [
         {
@@ -313,8 +313,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       tools: [],
       tagline: {
-        en: 'Learn to code... *by making your own games.*',
-        fr: 'Apprendre à coder... *en créant ses propres jeux.*',
+        en: 'Invent, code... *and play your own games.*',
+        fr: 'Inventer, coder... *et jouer à ses propres jeux.*',
       },
       highlights: [
         {
@@ -359,8 +359,8 @@ const DEFAULT_CONTENT: SiteContent = {
       },
       tools: [],
       tagline: {
-        en: 'Learn to code... *by making your own games.*',
-        fr: 'Apprendre à coder... *en créant ses propres jeux.*',
+        en: 'Invent, code... *and play your own games.*',
+        fr: 'Inventer, coder... *et jouer à ses propres jeux.*',
       },
       highlights: [
         {
@@ -404,7 +404,10 @@ const DEFAULT_CONTENT: SiteContent = {
         fr: 'Votre enfant invente un produit, en fabrique un prototype et le présente avec assurance devant un public.',
       },
       tools: [],
-      tagline: { en: 'Turn an idea... *into a real project.*', fr: 'Transformer une idée... *en vrai projet.*' },
+      tagline: {
+        en: 'From idea to pitch... *like a real founder.*',
+        fr: "De l'idée au pitch... *comme un vrai entrepreneur.*",
+      },
       highlights: [
         {
           icon: 'Lightbulb',
@@ -447,7 +450,10 @@ const DEFAULT_CONTENT: SiteContent = {
         fr: 'Votre enfant transforme une idée en mini business plan : clients visés, prix, budget et pitch.',
       },
       tools: [],
-      tagline: { en: 'Turn an idea... *into a real project.*', fr: 'Transformer une idée... *en vrai projet.*' },
+      tagline: {
+        en: 'From idea to pitch... *like a real founder.*',
+        fr: "De l'idée au pitch... *comme un vrai entrepreneur.*",
+      },
       highlights: [
         {
           icon: 'Lightbulb',
@@ -490,7 +496,10 @@ const DEFAULT_CONTENT: SiteContent = {
         fr: 'Votre enfant mène un projet de startup de A à Z et le présente devant un jury, comme un vrai fondateur.',
       },
       tools: [],
-      tagline: { en: 'Turn an idea... *into a real project.*', fr: 'Transformer une idée... *en vrai projet.*' },
+      tagline: {
+        en: 'From idea to pitch... *like a real founder.*',
+        fr: "De l'idée au pitch... *comme un vrai entrepreneur.*",
+      },
       highlights: [
         {
           icon: 'Lightbulb',
@@ -778,7 +787,7 @@ const DEFAULT_CONTENT: SiteContent = {
         fr: "Votre enfant modélise son propre objet en 3D et l'imprime, du premier croquis à la pièce finie.",
       },
       tools: [],
-      tagline: { en: 'From sketch... *to real object.*', fr: "Du croquis... *à l'objet réel.*" },
+      tagline: { en: 'Imagine, model... *and print in 3D.*', fr: 'Imaginer, modéliser... *et imprimer en 3D.*' },
       highlights: [
         {
           icon: 'Pencil',
@@ -904,7 +913,7 @@ const DEFAULT_CONTENT: SiteContent = {
   ],
   news: [],
   calendarEvents: [],
-  classFormat: { sessionsPerWeek: 1, sessionHours: 2, maxGroupSize: 12 },
+  classFormat: { sessionHours: 2, maxGroupSize: 12 },
   familyDiscountPercent: 5,
 };
 
@@ -974,7 +983,6 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
   const positive = (value: unknown, fallback: number) =>
     typeof value === 'number' && value > 0 ? value : fallback;
   const classFormat: ClassFormat = {
-    sessionsPerWeek: positive(rawFormat.sessionsPerWeek, defaultFormat.sessionsPerWeek),
     sessionHours: positive(rawFormat.sessionHours, defaultFormat.sessionHours),
     maxGroupSize: positive(rawFormat.maxGroupSize, defaultFormat.maxGroupSize),
   };
