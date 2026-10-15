@@ -4,6 +4,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   experimental: {
     serverActions: {
       // Photos straight from a phone camera are often 3-8 MB; the default

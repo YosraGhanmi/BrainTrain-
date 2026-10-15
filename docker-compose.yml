@@ -2,6 +2,7 @@
 # Settings come from the .env file next to this one (see .env.docker.example
 # and DEPLOY_VPS.md). Start or update with: docker compose up -d --build
 
+name: braintrain
 services:
   db:
     image: postgres:17
@@ -19,7 +20,20 @@ services:
       retries: 20
     # Not published on the internet; only the app container reaches it
 
+  migrate:
+    image: ${MIGRATION_IMAGE:-braintrain-migrations:local}
+    build:
+      context: .
+      target: migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+    restart: 'no'
+
   app:
+    image: ${IMAGE:-braintrain-app:local}
     build:
       context: .
       args:
@@ -29,9 +43,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/api/health', {signal: AbortSignal.timeout(5000)}).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 6s
+      start_period: 40s
+      retries: 12
     volumes:
       - uploads:/app/uploads
     # Only reachable from the server itself; Nginx forwards the public traffic

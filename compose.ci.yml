@@ -1,0 +1,5 @@
+# Isolated CI containers: no production ports, credentials, or volumes.
+services:
+  app:
+    env_file: !override [.env.docker.example]
+    ports: !reset []

@@ -1,224 +1,159 @@
-# Deploying BrainTrain on the OVH VPS (Docker)
+# BrainTrain: Docker and CI/CD on your Ubuntu VPS
 
-The site runs as two Docker containers on the VPS (Ubuntu, VPS-2):
+## Architecture and cost
 
-- **app**: the Next.js website, built from this repository
-- **db**: PostgreSQL 17, holding every account, child, enrollment, payment and the site content
+GitHub schedules jobs; a **self-hosted Actions runner on your VPS** checks out this
+private repository, builds Docker images, tests them, and deploys successful `main`
+pushes. Other branch pushes run CI only. Pull requests do not execute on the
+production runner. Only allow trusted collaborators to push code to this repository.
 
-Nginx on the VPS itself receives the public traffic (HTTPS) and forwards it to the app container. Uploaded images and the database live in Docker volumes, so they survive rebuilds and updates.
+There is no image registry, image upload, GitHub-hosted runner, GitHub artifact
+upload, or GitHub cache storage. GitHub currently lists self-hosted Actions usage
+as free: https://docs.github.com/en/billing/concepts/product-billing/github-actions
+Your VPS, domain, and external email/SMS/payment providers retain their own costs.
 
-Run every command below on the VPS, as a user with `sudo`.
+The application image uses Next.js standalone output: only the runtime, traced
+dependencies, static assets, and public files. Prisma's CLI and locked dependencies
+live in a separate migration image. Compiler dependencies and build caches still
+consume VPS disk during builds; they are not copied into the application image.
+Builds use the VPS CPU/RAM, so leave enough resources for the live app and database.
 
----
+## Run locally
 
-## 1. Connect to the VPS
+Docker Desktop must use Linux containers. Create `.env` only if you do not have one:
 
-From your PC (PowerShell), with the IP and user from the OVH email:
-
-```bash
-ssh ubuntu@YOUR_VPS_IP
+```powershell
+Copy-Item .env.docker.example .env
+docker compose up -d --build --wait --wait-timeout 180
+curl.exe --fail http://localhost:3000/api/health
 ```
 
-Then update the system:
+Open http://localhost:3000/fr. Disposable local admin credentials:
+`admin@example.test` / `localtestadmin123`. Do not use these in production.
+Compose starts PostgreSQL, runs the one-shot migration service, then starts the app.
+Database and uploads persist in `braintrain_db-data` and `braintrain_uploads`.
+SMTP, SMS, and payment functionality require provider credentials.
 
-```bash
-sudo apt update && sudo apt upgrade -y
+```sh
+docker compose ps -a
+docker compose logs --tail 100 app
+docker compose down
 ```
 
-## 2. Install Docker, Git and Nginx
+`down` keeps data. `down -v` erases it; never use it for production.
+The slim app image intentionally omits the full source, tsx, and Firebase import tools.
+Run one-time Firebase imports separately with the full project dependencies, not
+inside the application image, and never as part of deployment.
 
-```bash
-sudo apt install -y docker.io docker-compose-v2 git nginx certbot python3-certbot-nginx
-sudo usermod -aG docker $USER
+## Initial VPS setup (later)
+
+Target: fresh **Ubuntu 24.04 LTS, amd64**. Point your domain's DNS A record to the
+VPS first; remove an incorrect AAAA record. Ports 80/443 must be reachable for TLS.
+Upload `scripts/vps/setup.sh` and `scripts/vps/install-runner.sh` using your existing
+administrator SSH account. No deployment SSH key or registry token is needed.
+
+```sh
+sudo bash ~/setup.sh your-domain.example you@example.com 22
+sudo -u deploy nano /opt/braintrain/.env
 ```
 
-Log out (`exit`) and connect again so the `docker` group applies. Check:
+The last argument is your actual existing SSH port. Setup opens it in UFW without
+changing the SSH daemon. It installs Docker/Compose, Git, ShellCheck, Nginx,
+Certbot, and firewall rules; creates `deploy`; generates private database/admin/
+session credentials; and schedules nightly backups. It preserves an existing
+`.env` and Nginx site. If TLS issuance fails, correct DNS and rerun setup.
+Use the script on a fresh server; review it before using a shared server.
 
-```bash
-docker compose version
+Edit provider settings using `.env.example` / `.env.docker.example` as references.
+Read the generated admin password securely from `/opt/braintrain/.env`. This file
+stays on the VPS and is never committed or passed into the image build.
+Keep database passwords URL-safe (`openssl rand -hex 24`). Changing the environment
+password alone does not rotate an already initialized PostgreSQL role password.
+
+## Register the self-hosted runner
+
+In this private GitHub repository, open **Settings > Actions > Runners > New
+self-hosted runner** and choose **Linux / x64**. Use the download and checksum
+commands GitHub shows to obtain its current official runner archive on the VPS.
+Keep that downloaded archive in your administrator user's folder. Then run:
+
+```sh
+sudo bash ~/install-runner.sh ~/actions-runner-linux-x64-VERSION.tar.gz https://github.com/YosraGhanmi/BrainTrain-
 ```
 
-## 3. Open the firewall
+Enter the temporary registration token shown by GitHub when prompted. The script
+installs runner dependencies, registers it with the `braintrain` label, and starts
+its systemd service as `deploy`. Check that GitHub shows the runner as **Idle**.
+The runner connects outward to GitHub; GitHub does not SSH into your VPS.
+The `deploy` user belongs to the Docker group, which grants root-equivalent access.
+Do not enable workflows for untrusted contributors or fork pull requests on it.
 
-```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'
-sudo ufw enable
-```
+## GitHub variables
 
-Ports 3000 (website) and 5432 (database) stay closed to the internet: Docker only exposes them to the server itself.
+Under **Settings > Secrets and variables > Actions > Variables**, add:
 
-## 4. Get the code and fill in the settings
-
-```bash
-cd ~
-git clone https://github.com/YOUR-ACCOUNT/BrainTrain.git braintrain
-cd braintrain
-cp .env.docker.example .env
-nano .env
-```
-
-In `.env`, replace every `change-me`:
-
-- `POSTGRES_PASSWORD`: the database password. Letters and digits only. Make one with `openssl rand -hex 24`.
-- `ADMIN_SESSION_SECRET` and `CRON_SECRET`: one `openssl rand -hex 32` each.
-- `ADMIN_EMAIL` / `ADMIN_PASSWORD`: the admin dashboard login.
-- `NEXT_PUBLIC_SITE_URL`: the real address, e.g. `https://braintrain.tn`.
-- SMTP, Stripe and Twilio: the same values as today.
-
-Save with `Ctrl+O`, `Enter`, then `Ctrl+X`. Keep a copy of this file somewhere safe (a password manager): it is not in Git.
-
-## 5. Start everything
-
-```bash
-docker compose up -d --build
-```
-
-The first build takes a few minutes. On its first start the database container creates the `braintrain` database and user from `.env`, and the app creates all the tables.
-
-Check it's running:
-
-```bash
-docker compose ps
-docker compose logs -f app
-```
-
-You should see `Ready` in the app logs (`Ctrl+C` to stop following). `curl -I http://127.0.0.1:3000` should answer `200` or `307`.
-
-## 6. Bring the data over from Firebase (once)
-
-1. In Firebase console > Project settings > Service accounts, click **Generate new private key**. Copy its `project_id`, `client_email` and `private_key` into `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY` in `.env` (keep the private key in double quotes, with its `\n`s).
-2. Run `docker compose up -d` so the app picks up those values.
-3. Upload the site content and contact messages. They are in `data/content.json` and `data/messages.json`, which are not in Git. First create the folder on the VPS with `mkdir -p ~/braintrain/data`, then from your PC (PowerShell, in the project folder), using the latest copies (from wherever the live site runs today):
-
-```bash
-scp data/content.json data/messages.json ubuntu@YOUR_VPS_IP:~/braintrain/data/
-```
-
-Then on the VPS, put them into the app container:
-
-```bash
-cd ~/braintrain
-docker compose cp data/content.json app:/app/data/content.json
-docker compose cp data/messages.json app:/app/data/messages.json
-```
-
-4. Run the import:
-
-```bash
-docker compose exec app npm run db:import-firebase
-```
-
-It prints how many rows it copied per table, anything it couldn't copy, and the list of accounts that need a new password. Passwords are not copied (they lived in Firebase):
-
-- Reception accounts keep working.
-- Parents use **Forgot password** on the login page (SMS code), or you set one from the admin **Parents** page (key icon).
-- Teachers: set one from the admin **Teachers** page (key icon) and give it to them.
-
-The import is safe to run again: rows already copied are skipped. When it looks right, delete the three `FIREBASE_` lines from `.env` and run `docker compose up -d`.
-
-**Old uploaded images:** images uploaded on the old host were saved in `public/courses`, `public/partners`, `public/ach`, `public/age` and `public/children`. Any that are not in Git yet must be copied into those folders in the repository, then committed, or their pictures will be missing. New uploads go to the `uploads` volume.
-
-## 7. Domain and HTTPS
-
-1. At your domain registrar, point an `A` record for `braintrain.tn` (and `www`) to the VPS IP.
-2. Create the Nginx site:
-
-```bash
-sudo nano /etc/nginx/sites-available/braintrain
-```
-
-Paste (with your domain):
-
-```nginx
-server {
-    listen 80;
-    server_name braintrain.tn www.braintrain.tn;
-
-    # Photo and image uploads (the site itself accepts up to 10 MB)
-    client_max_body_size 12m;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-}
-```
-
-3. Enable it and get the certificate:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/braintrain /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d braintrain.tn -d www.braintrain.tn
-```
-
-Certbot switches the site to HTTPS and renews the certificate by itself.
-
-4. In the Stripe dashboard, set the webhook URL to `https://braintrain.tn/api/stripe/webhook` and put its signing secret in `STRIPE_WEBHOOK_SECRET` (then `docker compose up -d`).
-
-## 8. Daily payment reminders
-
-Open the crontab with `crontab -e` and add (your domain and the `CRON_SECRET` from `.env`):
-
-```cron
-0 9 * * * curl -s -X POST -H "x-cron-secret: YOUR_CRON_SECRET" https://braintrain.tn/api/cron/payment-reminders > /dev/null
-```
-
-Every day at 9:00 it marks late payments as overdue and texts the parents.
-
-## 9. Backups
-
-The database and the uploads are the only things that can't be rebuilt from Git. Back them up every night:
-
-```bash
-mkdir -p ~/backups
-crontab -e
-```
-
-Add:
-
-```cron
-30 2 * * * cd ~/braintrain && docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > ~/backups/db-$(date +\%F).sql.gz
-45 2 * * * docker run --rm -v braintrain_uploads:/uploads -v ~/backups:/backup alpine tar czf /backup/uploads-$(date +\%F).tgz -C /uploads .
-0 4 * * * find ~/backups -type f -mtime +14 -delete
-```
-
-This keeps 14 days on the VPS. Copy `~/backups` off the server from time to time (or enable OVH's automated backup option).
-
-Restore a database backup:
-
-```bash
-gunzip -c ~/backups/db-2027-06-15.sql.gz | docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'
-```
-
-## Updating the site
-
-After new code is pushed to Git:
-
-```bash
-cd ~/braintrain
-git pull
-docker compose up -d --build
-```
-
-The app applies any new database changes when it starts. Visitors see the old version until the new one is ready.
-
-## Useful commands
-
-| What | Command |
+| Variable | Value |
 | --- | --- |
-| Is it running? | `docker compose ps` |
-| Website logs | `docker compose logs -f app` |
-| Restart the website | `docker compose restart app` |
-| Open the database | `docker compose exec db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB"'` |
-| Stop everything | `docker compose down` (data is kept) |
+| `VPS_DEPLOY_ENABLED` | Leave unset until ready, then set exactly `true` |
+| `NEXT_PUBLIC_SITE_URL` | Your public URL, e.g. `https://your-domain.example` |
+| `NEXT_PUBLIC_STRINGTUNE_DEV_TOKEN` | Optional public build value |
 
-Never run `docker compose down -v`: the `-v` deletes the database and the uploads.
+No `VPS_HOST`, `VPS_USER`, `VPS_PORT`, SSH secrets, registry tokens, or publishing
+permissions are needed. Remove previous deployment-only SSH secrets if added.
+The normal automatic `GITHUB_TOKEN` handles checking out the private repository.
+Keep the public URL equal to `/opt/braintrain/.env`; changing it requires a rebuild.
+
+Until enabled, jobs are skipped and no runner is needed. After registering the
+runner and setting variables, push to `main` or manually run **VPS CI and
+deployment** on `main`. Each job runs entirely on the VPS. Jobs are serialized.
+
+## CI and deployment behavior
+
+CI runs ShellCheck and deployment failure tests, then builds both images locally.
+The application build runs auth configuration tests, TypeScript checks, and the
+production build. CI creates an isolated PostgreSQL/app stack with sample test
+credentials and no published ports, runs migrations, and checks health and public
+pages. Its temporary volumes are deleted afterward; production volumes are separate.
+A failed build or test prevents deployment and leaves the live application intact.
+
+Successful `main` jobs deploy the tested local release tags. Deploy backs up existing
+data, runs migrations with the migration image, replaces the application, and waits
+for health. Brief downtime during replacement is expected. It never pulls an app
+image from a registry. Release directories live in `/opt/braintrain/releases`;
+`current` points to the last healthy release and `previous` supports rollback.
+
+A failed migration aborts before replacing the app. A failed health check attempts
+to restore the previous app image and keeps the workflow failed. Schema changes
+are never reversed automatically: migrations must remain compatible with the
+previous application. Incompatible schema changes need a maintenance/restore plan.
+The first deployment has no previous application to restore.
+
+## Operations and backups
+
+As `deploy` on the VPS:
+
+```sh
+cd /opt/braintrain/current
+export IMAGE="$(cat image.ref)"
+export MIGRATION_IMAGE="$(cat migration.ref)"
+docker compose -f docker-compose.yml -f compose.production.yml ps
+docker compose -f docker-compose.yml -f compose.production.yml logs --tail 100 app
+bash scripts/vps/backup.sh
+# Confirm schema compatibility before restoring the previous app:
+bash scripts/vps/rollback.sh
+```
+
+Backups run at 02:30 **server time** and retain 14 days of database dumps and upload
+archives. Copy them off-server. These are separate snapshots; quiesce writes if
+atomic consistency across the database and uploaded files is required. Test
+restores in an isolated environment. Certbot manages renewal; check its timer.
+
+Release directories, tagged images, and Docker build caches remain local. Monitor
+disk use and remove obsolete BrainTrain releases/images while preserving `current`,
+`previous`, backups, and all production volumes. Do not globally prune shared VPS
+resources. No automatic image cleanup can accidentally remove the rollback image.
+
+For an intentional database restore, stop the app, prepare a clean database, and
+load a chosen SQL backup with `psql -v ON_ERROR_STOP=1`. Restore matching uploads
+when needed. Payment-reminder schedules and Firebase imports remain separate from
+CI/CD. Set Stripe's webhook to `https://YOUR_DOMAIN/api/stripe/webhook` when ready.

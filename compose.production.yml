@@ -1,0 +1,13 @@
+# Images are built locally on the VPS; never pull application images.
+services:
+  app:
+    image: ${IMAGE:?Set IMAGE to the local release image tag}
+    build: !reset null
+    pull_policy: never
+    depends_on: !override
+      db:
+        condition: service_healthy
+  migrate:
+    image: ${MIGRATION_IMAGE:?Set MIGRATION_IMAGE to the local migration image tag}
+    build: !reset null
+    pull_policy: never

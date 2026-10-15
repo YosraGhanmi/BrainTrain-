@@ -1,64 +1,42 @@
-name: CI
-
+name: VPS CI and deployment
 on:
   push:
-    branches: [main, master]
-  pull_request:
-
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: braintrain-vps
+  cancel-in-progress: false
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-
-    # Pages are pre-rendered at build time from the database
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: braintrain
-          POSTGRES_PASSWORD: braintrain
-          POSTGRES_DB: braintrain
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
+  ci:
+    if: vars.VPS_DEPLOY_ENABLED == 'true'
+    runs-on: [self-hosted, linux, x64, braintrain]
+    timeout-minutes: 60
     env:
-      DATABASE_URL: postgresql://braintrain:braintrain@localhost:5432/braintrain?schema=public
-      ADMIN_PASSWORD: ci-admin-password
-      ADMIN_SESSION_SECRET: ci-admin-session-secret
-      PORTAL_SESSION_SECRET: ci-portal-session-secret
-      STRIPE_SECRET_KEY: sk_test_ci
-      STRIPE_WEBHOOK_SECRET: whsec_ci
-      SMS_PROVIDER: twilio
-      TWILIO_ACCOUNT_SID: ACci
-      TWILIO_AUTH_TOKEN: ci-token
-      TWILIO_FROM_NUMBER: +15005550006
-      CRON_SECRET: ci-cron-secret
-
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000' }}
+      NEXT_PUBLIC_STRINGTUNE_DEV_TOKEN: ${{ vars.NEXT_PUBLIC_STRINGTUNE_DEV_TOKEN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-
-      - name: Create database tables
-        run: npx prisma migrate deploy
-
-      - name: Type-check
-        run: npx tsc --noEmit
-
-      - name: Build
-        run: npm run build
+          persist-credentials: false
+      - name: Check configuration
+        if: github.ref == 'refs/heads/main'
+        run: |
+          [[ "$NEXT_PUBLIC_SITE_URL" == https://* && "$NEXT_PUBLIC_SITE_URL" != *localhost* ]]
+          test -s /opt/braintrain/.env
+      - name: Prepare release
+        run: |
+          release="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "/opt/braintrain/releases/$release"
+          git archive HEAD | tar -x -C "/opt/braintrain/releases/$release"
+          echo "RELEASE=/opt/braintrain/releases/$release" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=$release" >> "$GITHUB_ENV"
+      - name: Build and test on VPS
+        run: |
+          cd "$RELEASE"
+          bash scripts/vps/ci.sh "$RELEASE_TAG"
+      - name: Deploy main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd "$RELEASE"
+          bash scripts/vps/deploy.sh "braintrain-app:$RELEASE_TAG"

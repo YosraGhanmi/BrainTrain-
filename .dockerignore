@@ -3,6 +3,8 @@ node_modules
 .git
 .github
 .claude
+data
+backups
 uploads
 lib/generated
 test-results
