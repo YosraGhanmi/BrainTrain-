@@ -5,7 +5,7 @@ import { deleteChild } from '@/lib/admin/portal-actions';
 import { ageOn } from '@/lib/content/age-range';
 import ClickableRow from '@/components/admin/ClickableRow';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
-import { formatClaimCode, listAllFirebaseChildren } from '@/lib/firebase/children';
+import { formatClaimCode, listAllDbChildren } from '@/lib/db/children';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +19,7 @@ const td = 'border border-ink/10 px-3 py-2.5';
 
 export default async function AdminChildrenPage() {
   await requireAdmin();
-  const children = await listAllFirebaseChildren();
+  const children = await listAllDbChildren();
   const today = new Date();
 
   return (

@@ -64,12 +64,17 @@
     "lengthLabel": "durée",
     "groupLabel": "enfants max",
     "outcomeHeading": "À la fin de l'année",
+    "outcomeHeadingSummer": "À la fin de l'été",
     "planMonthly": "Mensuel",
     "planMonthlyText": "Payez chaque mois",
     "planTerm": "Trimestriel",
     "planTermText": "Un paiement tous les 3 mois",
     "planYearly": "Annuel",
-    "planYearlyText": "Un seul paiement pour l'année"
+    "planYearlyText": "Un seul paiement pour l'année",
+    "planSeason": "Saison complète",
+    "planSeasonText": "Un seul paiement pour tout l'été",
+    "planSummerMonthlyText": "Paiement chaque mois de l'été",
+    "summerBadge": "École d'été"
   },
   "stats": {
     "heading": "Statistiques"
@@ -311,7 +316,7 @@
       "payNow": "Payer",
       "payAtDesk": "À régler à l'accueil ({method})",
       "nextSession": "Prochaine séance",
-      "location": "Lieu",
+      "location": "Salle",
       "teacher": "Enseignant",
       "notYetAssigned": "Pas encore assigné",
       "teacherUpdates": "Notes de l'enseignant",
@@ -340,13 +345,17 @@
       "startingFrom": "À partir de",
       "perMonth": "/ mois",
       "otherPlansHint": "Formules trimestre et année complète disponibles lors de l'inscription.",
+      "summerOtherPlansHint": "Une formule saison complète est aussi proposée à l'inscription.",
+      "summerBadge": "École d'été",
       "familyDiscount": "-{percent}% 2e enfant appliqué",
       "enrollHeading": "Inscription : groupe, formule et paiement",
       "noSessions": "Aucune séance n'est actuellement programmée pour ce cours.",
       "plans": {
         "monthly": { "label": "Mensuel", "hint": "Facturé chaque mois" },
         "quarterly": { "label": "Trimestre (3 mois)", "hint": "Facturé une fois pour 3 mois" },
-        "yearly": { "label": "Année complète", "hint": "Un seul paiement, du 15 sept. au 15 juin" }
+        "yearly": { "label": "Année complète", "hint": "Un seul paiement, du 15 sept. au 15 juin" },
+        "summerMonthly": { "label": "Mensuel", "hint": "Facturé chaque mois de l'été" },
+        "season": { "label": "Saison complète", "hint": "Un seul paiement, {dates}" }
       },
       "methods": {
         "cash": "Espèces",
@@ -361,7 +370,8 @@
         "ineligible": "Ce cours n'est pas proposé pour la tranche d'âge de cet enfant.",
         "capacity": "Ce groupe est complet. Veuillez en choisir un autre.",
         "duplicate": "Cet enfant est déjà inscrit à ce groupe.",
-        "conflict": "Cet enfant a déjà un cours prévu le même jour à la même heure. Veuillez choisir un autre groupe."
+        "conflict": "Cet enfant a déjà un cours prévu le même jour à la même heure. Veuillez choisir un autre groupe.",
+        "closed": "Les inscriptions à l'école d'été sont fermées."
       }
     },
     "coursesExplorer": {
@@ -378,7 +388,8 @@
       },
       "sessionsCount": "{count} séances",
       "viewSessions": "Voir les séances",
-      "enroll": "S'inscrire"
+      "enroll": "S'inscrire",
+      "summer": "École d'été"
     },
     "payments": {
       "empty": "Aucun paiement pour le moment.",

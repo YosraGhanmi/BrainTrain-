@@ -1,7 +1,7 @@
 import { readContent } from '@/lib/content/store';
 import CoursesManager from '@/components/admin/CoursesManager';
 import { requireAdminOnly } from '@/lib/admin/guard';
-import { listFirebasePricingRules } from '@/lib/firebase/pricing';
+import { listDbPricingRules } from '@/lib/db/pricing';
 import type { CourseEntry } from '@/lib/content/types';
 
 export const dynamic = 'force-dynamic';
@@ -9,12 +9,13 @@ export const dynamic = 'force-dynamic';
 // One pastel per age group, cycling if there are ever more than four.
 const AGE_GROUP_PASTELS = ['#a78bfa', '#fdba74', '#7dd3fc', '#86efac', '#f9a8d4', '#fcd34d'];
 
-export default async function AdminCoursesPage() {
+export default async function AdminCoursesPage(props: { searchParams: Promise<{ edit?: string; new?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const { courses, ageGroups } = readContent();
+  const { courses, ageGroups } = (await readContent());
 
-  const overrideRules = (await listFirebasePricingRules()).filter((rule) => rule.courseSlug);
-  const courseOverrides: Record<string, { MONTHLY?: number; QUARTERLY?: number; YEARLY?: number; currency: string }> = {};
+  const overrideRules = (await listDbPricingRules()).filter((rule) => rule.courseSlug);
+  const courseOverrides: Record<string, { MONTHLY?: number; QUARTERLY?: number; YEARLY?: number; SEASON?: number; currency: string }> = {};
   for (const rule of overrideRules) {
     if (!rule.courseSlug) continue;
     const entry = (courseOverrides[rule.courseSlug] ??= { currency: rule.currency });
@@ -40,13 +41,25 @@ export default async function AdminCoursesPage() {
   const groupedCourses = ageGroups.map((group, i) => ({
     group,
     color: AGE_GROUP_PASTELS[i % AGE_GROUP_PASTELS.length],
-    courses: courses.filter((c) => c.ageGroupSlug === group.slug),
+    courses: courses.filter((c) => c.ageGroupSlug === group.slug && !c.summer),
   }));
+  const summerCourses = ageGroups
+    .map((group) => ({ group, courses: courses.filter((c) => c.ageGroupSlug === group.slug && c.summer) }))
+    .filter((g) => g.courses.length > 0);
+
+  const initialOpenKey = searchParams.new === 'summer' ? '__new_summer__' : searchParams.edit ?? null;
 
   return (
     <div>
       <h1 className="text-center font-display text-4xl font-semibold text-ink">Courses</h1>
-      <CoursesManager ageGroups={ageGroups} groupedCourses={groupedCourses} blank={blank} courseOverrides={courseOverrides} />
+      <CoursesManager
+        ageGroups={ageGroups}
+        groupedCourses={groupedCourses}
+        summerCourses={summerCourses}
+        blank={blank}
+        courseOverrides={courseOverrides}
+        initialOpenKey={initialOpenKey}
+      />
     </div>
   );
 }

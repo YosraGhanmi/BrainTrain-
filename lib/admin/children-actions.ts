@@ -3,29 +3,28 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/admin/guard';
-import { ageGroupSlugForBirthDate, getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { ageGroupSlugForBirthDate, listAgeGroupEntries, getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
-import { getFirebaseTimeSlot } from '@/lib/firebase/time-slots';
-import { resolvePrice } from '@/lib/pricing/compute';
-import { applyDiscount, getFamilyDiscountPercent } from '@/lib/pricing/family-discount';
+import { getDbTimeSlot } from '@/lib/db/time-slots';
+import { quoteEnrollment } from '@/lib/pricing/compute';
+import { planTypesForCourse } from '@/lib/content/summer';
 import {
-  createFirebaseChild,
+  createDbChild,
   generateUniqueClaimCode,
-  getFirebaseChild,
-  updateFirebaseChild,
+  getDbChild,
+  updateDbChild,
   type ChildContactFields,
-  type FirebaseChild,
+  type DbChild,
   type PastClass,
-} from '@/lib/firebase/children';
-import { createFirebaseEnrollment, getFirebasePayment, updateFirebasePayment, type PaymentMethod, type PlanType } from '@/lib/firebase/enrollments';
+} from '@/lib/db/children';
+import { createDbEnrollment, getDbPayment, updateDbPayment, type PaymentMethod, type PlanType } from '@/lib/db/enrollments';
 import {
-  createFirebaseCourseSession,
-  getFirebaseCourseSession,
-  listFirebaseCourseSessionsByCourse,
-  type FirebaseCourseSession,
-} from '@/lib/firebase/sessions';
+  createDbCourseSession,
+  getDbCourseSession,
+  listDbCourseSessionsByCourse,
+  type DbCourseSession,
+} from '@/lib/db/sessions';
 
-const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
 const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'CHEQUE', 'CARD'];
 
 function field(formData: FormData, name: string): string {
@@ -55,19 +54,22 @@ function parseContactFields(formData: FormData): ChildContactFields {
 // The group for a course at a timetable slot. Staff import children from the
 // paper records mid-year, so a group that hasn't been set up on the Course
 // sessions page yet is created on the spot (no teacher, default capacity).
-async function findOrCreateSession(courseSlug: string, timeSlotId: string): Promise<FirebaseCourseSession | null> {
-  const slot = timeSlotId ? await getFirebaseTimeSlot(timeSlotId) : null;
+async function findOrCreateSession(courseSlug: string, timeSlotId: string): Promise<DbCourseSession | null> {
+  const slot = timeSlotId ? await getDbTimeSlot(timeSlotId) : null;
   if (!slot) return null;
-  const sameSlot = (s: FirebaseCourseSession) =>
+  const sameSlot = (s: DbCourseSession) =>
     s.dayOfWeek === slot.dayOfWeek && s.startTime === slot.startTime && s.endTime === slot.endTime;
 
-  const existing = (await listFirebaseCourseSessionsByCourse(courseSlug)).find(sameSlot);
+  const existing = (await listDbCourseSessionsByCourse(courseSlug)).find(sameSlot);
   if (existing) return existing;
 
-  const id = await createFirebaseCourseSession({
+  const id = await createDbCourseSession({
     courseSlug,
     teacherId: null,
     dayOfWeek: slot.dayOfWeek,
+    extraDays: [],
+    label: '',
+    summer: false,
     startTime: slot.startTime,
     endTime: slot.endTime,
     location: '',
@@ -75,32 +77,37 @@ async function findOrCreateSession(courseSlug: string, timeSlotId: string): Prom
     term: DEFAULT_SESSION_TERM,
   });
   revalidatePath('/admin/sessions');
-  return getFirebaseCourseSession(id);
+  return getDbCourseSession(id);
 }
 
 // Enrolls the child in a group as staff: always active, and the first
 // payment is either recorded as already paid or left pending so the usual
 // overdue alerts and SMS reminders pick it up once a parent is linked.
 // Unlike parents, staff may pick a course outside the child's age group.
-async function enrollAsStaff(child: FirebaseChild, formData: FormData): Promise<'ok' | string> {
+async function enrollAsStaff(child: DbChild, formData: FormData): Promise<'ok' | string> {
   const courseSlug = field(formData, 'courseSlug');
   const planType = field(formData, 'planType') as PlanType;
   const paymentMethod = field(formData, 'paymentMethod') as PaymentMethod;
   const paid = field(formData, 'paymentStatus') === 'PAID';
 
-  if (!courseSlug || !PLAN_TYPES.includes(planType) || !PAYMENT_METHODS.includes(paymentMethod)) return 'enroll';
-  const course = getCourseEntryOrThrow(courseSlug);
+  if (!courseSlug || !PAYMENT_METHODS.includes(paymentMethod)) return 'enroll';
+  const course = await getCourseEntryOrThrow(courseSlug);
+  if (!planTypesForCourse(course).includes(planType)) return 'enroll';
 
-  const session = await findOrCreateSession(courseSlug, field(formData, 'timeSlotId'));
-  if (!session) return 'enroll';
+  // Summer groups have their own days and times, so staff pick the group
+  // itself rather than a weekly timetable slot
+  const groupId = field(formData, 'courseSessionId');
+  const session = course.summer
+    ? groupId
+      ? await getDbCourseSession(groupId)
+      : null
+    : await findOrCreateSession(courseSlug, field(formData, 'timeSlotId'));
+  if (!session || session.courseSlug !== courseSlug) return 'enroll';
 
-  const price = await resolvePrice(planType, session.courseSlug, course.ageGroupSlug);
-  const discountPercent = await getFamilyDiscountPercent(child);
-  const amount = applyDiscount(price.amount, discountPercent);
-  const { currency } = price;
+  const { amount, currency, discountPercent, laterDueDates } = await quoteEnrollment(course, planType, child);
 
   try {
-    const { paymentId } = await createFirebaseEnrollment({
+    const { paymentId } = await createDbEnrollment({
       childId: child.id,
       courseSessionId: session.id,
       session,
@@ -109,13 +116,14 @@ async function enrollAsStaff(child: FirebaseChild, formData: FormData): Promise<
       amount,
       currency,
       discountPercent,
+      laterDueDates,
       forceActive: true,
     });
     if (paid) {
       // parentNotifiedAt set so the parent doesn't get a "payment confirmed"
       // popup for something settled on paper before they had an account
       const now = new Date();
-      await updateFirebasePayment(paymentId, { status: 'PAID', paidAt: now, parentNotifiedAt: now });
+      await updateDbPayment(paymentId, { status: 'PAID', paidAt: now, parentNotifiedAt: now });
     }
   } catch (err) {
     if (err instanceof Error && err.message === 'CAPACITY_FULL') return 'capacity';
@@ -138,12 +146,12 @@ export async function createExistingChild(formData: FormData): Promise<void> {
     redirect('/admin/children/new?error=required');
   }
   // Detected from the date of birth; the picked one only when no group fits
-  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth) ?? field(formData, 'ageGroupSlug');
+  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? field(formData, 'ageGroupSlug');
   if (!ageGroupSlug) redirect('/admin/children/new?error=required');
-  getAgeGroupEntryOrThrow(ageGroupSlug);
+  await getAgeGroupEntryOrThrow(ageGroupSlug);
 
   const claimCode = await generateUniqueClaimCode();
-  const childId = await createFirebaseChild({
+  const childId = await createDbChild({
     parentId: '',
     fullName,
     dateOfBirth,
@@ -159,7 +167,7 @@ export async function createExistingChild(formData: FormData): Promise<void> {
   // child's page where staff can retry with another group.
   let enrollResult = 'ok';
   if (field(formData, 'courseSlug')) {
-    const child = await getFirebaseChild(childId);
+    const child = await getDbChild(childId);
     enrollResult = await enrollAsStaff(child!, formData);
   }
 
@@ -169,16 +177,16 @@ export async function createExistingChild(formData: FormData): Promise<void> {
 
 export async function updateChildDetails(childId: string, formData: FormData): Promise<void> {
   await requireAdmin();
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   if (!child) redirect('/admin/children');
 
   const fullName = field(formData, 'fullName');
   const dateOfBirth = new Date(field(formData, 'dateOfBirth'));
   if (!fullName || Number.isNaN(dateOfBirth.getTime())) redirect(`/admin/children/${childId}/edit?error=details`);
-  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth) ?? (field(formData, 'ageGroupSlug') || child!.ageGroupSlug);
-  getAgeGroupEntryOrThrow(ageGroupSlug);
+  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? (field(formData, 'ageGroupSlug') || child!.ageGroupSlug);
+  await getAgeGroupEntryOrThrow(ageGroupSlug);
 
-  await updateFirebaseChild(childId, {
+  await updateDbChild(childId, {
     fullName,
     dateOfBirth,
     ageGroupSlug,
@@ -193,7 +201,7 @@ export async function updateChildDetails(childId: string, formData: FormData): P
 
 export async function addChildEnrollment(childId: string, formData: FormData): Promise<void> {
   await requireAdmin();
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   if (!child) redirect('/admin/children');
 
   const result = await enrollAsStaff(child!, formData);
@@ -203,9 +211,9 @@ export async function addChildEnrollment(childId: string, formData: FormData): P
 
 export async function markChildPaymentPaid(childId: string, paymentId: string): Promise<void> {
   await requireAdmin();
-  const payment = await getFirebasePayment(paymentId);
+  const payment = await getDbPayment(paymentId);
   if (!payment) redirect(`/admin/children/${childId}?error=1`);
-  await updateFirebasePayment(paymentId, { status: 'PAID', paidAt: new Date(), parentNotifiedAt: null });
+  await updateDbPayment(paymentId, { status: 'PAID', paidAt: new Date(), parentNotifiedAt: null });
   revalidatePath('/admin/payments');
   revalidatePath(`/admin/children/${childId}`);
   redirect(`/admin/children/${childId}?saved=1`);
@@ -213,13 +221,13 @@ export async function markChildPaymentPaid(childId: string, paymentId: string): 
 
 export async function addPastClass(childId: string, formData: FormData): Promise<void> {
   await requireAdmin();
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   if (!child) redirect('/admin/children');
 
   const course = field(formData, 'course');
   if (!course) redirect(`/admin/children/${childId}?error=pastClass`);
   const pastClasses = [...child!.pastClasses, { schoolYear: field(formData, 'schoolYear'), course, note: field(formData, 'note') || null }];
-  await updateFirebaseChild(childId, { pastClasses });
+  await updateDbChild(childId, { pastClasses });
 
   revalidatePath(`/admin/children/${childId}`);
   redirect(`/admin/children/${childId}?saved=1`);
@@ -227,20 +235,20 @@ export async function addPastClass(childId: string, formData: FormData): Promise
 
 export async function removePastClass(childId: string, index: number): Promise<void> {
   await requireAdmin();
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   if (!child) redirect('/admin/children');
 
-  await updateFirebaseChild(childId, { pastClasses: child!.pastClasses.filter((_, i) => i !== index) });
+  await updateDbChild(childId, { pastClasses: child!.pastClasses.filter((_, i) => i !== index) });
   revalidatePath(`/admin/children/${childId}`);
 }
 
 export async function regenerateChildClaimCode(childId: string): Promise<void> {
   await requireAdmin();
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   // A code only makes sense until a parent has linked the child
   if (!child || child.parentId) redirect(`/admin/children/${childId}`);
 
-  await updateFirebaseChild(childId, { claimCode: await generateUniqueClaimCode() });
+  await updateDbChild(childId, { claimCode: await generateUniqueClaimCode() });
   revalidatePath(`/admin/children/${childId}`);
   revalidatePath('/admin/children');
 }

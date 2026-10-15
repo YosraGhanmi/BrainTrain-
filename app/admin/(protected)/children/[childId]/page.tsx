@@ -20,17 +20,18 @@ import {
 } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { addChildEnrollment, addPastClass, markChildPaymentPaid, regenerateChildClaimCode, removePastClass } from '@/lib/admin/children-actions';
-import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { ageGroupLookup, courseLookup } from '@/lib/content/lookup';
 import { ageOn } from '@/lib/content/age-range';
 import { rotateHue } from '@/lib/color';
-import { formatClaimCode, getFirebaseChild } from '@/lib/firebase/children';
-import { firestore } from '@/lib/firebase/admin';
-import { listFirebaseBadgesByChild } from '@/lib/firebase/badges';
-import { listFirebaseTeacherNotesByChild } from '@/lib/firebase/teacher-notes';
-import { listFirebaseCourseSessions } from '@/lib/firebase/sessions';
-import { listFirebaseTeachers } from '@/lib/firebase/teachers';
-import { listFirebaseEnrollmentsWithSessionsByChild, listFirebasePaymentsWithRelationsByChild } from '@/lib/firebase/read-models';
-import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
+import { formatClaimCode, getDbChild } from '@/lib/db/children';
+import { getDbPortalProfile } from '@/lib/db/portal-auth';
+import { listDbBadgesByChild } from '@/lib/db/badges';
+import { listDbTeacherNotesByChild } from '@/lib/db/teacher-notes';
+import { listDbCourseSessions } from '@/lib/db/sessions';
+import { listDbTeachers } from '@/lib/db/teachers';
+import { listDbEnrollmentsWithSessionsByChild, listDbPaymentsWithRelationsByChild } from '@/lib/db/read-models';
+import { listTimeSlots, sessionGroupLabel } from '@/lib/scheduling/time-slots';
+import { formatSessionDays } from '@/lib/scheduling/slots';
 import { loadStaffEnrollmentOptions } from '@/lib/admin/staff-enrollment';
 import StaffEnrollmentFields from '@/components/admin/StaffEnrollmentFields';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
@@ -90,33 +91,33 @@ export default async function AdminChildProfilePage(props: {
   params: Promise<{ childId: string }>;
   searchParams: Promise<{ created?: string; saved?: string; error?: string }>;
 }) {
+  const [courseOf, ageGroupOf] = await Promise.all([courseLookup(), ageGroupLookup()]);
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   await requireAdmin();
 
-  const child = await getFirebaseChild(params.childId);
+  const child = await getDbChild(params.childId);
   if (!child) notFound();
 
-  const [parentDoc, enrollments, payments, badges, notes, sessions, teachers, timeSlots, enrollmentOptions] = await Promise.all([
-    child.parentId ? firestore.collection('users').doc(child.parentId).get() : null,
-    listFirebaseEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']),
-    listFirebasePaymentsWithRelationsByChild(child.id),
-    listFirebaseBadgesByChild(child.id),
-    listFirebaseTeacherNotesByChild(child.id),
-    listFirebaseCourseSessions(),
-    listFirebaseTeachers(),
+  const [parent, enrollments, payments, badges, notes, sessions, teachers, timeSlots, enrollmentOptions] = await Promise.all([
+    getDbPortalProfile(child.parentId),
+    listDbEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']),
+    listDbPaymentsWithRelationsByChild(child.id),
+    listDbBadgesByChild(child.id),
+    listDbTeacherNotesByChild(child.id),
+    listDbCourseSessions(),
+    listDbTeachers(),
     listTimeSlots(),
     loadStaffEnrollmentOptions(),
   ]);
 
-  const parent = parentDoc?.data();
   const teacherName = new Map(teachers.map((t) => [t.id, t.fullName]));
   const sessionById = new Map(sessions.map((s) => [s.id, s]));
   const courseTitleForSession = (sessionId: string | null) => {
     const session = sessionId ? sessionById.get(sessionId) : undefined;
-    return session ? getCourseEntryOrThrow(session.courseSlug).title.en : null;
+    return session ? courseOf(session.courseSlug).title.en : null;
   };
 
-  const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
+  const ageGroup = ageGroupOf(child.ageGroupSlug);
   const hasBirthDate = child.dateOfBirth.getTime() > 0;
   const age = hasBirthDate ? ageOn(child.dateOfBirth, new Date()) : null;
   const banner = child.photoColor
@@ -309,18 +310,18 @@ export default async function AdminChildProfilePage(props: {
               <ul className="mt-4 space-y-3">
                 {enrollments.map((e) => {
                   const s = e.courseSession;
-                  const slotLabel = findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime);
+                  const slotLabel = sessionGroupLabel(timeSlots, s);
                   const enrollmentPayments = payments.filter((p) => p.enrollmentId === e.id);
                   return (
                     <li key={e.id} className="rounded-2xl border border-ink/5 bg-slate-50/70 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="flex items-center gap-2 font-semibold text-ink">
                           <BookOpen className="h-4 w-4 text-accent" />
-                          {getCourseEntryOrThrow(s.courseSlug).title.en}
+                          {courseOf(s.courseSlug).title.en}
                         </p>
                         <span className="text-xs font-semibold text-stone">
                           {slotLabel ? `${slotLabel} · ` : ''}
-                          {DAYS[s.dayOfWeek]} {s.startTime}-{s.endTime}
+                          {formatSessionDays(s, DAYS)} {s.startTime}-{s.endTime}
                           {s.teacherId ? ` · ${teacherName.get(s.teacherId) ?? 'Teacher'}` : ' · No teacher yet'}
                         </span>
                       </div>

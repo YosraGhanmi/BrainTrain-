@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminCalendarPage(props: { searchParams: Promise<{ error?: string }> }) {
   const searchParams = await props.searchParams;
-  const { calendarEvents, ageGroups, courses } = readContent();
+  const { calendarEvents, ageGroups, courses } = (await readContent());
   const sorted = [...calendarEvents].sort((a, b) => a.date.localeCompare(b.date));
 
   return (

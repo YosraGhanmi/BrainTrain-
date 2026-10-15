@@ -4,16 +4,16 @@ import { PlusCircle, KeyRound } from 'lucide-react';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
-import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { ageGroupLookup, courseLookup } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import NewsCard, { type FeedItem } from '@/components/portal/NewsCard';
 import TeacherNotesCard from '@/components/portal/TeacherNotesCard';
 import BadgesCard from '@/components/portal/BadgesCard';
 import ChildProfileCard from '@/components/portal/ChildProfileCard';
 import type { AppLocale } from '@/i18n/routing';
-import { listFirebaseBadgesByChild } from '@/lib/firebase/badges';
-import { listFirebaseChildren } from '@/lib/firebase/children';
-import { listFirebasePaymentsWithRelationsByChild, listFirebaseEnrollmentsWithSessionsByChild, listTeacherNotesForDashboard } from '@/lib/firebase/read-models';
+import { listDbBadgesByChild } from '@/lib/db/badges';
+import { listDbChildren } from '@/lib/db/children';
+import { listDbPaymentsWithRelationsByChild, listDbEnrollmentsWithSessionsByChild, listTeacherNotesForDashboard } from '@/lib/db/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,12 +21,13 @@ export default async function ParentDashboardPage(props: {
   params: Promise<{ locale: AppLocale }>;
   searchParams: Promise<{ linked?: string }>;
 }) {
+  const [courseOf, ageGroupOf] = await Promise.all([courseLookup(), ageGroupLookup()]);
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.dashboard' });
-  const children = await listFirebaseChildren(parent.parentId);
+  const children = await listDbChildren(parent.parentId);
   const selected = await resolveSelectedChild(children);
-  const { news } = readContent();
+  const { news } = (await readContent());
 
   if (!selected) {
     return (
@@ -60,17 +61,20 @@ export default async function ParentDashboardPage(props: {
   const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
   const [enrollments, badges, notes, duePayments] = await Promise.all([
-    listFirebaseEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']),
-    listFirebaseBadgesByChild(child.id),
+    listDbEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']),
+    listDbBadgesByChild(child.id),
     listTeacherNotesForDashboard(child.id),
-    listFirebasePaymentsWithRelationsByChild(child.id).then((payments) =>
-      payments.filter((payment) => ['PENDING', 'OVERDUE'].includes(payment.status) && payment.enrollment),
+    listDbPaymentsWithRelationsByChild(child.id).then((payments) =>
+      // Not yet the later months of a monthly summer plan
+      payments.filter(
+        (payment) => ['PENDING', 'OVERDUE'].includes(payment.status) && payment.enrollment && payment.dueDate <= new Date(),
+      ),
     ),
   ]);
 
   const enrolledCourseSlugs = new Set(enrollments.map((e) => e.courseSession.courseSlug));
-  const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
-  const courseTitles = [...enrolledCourseSlugs].map((slug) => localized(getCourseEntryOrThrow(slug).title, params.locale));
+  const ageGroup = ageGroupOf(child.ageGroupSlug);
+  const courseTitles = [...enrolledCourseSlugs].map((slug) => localized(courseOf(slug).title, params.locale));
   const visibleNews = news.filter(
     (n) =>
       (n.targetAgeGroups.length === 0 || n.targetAgeGroups.includes(child.ageGroupSlug)) &&
@@ -87,7 +91,7 @@ export default async function ParentDashboardPage(props: {
     ...duePayments.map((p) => ({
       id: `pay-${p.id}`,
       type: 'reminder' as const,
-      title: t('paymentDue', { course: localized(getCourseEntryOrThrow(p.enrollment!.courseSession.courseSlug).title, params.locale) }),
+      title: t('paymentDue', { course: localized(courseOf(p.enrollment!.courseSession.courseSlug).title, params.locale) }),
       date: p.dueDate.toISOString(),
       href: '/parent-portal/payments',
     })),

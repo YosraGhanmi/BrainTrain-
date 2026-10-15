@@ -23,26 +23,28 @@ import {
   Droplet,
   Leaf,
   CheckCircle2,
+  Sun,
   type LucideIcon,
 } from 'lucide-react';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import { Link } from '@/i18n/navigation';
-import { readContent } from '@/lib/content/store';
 import { getAgeGroup, getCoursesForAgeGroup } from '@/lib/coursesData';
 import type { AppLocale } from '@/i18n/routing';
 import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
 export const revalidate = 300;
 
+// Rendered on first visit, then cached: see generateStaticParams in
+// app/[locale]/layout.tsx
 export function generateStaticParams() {
-  return readContent().ageGroups.map((g) => ({ slug: g.slug }));
+  return [];
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
   const params = await props.params;
-  const group = getAgeGroup(params.slug, params.locale);
+  const group = await getAgeGroup(params.slug, params.locale);
   if (!group) return { title: 'Courses | BrainTrain' };
 
   const title = `${group.label} Courses | BrainTrain`;
@@ -87,11 +89,12 @@ const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: numb
 
 export default async function AgeGroupCoursesPage(props: { params: Promise<{ slug: string; locale: AppLocale }> }) {
   const params = await props.params;
-  const group = getAgeGroup(params.slug, params.locale);
+  const group = await getAgeGroup(params.slug, params.locale);
   if (!group) notFound();
 
-  const groupCourses = getCoursesForAgeGroup(group, params.locale);
+  const groupCourses = await getCoursesForAgeGroup(group, params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
+  const tc = await getTranslations({ locale: params.locale, namespace: 'coursePage' });
 
   return (
     <div className="flex min-h-screen flex-col text-ink">
@@ -127,7 +130,7 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
           <p className="mt-3 max-w-xl text-stone">{group.description}</p>
 
           <div className="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-            {groupCourses.map(({ slug, title, icon: Icon, color, image }, index) => (
+            {groupCourses.map(({ slug, title, icon: Icon, color, image, summer }, index) => (
               <div
                 key={slug}
                 className="relative rounded-tl-xl rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-br-xl border border-ink/10 bg-white p-6 pt-9 text-center shadow-sm"
@@ -135,6 +138,12 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
                 <span className="absolute -top-4 left-6 flex h-9 w-9 items-center justify-center rounded-full border-4 border-surface bg-accent text-sm font-extrabold text-white shadow-sm">
                   {index + 1}
                 </span>
+                {summer ? (
+                  <span className="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800 shadow-sm">
+                    <Sun className="h-3 w-3" />
+                    {tc('summerBadge')}
+                  </span>
+                ) : null}
 
                 {image ? (
                   <div className="relative h-32 w-full overflow-hidden rounded-2xl">

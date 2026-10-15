@@ -2,14 +2,15 @@ import Link from 'next/link';
 import { Clock3, X } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { updateEnrollmentStatus, approveEnrollment, moveEnrollment } from '@/lib/admin/portal-actions';
-import { getCourseEntryOrThrow, listAgeGroupEntries, listCourseEntries, listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
-import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
+import { courseLookup, listAgeGroupEntries, listCourseEntries, listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
+import { listTimeSlots, sessionGroupLabel } from '@/lib/scheduling/time-slots';
+import { formatSessionDays } from '@/lib/scheduling/slots';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { firestore } from '@/lib/firebase/admin';
-import { getFirebaseChild } from '@/lib/firebase/children';
-import { type FirebaseChild } from '@/lib/firebase/children';
-import { listAllFirebaseEnrollments } from '@/lib/firebase/enrollments';
-import { listAllFirebaseSessionsWithCounts, type SessionWithCount } from '@/lib/firebase/read-models';
+import { getDbPortalProfile } from '@/lib/db/portal-auth';
+import { getDbChild } from '@/lib/db/children';
+import { type DbChild } from '@/lib/db/children';
+import { listAllDbEnrollments } from '@/lib/db/enrollments';
+import { listAllDbSessionsWithCounts, type SessionWithCount } from '@/lib/db/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,11 +27,11 @@ export default async function AdminEnrollmentsPage(
     searchParams: Promise<{ saved?: string; error?: string; ageGroup?: string; course?: string; group?: string }>;
   }
 ) {
+  const courseOf = await courseLookup();
   const searchParams = await props.searchParams;
   await requireAdmin();
 
-  const ageGroups = listAgeGroupEntries();
-  const allCourses = listCourseEntries();
+  const [ageGroups, allCourses] = await Promise.all([listAgeGroupEntries(), listCourseEntries()]);
   const timeSlots = await listTimeSlots();
 
   const selectedAgeGroup = searchParams.ageGroup ?? '';
@@ -42,7 +43,7 @@ export default async function AdminEnrollmentsPage(
   let courseSlugFilter: Set<string> | null = null;
   let slotFilter: { dayOfWeek: number; startTime: string; endTime: string } | null = null;
   if (selectedAgeGroup) {
-    const slugs = listCourseEntriesForAgeGroup(selectedAgeGroup).map((c) => c.slug);
+    const slugs = (await listCourseEntriesForAgeGroup(selectedAgeGroup)).map((c) => c.slug);
     courseSlugFilter = new Set(slugs);
   }
   if (selectedGroup) {
@@ -52,7 +53,7 @@ export default async function AdminEnrollmentsPage(
     slotFilter = { dayOfWeek: slot?.dayOfWeek ?? -1, startTime: slot?.startTime ?? '', endTime: slot?.endTime ?? '' };
   }
 
-  const [rawEnrollments, sessions] = await Promise.all([listAllFirebaseEnrollments(), listAllFirebaseSessionsWithCounts()]);
+  const [rawEnrollments, sessions] = await Promise.all([listAllDbEnrollments(), listAllDbSessionsWithCounts()]);
   const sessionById = new Map(sessions.map((session) => [session.id, session]));
   type AdminEnrollmentRow = {
     id: string;
@@ -61,7 +62,7 @@ export default async function AdminEnrollmentsPage(
     status: 'PENDING' | 'ACTIVE' | 'CANCELLED';
     enrolledAt: Date;
     courseSession: SessionWithCount;
-    child: FirebaseChild;
+    child: DbChild;
     parentName: string;
   };
 
@@ -79,10 +80,10 @@ export default async function AdminEnrollmentsPage(
       ) {
         return null;
       }
-      const child = await getFirebaseChild(enrollment.childId);
+      const child = await getDbChild(enrollment.childId);
       if (!child) return null;
-      const parent = child.parentId ? await firestore.collection('users').doc(child.parentId).get() : null;
-      return { ...enrollment, courseSession, child, parentName: String(parent?.data()?.fullName ?? 'Not linked yet') };
+      const parent = await getDbPortalProfile(child.parentId);
+      return { ...enrollment, courseSession, child, parentName: parent?.fullName ?? 'Not linked yet' };
     }),
   );
 
@@ -256,13 +257,8 @@ export default async function AdminEnrollmentsPage(
               </tr>
             ) : (
               enrollments.map((e) => {
-                const course = getCourseEntryOrThrow(e.courseSession.courseSlug);
-                const groupLabel = findSlotLabel(
-                  timeSlots,
-                  e.courseSession.dayOfWeek,
-                  e.courseSession.startTime,
-                  e.courseSession.endTime
-                );
+                const course = courseOf(e.courseSession.courseSlug);
+                const groupLabel = sessionGroupLabel(timeSlots, e.courseSession);
                 const otherSessions = sessions.filter(
                   (s) => s.courseSlug === e.courseSession.courseSlug && s.id !== e.courseSessionId
                 );
@@ -273,7 +269,7 @@ export default async function AdminEnrollmentsPage(
                     <td className="px-5 py-4 text-stone">{course.title.en}</td>
                     <td className="px-5 py-4 text-stone">{ageGroupLabelBySlug.get(course.ageGroupSlug) ?? '—'}</td>
                     <td className="px-5 py-4 text-stone">
-                      {groupLabel ?? `${DAYS[e.courseSession.dayOfWeek]} ${e.courseSession.startTime}–${e.courseSession.endTime}`}
+                      {groupLabel ?? `${formatSessionDays(e.courseSession, DAYS)} ${e.courseSession.startTime}–${e.courseSession.endTime}`}
                     </td>
                     <td className="px-5 py-4">
                       <span className={`rounded-full px-3 py-1 text-xs font-bold ${STATUS_STYLES[e.status]}`}>{e.status}</span>
@@ -293,10 +289,10 @@ export default async function AdminEnrollmentsPage(
                               </option>
                               {otherSessions.map((s) => {
                                 const seatsLeft = s.capacity - s.enrollmentCount;
-                                const label = findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime);
+                                const label = sessionGroupLabel(timeSlots, s);
                                 return (
                                   <option key={s.id} value={s.id} disabled={seatsLeft <= 0}>
-                                    {label ?? `${DAYS[s.dayOfWeek]} ${s.startTime}–${s.endTime}`} ({s.term}){' '}
+                                    {label ?? `${formatSessionDays(s, DAYS)} ${s.startTime}–${s.endTime}`} ({s.term}){' '}
                                     {seatsLeft <= 0 ? '— Full' : `— ${seatsLeft} left`}
                                   </option>
                                 );

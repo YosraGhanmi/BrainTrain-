@@ -3,8 +3,8 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
-import { createFirebaseExpense, deleteFirebaseExpense, type ExpenseChargeType } from '@/lib/firebase/expenses';
-import { createFirebaseNotification } from '@/lib/firebase/notifications';
+import { createDbExpense, deleteDbExpense, type ExpenseChargeType } from '@/lib/db/expenses';
+import { createDbNotification } from '@/lib/db/notifications';
 
 function dispensePath(chargeType: ExpenseChargeType): string {
   return chargeType === 'FIXED' ? '/admin/dispenses/fixed' : '/admin/dispenses/variable';
@@ -32,7 +32,7 @@ export async function createExpense(formData: FormData): Promise<void> {
 
   const createdByName = session.kind === 'admin' ? 'Admin' : session.fullName;
 
-  await createFirebaseExpense({
+  await createDbExpense({
     label,
     amount,
     currency,
@@ -45,7 +45,7 @@ export async function createExpense(formData: FormData): Promise<void> {
 
   // Notify admin when a secretary logs an expense
   if (session.kind === 'secretary') {
-    await createFirebaseNotification({
+    await createDbNotification({
       type: 'EXPENSE_ADDED',
       title: `${session.fullName} logged a dispense`,
       body: `${label}: ${amount.toFixed(2)} ${currency}`,
@@ -60,7 +60,7 @@ export async function createExpense(formData: FormData): Promise<void> {
 
 export async function deleteExpense(id: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebaseExpense(id);
+  await deleteDbExpense(id);
   revalidatePath('/admin/dispenses/fixed');
   revalidatePath('/admin/dispenses/variable');
   revalidatePath('/admin');

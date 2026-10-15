@@ -5,6 +5,9 @@ import AuthCard from '@/components/portal/AuthCard';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { AppLocale } from '@/i18n/routing';
 
+// Reads the session cookie / URL parameters on every request
+export const dynamic = 'force-dynamic';
+
 export default async function ResetPasswordPage(
   props: {
     params: Promise<{ locale: AppLocale }>;

@@ -8,5 +8,5 @@ export async function submitContactMessage(data: { name: string; email: string; 
   const message = data.message.trim();
   if (!name || !email || !message) return;
 
-  addMessage({ name, email, message });
+  await addMessage({ name, email, message });
 }

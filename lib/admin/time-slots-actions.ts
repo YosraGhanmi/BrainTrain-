@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdminOnly } from '@/lib/admin/guard';
-import { createFirebaseTimeSlot, deleteFirebaseTimeSlot, updateFirebaseTimeSlot } from '@/lib/firebase/time-slots';
+import { createDbTimeSlot, deleteDbTimeSlot, updateDbTimeSlot } from '@/lib/db/time-slots';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -23,9 +23,9 @@ export async function upsertTimeSlot(formData: FormData): Promise<void> {
 
   try {
     if (id) {
-      await updateFirebaseTimeSlot(id, { label, dayOfWeek, startTime, endTime });
+      await updateDbTimeSlot(id, { label, dayOfWeek, startTime, endTime });
     } else {
-      await createFirebaseTimeSlot({ label, dayOfWeek, startTime, endTime });
+      await createDbTimeSlot({ label, dayOfWeek, startTime, endTime });
     }
   } catch (err) {
     if (err instanceof Error && err.message === 'LABEL_TAKEN') {
@@ -41,7 +41,7 @@ export async function upsertTimeSlot(formData: FormData): Promise<void> {
 
 export async function deleteTimeSlot(id: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebaseTimeSlot(id);
+  await deleteDbTimeSlot(id);
   revalidatePath('/admin/time-slots');
   revalidatePath('/admin/sessions');
   redirect('/admin/time-slots?saved=1');

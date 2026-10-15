@@ -36,7 +36,7 @@ export default async function CoursesPage(props: { params: Promise<{ locale: App
   // Icons must stay raw string names here (not resolved LucideIcon
   // components) — AgeGroupCoverflow is a client component and a resolved
   // component reference can't cross the server/client boundary as a prop.
-  const ageGroups = readContent().ageGroups.map((g) => ({
+  const ageGroups = (await readContent()).ageGroups.map((g) => ({
     slug: g.slug,
     label: g.label[params.locale] || g.label.en,
     stage: g.stage[params.locale] || g.stage.en,

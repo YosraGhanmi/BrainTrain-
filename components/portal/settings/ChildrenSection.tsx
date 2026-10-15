@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { GraduationCap, BookOpen } from 'lucide-react';
 import { editChild } from '@/lib/children/actions';
-import { getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { ageGroupLookup, courseLookup } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
@@ -39,6 +39,7 @@ export default async function ChildrenSection({
   ageGroups: AgeGroupEntry[];
   selectedChildId: string;
 }) {
+  const [courseOf, ageGroupOf] = await Promise.all([courseLookup(), ageGroupLookup()]);
   const t = await getTranslations({ locale, namespace: 'parentPortal.childrenSection' });
   const selected = kids.find((c) => c.id === selectedChildId) ?? kids[0] ?? null;
 
@@ -58,7 +59,7 @@ export default async function ChildrenSection({
       <div className="flex gap-2 overflow-x-auto pb-2 lg:w-56 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:space-y-1 lg:pb-0">
         {kids.map((child) => {
           const isActive = selected?.id === child.id;
-          const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
+          const ageGroup = ageGroupOf(child.ageGroupSlug);
           return (
             <Link
               key={child.id}
@@ -152,7 +153,7 @@ export default async function ChildrenSection({
             ) : (
               <ul className="mt-4 space-y-2">
                 {selected.enrollments.map((enrollment) => {
-                  const course = getCourseEntryOrThrow(enrollment.courseSession.courseSlug);
+                  const course = courseOf(enrollment.courseSession.courseSlug);
                   return (
                     <li key={enrollment.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3">
                       <span className="flex items-center gap-2 text-sm font-semibold text-ink">

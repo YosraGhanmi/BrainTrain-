@@ -1,16 +1,17 @@
 import { requireAdminOnly } from '@/lib/admin/guard';
-import { createSecretary, deleteSecretary, setSecretaryFrozen } from '@/lib/admin/portal-actions';
+import { createSecretary, deleteSecretary, setSecretaryFrozen, setAccountPassword } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
+import SetPasswordButton from '@/components/admin/SetPasswordButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { listFirebaseSecretaries } from '@/lib/firebase/secretaries';
+import { listDbSecretaries } from '@/lib/db/secretaries';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminSecretariesPage(props: { searchParams: Promise<{ error?: string; saved?: string }> }) {
+export default async function AdminSecretariesPage(props: { searchParams: Promise<{ error?: string; saved?: string; passwordError?: string }> }) {
   const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const secretaries = await listFirebaseSecretaries();
+  const secretaries = await listDbSecretaries();
 
 
   return (
@@ -18,6 +19,9 @@ export default async function AdminSecretariesPage(props: { searchParams: Promis
       <h1 className="font-display text-3xl font-semibold text-ink">Reception</h1>
       <p className="mt-1 text-sm text-stone">Reception accounts sign in through the same door as Admin, with a role picker.</p>
 
+      {searchParams.passwordError ? (
+        <p className="mt-4 text-sm font-semibold text-red-600">Password not saved: use at least 8 characters.</p>
+      ) : null}
       {searchParams.error === 'exists' ? (
         <p className="mt-4 text-sm font-semibold text-red-600">A user with that email or phone already exists.</p>
       ) : searchParams.error ? (
@@ -70,6 +74,7 @@ export default async function AdminSecretariesPage(props: { searchParams: Promis
                   <td className="px-5 py-4 text-stone">{s.phone}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <SetPasswordButton action={setAccountPassword.bind(null, s.id)} accountName={s.fullName} returnTo="/admin/secretaries" />
                       <FreezeToggleButton action={setSecretaryFrozen.bind(null, s.id, !s.isFrozen)} isFrozen={s.isFrozen} />
                       <DeleteIconButton action={deleteSecretary.bind(null, s.id)} />
                     </div>

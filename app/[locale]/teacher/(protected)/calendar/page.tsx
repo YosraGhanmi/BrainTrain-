@@ -2,10 +2,13 @@ import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { requireTeacher } from '@/lib/portal-auth/guard';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
-import { listFirebaseSessionsWithCountsByTeacher } from '@/lib/firebase/read-models';
+import { formatSessionDays, sessionDays } from '@/lib/scheduling/slots';
+import { isInSummer } from '@/lib/content/summer';
+import { readContent } from '@/lib/content/store';
+import { listDbSessionsWithCountsByTeacher } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +30,7 @@ export default async function TeacherCalendarPage(
     searchParams: Promise<{ month?: string }>;
   }
 ) {
+  const courseOf = await courseLookup();
   const searchParams = await props.searchParams;
   const params = await props.params;
   const teacher = await requireTeacher(params.locale);
@@ -34,14 +38,17 @@ export default async function TeacherCalendarPage(
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const WEEKDAYS = tc.raw('daysShort') as string[];
   const MONTH_NAMES = tc.raw('months') as string[];
-  const sessions = await listFirebaseSessionsWithCountsByTeacher(teacher.teacherId);
+  const sessions = await listDbSessionsWithCountsByTeacher(teacher.teacherId);
 
   const byDayOfWeek = new Map<number, typeof sessions>();
   for (const s of sessions) {
-    const list = byDayOfWeek.get(s.dayOfWeek) ?? [];
-    list.push(s);
-    byDayOfWeek.set(s.dayOfWeek, list);
+    for (const day of sessionDays(s)) {
+      const list = byDayOfWeek.get(day) ?? [];
+      list.push(s);
+      byDayOfWeek.set(day, list);
+    }
   }
+  const { summerSchool } = (await readContent());
   for (const list of byDayOfWeek.values()) {
     list.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
@@ -65,7 +72,7 @@ export default async function TeacherCalendarPage(
   const hasAny = sessions.length > 0;
 
   // Distinct courses on this teacher's timetable, for the color/icon legend.
-  const legend = [...new Set(sessions.map((s) => s.courseSlug))].map((slug) => getCourseEntryOrThrow(slug));
+  const legend = [...new Set(sessions.map((s) => s.courseSlug))].map((slug) => courseOf(slug));
 
   return (
     <div>
@@ -128,7 +135,10 @@ export default async function TeacherCalendarPage(
             {cells.map((day, i) => {
               const dayOfWeek = i % 7;
               const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-              const daySessions = day ? byDayOfWeek.get(dayOfWeek) ?? [] : [];
+              // Summer groups only meet during the summer season
+              const daySessions = day
+                ? (byDayOfWeek.get(dayOfWeek) ?? []).filter((s) => !s.summer || isInSummer(summerSchool, new Date(year, month, day)))
+                : [];
               const isToday = isCurrentMonth && day === today.getDate();
               return (
                 <div
@@ -149,7 +159,7 @@ export default async function TeacherCalendarPage(
 
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {daySessions.map((s) => {
-                          const course = getCourseEntryOrThrow(s.courseSlug);
+                          const course = courseOf(s.courseSlug);
                           const Icon = getIcon(course.icon);
                           return (
                             <Link
@@ -180,7 +190,7 @@ export default async function TeacherCalendarPage(
           {[...sessions]
             .sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime))
             .map((s) => {
-              const course = getCourseEntryOrThrow(s.courseSlug);
+              const course = courseOf(s.courseSlug);
               return (
                 <div key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm">
                   <span
@@ -188,7 +198,7 @@ export default async function TeacherCalendarPage(
                     style={{ backgroundColor: course.color }}
                     aria-hidden
                   />
-                  <span className="font-semibold text-ink">{WEEKDAYS[s.dayOfWeek]}</span>
+                  <span className="font-semibold text-ink">{formatSessionDays(s, WEEKDAYS)}</span>
                   <span className="text-stone">
                     {s.startTime}–{s.endTime}
                   </span>

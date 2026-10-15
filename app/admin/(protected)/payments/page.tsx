@@ -1,8 +1,8 @@
 import { requireAdmin } from '@/lib/admin/guard';
 import { setPaymentStatus } from '@/lib/admin/portal-actions';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { listAllFirebasePaymentsWithRelations } from '@/lib/firebase/read-models';
+import { listAllDbPaymentsWithRelations } from '@/lib/db/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,8 +14,9 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default async function AdminPaymentsPage() {
+  const courseOf = await courseLookup();
   await requireAdmin();
-  const payments = await listAllFirebasePaymentsWithRelations();
+  const payments = await listAllDbPaymentsWithRelations();
 
   return (
     <div>
@@ -40,7 +41,7 @@ export default async function AdminPaymentsPage() {
             {payments.map((p) => {
               const enrollment = p.enrollment;
               if (!enrollment || !p.child) return null;
-              const course = getCourseEntryOrThrow(enrollment.courseSession.courseSlug);
+              const course = courseOf(enrollment.courseSession.courseSlug);
               return (
                 <tr key={p.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-5 py-4 font-semibold text-ink">{p.child.fullName}</td>

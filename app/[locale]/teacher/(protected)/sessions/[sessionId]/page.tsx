@@ -1,15 +1,16 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { formatSessionDays } from '@/lib/scheduling/slots';
 import { Link } from '@/i18n/navigation';
 import { ChevronRight, CalendarDays, MapPin, Users, Sparkles } from 'lucide-react';
 import { requireTeacher } from '@/lib/portal-auth/guard';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
 import { estimateCompletedSessions, percentFromCompleted } from '@/lib/progress';
 import StudentRoster, { type RosterStudent } from '@/components/portal/teacher/StudentRoster';
-import { getFirebaseCourseSession } from '@/lib/firebase/sessions';
-import { getFirebaseRosterForSession } from '@/lib/firebase/read-models';
+import { getDbCourseSession } from '@/lib/db/sessions';
+import { getDbRosterForSession } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -27,18 +28,19 @@ export default async function TeacherSessionRosterPage(
     params: Promise<{ locale: AppLocale; sessionId: string }>;
   }
 ) {
+  const courseOf = await courseLookup();
   const params = await props.params;
   const teacher = await requireTeacher(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.roster' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
-  const session = await getFirebaseCourseSession(params.sessionId);
+  const session = await getDbCourseSession(params.sessionId);
 
   if (!session || session.teacherId !== teacher.teacherId) notFound();
-  const course = getCourseEntryOrThrow(session.courseSlug);
+  const course = courseOf(session.courseSlug);
   const Icon = getIcon(course.icon);
 
-  const roster = await getFirebaseRosterForSession(session.id);
+  const roster = await getDbRosterForSession(session.id);
   const students: RosterStudent[] = roster.map((enrollment) => {
     const child = enrollment.child;
     const completed = estimateCompletedSessions(enrollment.enrolledAt, course.sessions);
@@ -83,7 +85,7 @@ export default async function TeacherSessionRosterPage(
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-ink/60">
               <span className="flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4" />
-                {DAYS[session.dayOfWeek]} ·{' '}
+                {formatSessionDays(session, DAYS)} ·{' '}
                 {session.startTime}–{session.endTime}
               </span>
               <span className="flex items-center gap-1.5">

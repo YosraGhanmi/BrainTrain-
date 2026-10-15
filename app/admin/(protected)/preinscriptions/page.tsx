@@ -1,14 +1,14 @@
 import { ClipboardCheck } from 'lucide-react';
 import { requirePreinscriptionAccess, updatePreinscriptionRouting } from '@/lib/preinscription/actions';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { getFirebasePreinscriptionSetting, listFirebasePreinscriptions } from '@/lib/firebase/preinscriptions';
+import { getDbPreinscriptionSetting, listDbPreinscriptions } from '@/lib/db/preinscriptions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPreinscriptionsPage(props: { searchParams: Promise<{ saved?: string }> }) {
   const searchParams = await props.searchParams;
   const session = await requirePreinscriptionAccess();
-  const [routeToForm, submissions] = await Promise.all([getFirebasePreinscriptionSetting(), listFirebasePreinscriptions()]);
+  const [routeToForm, submissions] = await Promise.all([getDbPreinscriptionSetting(), listDbPreinscriptions()]);
 
   return (
     <div>

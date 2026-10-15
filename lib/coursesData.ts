@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { readContent } from './content/store';
 import { getIcon } from './content/icons';
+import { offeredCourses } from './content/summer';
 import type { AppLocale } from '@/i18n/routing';
 
 export type CurriculumPhase = {
@@ -28,6 +29,7 @@ export type Course = {
   outcome: string;
   skills: string[];
   tools: string[];
+  summer?: boolean;
 };
 
 export type AgeGroup = {
@@ -65,12 +67,11 @@ function slugifyTitle(title: string): string {
 }
 
 // Content is admin-editable at runtime (see lib/content/store.ts), so these
-// are read fresh on every call rather than exported as static constants —
-// pages that render them must opt into dynamic rendering (`export const
-// dynamic = 'force-dynamic'`) so a saved edit shows up without a rebuild.
+// are read fresh on every request rather than exported as static constants.
+// Summer courses are left out while the summer school is closed.
 
-export function getCourses(locale: AppLocale): Course[] {
-  return readContent().courses.map((c) => ({
+export async function getCourses(locale: AppLocale): Promise<Course[]> {
+  return offeredCourses(await readContent()).map((c) => ({
     ...c,
     title: c.title[locale] || c.title.en,
     description: c.description[locale] || c.description.en,
@@ -90,8 +91,8 @@ export function getCourses(locale: AppLocale): Course[] {
   }));
 }
 
-export function getAgeGroups(locale: AppLocale): AgeGroup[] {
-  return readContent().ageGroups.map((g) => ({
+export async function getAgeGroups(locale: AppLocale): Promise<AgeGroup[]> {
+  return (await readContent()).ageGroups.map((g) => ({
     ...g,
     label: g.label[locale] || g.label.en,
     description: g.description[locale] || g.description.en,
@@ -100,22 +101,22 @@ export function getAgeGroups(locale: AppLocale): AgeGroup[] {
   }));
 }
 
-export function getCourse(slug: string, locale: AppLocale): Course | undefined {
-  return getCourses(locale).find((course) => course.slug === slug);
+export async function getCourse(slug: string, locale: AppLocale): Promise<Course | undefined> {
+  return (await getCourses(locale)).find((course) => course.slug === slug);
 }
 
-export function getAgeGroup(slug: string, locale: AppLocale): AgeGroup | undefined {
-  return getAgeGroups(locale).find((group) => group.slug === slug);
+export async function getAgeGroup(slug: string, locale: AppLocale): Promise<AgeGroup | undefined> {
+  return (await getAgeGroups(locale)).find((group) => group.slug === slug);
 }
 
-export function getCoursesForAgeGroup(group: AgeGroup, locale: AppLocale): Course[] {
-  return getCourses(locale).filter((c) => c.ageGroupSlug === group.slug);
+export async function getCoursesForAgeGroup(group: AgeGroup, locale: AppLocale): Promise<Course[]> {
+  return (await getCourses(locale)).filter((c) => c.ageGroupSlug === group.slug);
 }
 
-export function getCourseKinds(locale: AppLocale): CourseKind[] {
+export async function getCourseKinds(locale: AppLocale): Promise<CourseKind[]> {
   const kinds = new Map<string, CourseKind>();
-  const resolved = getCourses(locale);
-  readContent().courses.forEach((raw, i) => {
+  const resolved = await getCourses(locale);
+  offeredCourses(await readContent()).forEach((raw, i) => {
     // Slugs are generated from the English title so they stay stable across
     // locales regardless of which language is currently being viewed.
     const slug = slugifyTitle(raw.title.en);
@@ -129,6 +130,6 @@ export function getCourseKinds(locale: AppLocale): CourseKind[] {
   return Array.from(kinds.values());
 }
 
-export function getCourseKind(slug: string, locale: AppLocale): CourseKind | undefined {
-  return getCourseKinds(locale).find((kind) => kind.slug === slug);
+export async function getCourseKind(slug: string, locale: AppLocale): Promise<CourseKind | undefined> {
+  return (await getCourseKinds(locale)).find((kind) => kind.slug === slug);
 }

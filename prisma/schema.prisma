@@ -1,0 +1,448 @@
+// BrainTrain database. Every table here was a Firestore collection before
+// the move to PostgreSQL; ids imported from Firebase keep their original
+// string values so links, cookies and references stay valid.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Accounts and sessions
+// ---------------------------------------------------------------------------
+
+enum Role {
+  PARENT
+  TEACHER
+  SECRETARY
+}
+
+enum ParentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Parents, teachers and reception staff. The single Admin account is not
+// here: it signs in with the credentials in the environment.
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  fullName       String
+  phone          String        @default("")
+  secondaryPhone String?
+  backupEmail    String?
+  role           Role
+  parentStatus   ParentStatus?
+  isFrozen       Boolean       @default(false)
+
+  // bcrypt. Null for accounts imported from Firebase until the person resets
+  // their password or the admin sets one.
+  passwordHash String?
+
+  twoFactorEnabled           Boolean   @default(false)
+  twoFactorCodeHash          String?
+  twoFactorCodeExpiresAt     DateTime?
+  passwordResetCodeHash      String?
+  passwordResetCodeExpiresAt DateTime?
+
+  // Teachers: courses they teach, and the 4-digit PIN asked after password
+  teacherCourseSlugs    String[] @default([])
+  teacherSecretCodeHash String?
+  teacherSecretCode     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions        PortalSession[]
+  children        Child[]
+  teachingGroups  CourseSession[]
+  teacherNotes    TeacherNote[]
+  badgesAwarded   Badge[]
+  smsNotifications SmsNotification[]
+
+  @@index([role])
+  @@index([phone])
+  @@map("users")
+}
+
+model PortalSession {
+  id        String   @id @default(cuid())
+  // sha256 of the random token kept in the browser cookie
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("portal_sessions")
+}
+
+// ---------------------------------------------------------------------------
+// Children, groups and enrollments
+// ---------------------------------------------------------------------------
+
+model Child {
+  id           String    @id @default(cuid())
+  // Null while a child imported from the paper records is unclaimed
+  parentId     String?
+  parent       User?     @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  fullName     String
+  dateOfBirth  DateTime  @db.Date
+  // Fallback only: the age group is recomputed from the date of birth
+  ageGroupSlug String    @default("")
+  institution  String?
+  specialNeeds String?
+  photoUrl     String?
+  photoColor   String?
+  claimCode    String?   @unique
+  claimedAt    DateTime?
+  // [{ schoolYear, course, note }] from the paper records
+  pastClasses  Json      @default("[]")
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+  registeredAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  enrollments  Enrollment[]
+  teacherNotes TeacherNote[]
+  badges       Badge[]
+
+  @@index([parentId])
+  @@map("children")
+}
+
+model TimeSlot {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("time_slots")
+}
+
+// A group: one course at a weekly day and time (summer groups can meet on
+// several days), with its teacher, classroom and seats
+model CourseSession {
+  id         String   @id @default(cuid())
+  courseSlug String
+  teacherId  String?
+  teacher    User?    @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  dayOfWeek  Int
+  extraDays  Int[]    @default([])
+  label      String   @default("")
+  summer     Boolean  @default(false)
+  startTime  String
+  endTime    String
+  location   String   @default("")
+  capacity   Int      @default(12)
+  term       String   @default("")
+  createdAt  DateTime @default(now())
+
+  enrollments  Enrollment[]
+  teacherNotes TeacherNote[]
+  badges       Badge[]
+
+  @@index([courseSlug])
+  @@index([teacherId])
+  @@map("course_sessions")
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+}
+
+// Enrollments and their payments are kept when a child or a group is
+// deleted (the reference is cleared), so earnings history stays intact.
+model Enrollment {
+  id              String           @id @default(cuid())
+  childId         String?
+  child           Child?           @relation(fields: [childId], references: [id], onDelete: SetNull)
+  courseSessionId String?
+  courseSession   CourseSession?   @relation(fields: [courseSessionId], references: [id], onDelete: SetNull)
+  status          EnrollmentStatus @default(PENDING)
+  enrolledAt      DateTime         @default(now())
+
+  paymentPlans PaymentPlan[]
+  payments     Payment[]
+  teacherNotes TeacherNote[]
+
+  @@index([childId])
+  @@index([courseSessionId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+enum PlanType {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  SEASON
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  CHEQUE
+}
+
+model PaymentPlan {
+  id              String        @id @default(cuid())
+  enrollmentId    String
+  enrollment      Enrollment    @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  type            PlanType
+  method          PaymentMethod
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("TND")
+  // Sibling discount already included in amount
+  discountPercent Decimal       @default(0) @db.Decimal(5, 2)
+  startDate       DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+
+  payments Payment[]
+
+  @@index([enrollmentId])
+  @@map("payment_plans")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  FAILED
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  paymentPlanId         String
+  paymentPlan           PaymentPlan   @relation(fields: [paymentPlanId], references: [id], onDelete: Cascade)
+  enrollmentId          String
+  enrollment            Enrollment    @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("TND")
+  dueDate               DateTime
+  status                PaymentStatus @default(PENDING)
+  paidAt                DateTime?
+  parentNotifiedAt      DateTime?
+  stripeSessionId       String?       @unique
+  stripePaymentIntentId String?
+  createdAt             DateTime      @default(now())
+
+  smsNotifications SmsNotification[]
+
+  @@index([enrollmentId])
+  @@index([status, dueDate])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+// Age-group default (ageGroupSlug set) or course-specific override
+// (courseSlug set) for one plan type
+model PricingRule {
+  id           String   @id @default(cuid())
+  planType     PlanType
+  ageGroupSlug String?
+  courseSlug   String?
+  amount       Decimal  @db.Decimal(10, 2)
+  currency     String   @default("TND")
+  updatedAt    DateTime @updatedAt
+
+  @@unique([planType, ageGroupSlug])
+  @@unique([planType, courseSlug])
+  @@map("pricing_rules")
+}
+
+// ---------------------------------------------------------------------------
+// Teacher feedback
+// ---------------------------------------------------------------------------
+
+model TeacherNote {
+  id              String         @id @default(cuid())
+  teacherId       String?
+  teacher         User?          @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  childId         String
+  child           Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  courseSessionId String?
+  courseSession   CourseSession? @relation(fields: [courseSessionId], references: [id], onDelete: SetNull)
+  enrollmentId    String?
+  enrollment      Enrollment?    @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  content         String
+  createdAt       DateTime       @default(now())
+
+  @@index([childId])
+  @@index([enrollmentId])
+  @@index([courseSessionId, childId])
+  @@map("teacher_notes")
+}
+
+model Badge {
+  id              String         @id @default(cuid())
+  childId         String
+  child           Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  teacherId       String?
+  teacher         User?          @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  courseSessionId String?
+  courseSession   CourseSession? @relation(fields: [courseSessionId], references: [id], onDelete: SetNull)
+  title           String
+  note            String?
+  emoji           String         @default("🏅")
+  imageUrl        String?
+  awardedAt       DateTime       @default(now())
+
+  @@index([childId])
+  @@index([courseSessionId])
+  @@map("badges")
+}
+
+// ---------------------------------------------------------------------------
+// Money in and out (besides tuition payments)
+// ---------------------------------------------------------------------------
+
+enum ChargeType {
+  FIXED
+  VARIABLE
+}
+
+model Expense {
+  id            String     @id @default(cuid())
+  label         String
+  amount        Decimal    @db.Decimal(10, 2)
+  currency      String     @default("TND")
+  note          String?
+  date          DateTime
+  chargeType    ChargeType @default(VARIABLE)
+  createdByName String     @default("")
+  createdByRole String     @default("")
+  createdAt     DateTime   @default(now())
+
+  @@index([date])
+  @@map("expenses")
+}
+
+model Earning {
+  id            String   @id @default(cuid())
+  label         String
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("TND")
+  note          String?
+  date          DateTime
+  createdByName String   @default("")
+  createdByRole String   @default("")
+  createdAt     DateTime @default(now())
+
+  @@index([date])
+  @@map("earnings")
+}
+
+// ---------------------------------------------------------------------------
+// Admin feed, messages and logs
+// ---------------------------------------------------------------------------
+
+enum NotificationType {
+  EXPENSE_ADDED
+  EARNING_ADDED
+  PREINSCRIPTION_SUBMITTED
+  OFFLINE_PAYMENT_DECLARED
+  CHILD_LINKED
+}
+
+// The admin bell
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([readAt, createdAt])
+  @@map("notifications")
+}
+
+enum SmsPurpose {
+  PAYMENT_REMINDER
+  PASSWORD_RESET
+  ENROLLMENT_APPROVED
+}
+
+enum SmsStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+model SmsNotification {
+  id                String     @id @default(cuid())
+  parentId          String?
+  parent            User?      @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  phone             String
+  message           String
+  purpose           SmsPurpose
+  status            SmsStatus
+  provider          String
+  providerMessageId String?
+  relatedPaymentId  String?
+  relatedPayment    Payment?   @relation(fields: [relatedPaymentId], references: [id], onDelete: SetNull)
+  createdAt         DateTime   @default(now())
+
+  @@map("sms_notifications")
+}
+
+model Preinscription {
+  id             String   @id @default(cuid())
+  childFullName  String
+  childAge       Int
+  institution    String
+  parentFullName String
+  parentPhone    String
+  createdAt      DateTime @default(now())
+
+  @@map("preinscriptions")
+}
+
+// Messages sent from the website's contact form
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+// ---------------------------------------------------------------------------
+// Site content and settings
+// ---------------------------------------------------------------------------
+
+// Everything the admin edits about the public site (courses, age groups,
+// texts, summer school...), as one document. id is always "main".
+model SiteContent {
+  id        String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+
+  @@map("site_content")
+}
+
+// Small admin switches, e.g. "preinscription" -> { routeRegisterToForm }
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

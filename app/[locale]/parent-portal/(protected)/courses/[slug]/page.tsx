@@ -1,26 +1,27 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sun } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { readContent } from '@/lib/content/store';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
-import { resolvePrice } from '@/lib/pricing/compute';
+import { familyDiscountSettingFor, resolvePrice } from '@/lib/pricing/compute';
 import { applyDiscount, getFamilyDiscountPercent } from '@/lib/pricing/family-discount';
+import { formatSummerDates, isCourseOffered } from '@/lib/content/summer';
 import { enrollChild } from '@/lib/enrollment/actions';
-import { sessionsConflict } from '@/lib/scheduling/slots';
-import { findSlotLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
+import { formatSessionDays, sessionDays, sessionsConflict } from '@/lib/scheduling/slots';
+import { sessionGroupLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CurriculumTimeline from '@/components/course/CurriculumTimeline';
 import EnrollWizard from '@/components/portal/EnrollWizard';
 import type { AppLocale } from '@/i18n/routing';
-import { listFirebaseChildren } from '@/lib/firebase/children';
-import { listFirebaseEnrollmentsWithSessionsByChild, listFirebaseSessionsWithCountsByCourse } from '@/lib/firebase/read-models';
-import type { PlanType, PaymentMethod } from '@/lib/firebase/enrollments';
+import { listDbChildren } from '@/lib/db/children';
+import { listDbEnrollmentsWithSessionsByChild, listDbSessionsWithCountsByCourse } from '@/lib/db/read-models';
+import type { PlanType, PaymentMethod } from '@/lib/db/enrollments';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,7 @@ export default async function CourseDetailPage(
     searchParams: Promise<{ error?: string }>;
   }
 ) {
+  const courseOf = await courseLookup();
   const searchParams = await props.searchParams;
   const params = await props.params;
   const parent = await requireParent(params.locale);
@@ -37,10 +39,16 @@ export default async function CourseDetailPage(
   const td = await getTranslations({ locale: params.locale, namespace: 'parentPortal.courseDetail' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
-  const PLAN_INFO: { type: PlanType; label: string; hint: string }[] = [
+  const content = (await readContent());
+  const summerDates = formatSummerDates(content.summerSchool, params.locale);
+  const SCHOOL_YEAR_PLANS: { type: PlanType; label: string; hint: string }[] = [
     { type: 'MONTHLY', label: td('plans.monthly.label'), hint: td('plans.monthly.hint') },
     { type: 'QUARTERLY', label: td('plans.quarterly.label'), hint: td('plans.quarterly.hint') },
     { type: 'YEARLY', label: td('plans.yearly.label'), hint: td('plans.yearly.hint') },
+  ];
+  const SUMMER_PLANS: { type: PlanType; label: string; hint: string }[] = [
+    { type: 'MONTHLY', label: td('plans.summerMonthly.label'), hint: td('plans.summerMonthly.hint') },
+    { type: 'SEASON', label: td('plans.season.label'), hint: td('plans.season.hint', { dates: summerDates }) },
   ];
   const PAYMENT_METHOD_INFO: { type: PaymentMethod; label: string }[] = [
     { type: 'CASH', label: td('methods.cash') },
@@ -55,8 +63,9 @@ export default async function CourseDetailPage(
     capacity: td('errors.capacity'),
     duplicate: td('errors.duplicate'),
     conflict: td('errors.conflict'),
+    closed: td('errors.closed'),
   };
-  const children = await listFirebaseChildren(parent.parentId);
+  const children = await listDbChildren(parent.parentId);
   const selected = await resolveSelectedChild(children);
 
   if (!selected) {
@@ -70,8 +79,9 @@ export default async function CourseDetailPage(
   const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
 
-  const course = readContent().courses.find((c) => c.slug === params.slug);
-  if (!course) notFound();
+  const course = content.courses.find((c) => c.slug === params.slug);
+  if (!course || !isCourseOffered(course, content)) notFound();
+  const PLAN_INFO = course.summer ? SUMMER_PLANS : SCHOOL_YEAR_PLANS;
 
   const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
   const curriculum = course.curriculum?.map((phase) => ({
@@ -80,11 +90,11 @@ export default async function CourseDetailPage(
   }));
 
   const [sessions, timeSlots] = await Promise.all([
-    listFirebaseSessionsWithCountsByCourse(params.slug),
+    listDbSessionsWithCountsByCourse(params.slug),
     listTimeSlots(),
   ]);
 
-  const otherEnrollments = await listFirebaseEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']);
+  const otherEnrollments = await listDbEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']);
   const enrolledSessionIds = new Set(
     otherEnrollments.filter((enrollment) => enrollment.courseSession.courseSlug === params.slug).map((e) => e.courseSessionId)
   );
@@ -97,14 +107,15 @@ export default async function CourseDetailPage(
     );
     return {
       id: s.id,
-      label: findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime) ?? `G${i + 1}`,
+      label: sessionGroupLabel(timeSlots, s) ?? `G${i + 1}`,
       dayOfWeek: s.dayOfWeek,
+      daysLabel: sessionDays(s).length > 1 ? formatSessionDays(s, DAYS) : null,
       startTime: s.startTime,
       endTime: s.endTime,
       location: s.location,
       seatsLeft: s.capacity - s.enrollmentCount,
       enrolled: enrolledSessionIds.has(s.id),
-      conflictLabel: conflict ? localized(getCourseEntryOrThrow(conflict.courseSession.courseSlug).title, params.locale) : null,
+      conflictLabel: conflict ? localized(courseOf(conflict.courseSession.courseSlug).title, params.locale) : null,
     };
   });
 
@@ -114,7 +125,7 @@ export default async function CourseDetailPage(
     Promise.all(
       PLAN_INFO.map(async (plan) => ({ ...plan, ...(await resolvePrice(plan.type, params.slug, course.ageGroupSlug)) }))
     ),
-    getFamilyDiscountPercent(child),
+    familyDiscountSettingFor(course).then((percent) => getFamilyDiscountPercent(child, percent)),
   ]);
   // Same discount enrollChild applies, so the wizard shows what will be billed
   const prices = basePrices.map((plan) => ({ ...plan, amount: applyDiscount(plan.amount, discountPercent) }));
@@ -143,8 +154,22 @@ export default async function CourseDetailPage(
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div>
           {media}
+          {course.summer ? (
+            <p className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
+              <Sun className="h-3.5 w-3.5" />
+              {td('summerBadge')} · {summerDates}
+            </p>
+          ) : null}
           <h1 className="mt-5 font-display text-2xl font-bold text-ink">{localized(course.title, params.locale)}</h1>
           <p className="mt-3 text-sm leading-relaxed text-stone">{localized(course.description, params.locale)}</p>
+          {course.summer ? (
+            <div className="mt-4 space-y-2 rounded-2xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-relaxed text-ink/80">
+              {localized(content.summerSchool.intro, params.locale) ? <p>{localized(content.summerSchool.intro, params.locale)}</p> : null}
+              {localized(content.summerSchool.closingNote, params.locale) ? (
+                <p className="font-semibold text-ink">{localized(content.summerSchool.closingNote, params.locale)}</p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div>
@@ -161,7 +186,7 @@ export default async function CourseDetailPage(
               {td('familyDiscount', { percent: discountPercent })}
             </p>
           ) : null}
-          <p className="mt-1 text-sm text-stone">{td('otherPlansHint')}</p>
+          <p className="mt-1 text-sm text-stone">{course.summer ? td('summerOtherPlansHint') : td('otherPlansHint')}</p>
         </div>
       </div>
 

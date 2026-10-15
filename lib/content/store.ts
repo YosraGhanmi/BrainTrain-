@@ -1,13 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import { cache } from 'react';
+import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
-import type { SiteContent, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat } from './types';
+import type { SiteContent, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
 
-// Everything the admin dashboard edits lives in one JSON file on disk. This
-// only works because the app runs on a traditional Node server with a
-// persistent filesystem — a serverless host would need a real database
-// instead, since its filesystem is read-only / ephemeral per invocation.
-const CONTENT_PATH = path.join(process.cwd(), 'data', 'content.json');
+// Everything the admin dashboard edits about the public site is one JSON
+// document in the site_content table (see prisma/schema.prisma).
 
 const DEFAULT_CONTENT: SiteContent = {
   sponsors: [
@@ -915,6 +912,20 @@ const DEFAULT_CONTENT: SiteContent = {
   calendarEvents: [],
   classFormat: { sessionHours: 2, maxGroupSize: 12 },
   familyDiscountPercent: 5,
+  summerSchool: {
+    enabled: false,
+    startDate: '2027-06-15',
+    endDate: '2027-08-30',
+    familyDiscountPercent: 5,
+    intro: {
+      en: 'Our main objective this summer is to help children develop both hard and soft skills through an effective hands-on learning approach. Children will not only learn how to build and program, but also how to solve problems, work in teams, communicate their ideas, and think creatively. By the end of the session, each child will complete a project and present it confidently in front of their parents.',
+      fr: "Notre objectif principal cet été est d'aider les enfants à développer des compétences techniques et humaines grâce à une approche pratique et efficace. Les enfants n'apprendront pas seulement à construire et à programmer, mais aussi à résoudre des problèmes, à travailler en équipe, à communiquer leurs idées et à faire preuve de créativité. À la fin de la session, chaque enfant réalisera un projet et le présentera avec assurance devant ses parents.",
+    },
+    closingNote: {
+      en: "The last session ends with a final ceremony to celebrate the children's achievements.",
+      fr: 'La dernière séance se termine par une cérémonie finale pour célébrer les réussites des enfants.',
+    },
+  },
 };
 
 // `data/content.json` may still hold plain strings for fields that used to be
@@ -962,6 +973,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     outcome: toLocalized(c.outcome, { en: '', fr: '' }),
     skills: Array.isArray(c.skills) ? c.skills.map((s: any) => toLocalized(s, { en: '', fr: '' })) : [],
     tools: Array.isArray(c.tools) ? c.tools.map(String).filter(Boolean) : [],
+    summer: c.summer === true ? true : undefined,
   }));
 
   const ageGroups: AgeGroupEntry[] = (raw.ageGroups ?? DEFAULT_CONTENT.ageGroups).map((g: any) => {
@@ -1004,26 +1016,47 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     targetCourses: Array.isArray(e.targetCourses) ? e.targetCourses : [],
   }));
 
-  return { ...merged, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent };
+  const rawSummer: Partial<SummerSchoolSettings> = raw.summerSchool ?? {};
+  const defaultSummer = DEFAULT_CONTENT.summerSchool;
+  const isoDate = (value: unknown, fallback: string) =>
+    typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
+  const summerSchool: SummerSchoolSettings = {
+    enabled: rawSummer.enabled === true,
+    startDate: isoDate(rawSummer.startDate, defaultSummer.startDate),
+    endDate: isoDate(rawSummer.endDate, defaultSummer.endDate),
+    familyDiscountPercent:
+      typeof rawSummer.familyDiscountPercent === 'number' && rawSummer.familyDiscountPercent >= 0 && rawSummer.familyDiscountPercent <= 100
+        ? rawSummer.familyDiscountPercent
+        : defaultSummer.familyDiscountPercent,
+    intro: toLocalized(rawSummer.intro, defaultSummer.intro),
+    closingNote: toLocalized(rawSummer.closingNote, defaultSummer.closingNote),
+  };
+
+  return { ...merged, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
-function ensureFile(): void {
-  const dir = path.dirname(CONTENT_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(CONTENT_PATH)) {
-    fs.writeFileSync(CONTENT_PATH, JSON.stringify(DEFAULT_CONTENT, null, 2), 'utf-8');
-  }
-}
+const CONTENT_ID = 'main';
 
-export function readContent(): SiteContent {
-  ensureFile();
-  const raw = fs.readFileSync(CONTENT_PATH, 'utf-8');
-  // Merge over defaults so a partially-edited file (or a field added in a
+// One read per request: pages call this from many components and helpers
+// while rendering, and they all get the same row.
+export const readContent = cache(async (): Promise<SiteContent> => {
+  const row = await prisma.siteContent.findUnique({ where: { id: CONTENT_ID } });
+  // Merge over defaults so a partially-edited document (or a field added in a
   // later version of this file) never crashes a render with `undefined`.
-  return normalize(JSON.parse(raw));
+  return normalize((row?.data ?? DEFAULT_CONTENT) as Partial<SiteContent>);
+});
+
+export async function writeContent(content: SiteContent): Promise<void> {
+  const data = JSON.parse(JSON.stringify(content));
+  await prisma.siteContent.upsert({ where: { id: CONTENT_ID }, create: { id: CONTENT_ID, data }, update: { data } });
 }
 
-export function writeContent(content: SiteContent): void {
-  ensureFile();
-  fs.writeFileSync(CONTENT_PATH, JSON.stringify(content, null, 2), 'utf-8');
+// Starting point for an empty database: what the site shipped with
+export function defaultContent(): SiteContent {
+  return normalize(DEFAULT_CONTENT);
+}
+
+// For the one-time import of the old data/content.json
+export function normalizeContent(raw: unknown): SiteContent {
+  return normalize((raw ?? {}) as Partial<SiteContent>);
 }

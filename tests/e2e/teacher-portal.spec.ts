@@ -18,17 +18,19 @@ test.describe('Teacher portal — admin creates account, teacher logs in and nav
     const adminPage = await adminContext.newPage();
     await adminPage.goto('/admin/login?role=admin');
     await adminPage.getByLabel(/email/i).fill(ADMIN_EMAIL);
-    await adminPage.getByLabel(/password/i).fill(ADMIN_PASSWORD);
+    await adminPage.getByLabel('Password', { exact: true }).fill(ADMIN_PASSWORD);
     await adminPage.getByRole('button', { name: /log in/i }).click();
     await adminPage.waitForURL('**/admin', { timeout: 15_000 });
 
     await adminPage.goto('/admin/teachers');
     await adminPage.getByRole('button', { name: /add teacher/i }).click();
-    await adminPage.locator('input[name="fullName"]').fill(fullName);
-    await adminPage.locator('input[name="email"]').fill(email);
-    await adminPage.locator('input[name="phone"]').fill(phone);
-    await adminPage.locator('select[name="courseSlug"]').selectOption({ index: 1 });
-    await adminPage.getByRole('button', { name: /create teacher account/i }).click();
+    // Existing teacher rows have their own course pickers; stay in the dialog
+    const createForm = adminPage.locator('form', { has: adminPage.getByRole('button', { name: /create teacher account/i }) });
+    await createForm.locator('input[name="fullName"]').fill(fullName);
+    await createForm.locator('input[name="email"]').fill(email);
+    await createForm.locator('input[name="phone"]').fill(phone);
+    await createForm.locator('select[name="courseSlug"]').selectOption({ index: 1 });
+    await createForm.getByRole('button', { name: /create teacher account/i }).click();
     await adminPage.waitForURL(/\/admin\/teachers\?/, { timeout: 15_000 });
 
     const url = new URL(adminPage.url());

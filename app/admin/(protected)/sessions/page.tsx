@@ -1,12 +1,15 @@
 import { requireAdminOnly } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertCourseSession, deleteCourseSession } from '@/lib/admin/portal-actions';
-import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
-import { listFirebaseCourseSessions } from '@/lib/firebase/sessions';
-import { listFirebaseTeachers } from '@/lib/firebase/teachers';
-import { firestore } from '@/lib/firebase/admin';
+import { listTimeSlots, sessionGroupLabel } from '@/lib/scheduling/time-slots';
+import { formatSessionDays } from '@/lib/scheduling/slots';
+import { listDbCourseSessions } from '@/lib/db/sessions';
+import { listDbTeachers } from '@/lib/db/teachers';
+import { prisma } from '@/lib/db/prisma';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
+import CourseGroupPicker from '@/components/admin/CourseGroupPicker';
+import RevealForm from '@/components/admin/RevealForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,22 +18,27 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 export default async function AdminSessionsPage(props: { searchParams: Promise<{ error?: string; saved?: string }> }) {
   const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const [sessions, teachers, content, timeSlots] = await Promise.all([
-    listFirebaseCourseSessions(),
-    listFirebaseTeachers(),
-    Promise.resolve(readContent()),
+  const [sessions, teachers, content, timeSlots, enrollmentCounts] = await Promise.all([
+    listDbCourseSessions(),
+    listDbTeachers(),
+    (await readContent()),
     listTimeSlots(),
+    prisma.enrollment.groupBy({ by: ['courseSessionId'], _count: { _all: true } }),
   ]);
 
-  // Get enrollment count per session
-  const enrollmentCountBySession = new Map<string, number>();
-  await Promise.all(
-    sessions.map(async (s) => {
-      const snap = await firestore.collection('enrollments').where('courseSessionId', '==', s.id).count().get();
-      enrollmentCountBySession.set(s.id, snap.data().count);
-    }),
-  );
+  // Enrollment count per session
+  const enrollmentCountBySession = new Map(enrollmentCounts.map((row) => [row.courseSessionId ?? '', row._count._all]));
   const teacherById = new Map(teachers.map((t) => [t.id, t]));
+  // School-year courses only: summer groups are added on the Summer school page
+  const courseGroups = content.ageGroups
+    .map((group) => ({
+      slug: group.slug,
+      label: group.label.en,
+      courses: content.courses
+        .filter((c) => c.ageGroupSlug === group.slug && !c.summer)
+        .map((c) => ({ slug: c.slug, title: c.title.en })),
+    }))
+    .filter((group) => group.courses.length > 0);
 
   return (
     <div>
@@ -41,6 +49,10 @@ export default async function AdminSessionsPage(props: { searchParams: Promise<{
         actually is on the{' '}
         <a href="/admin/time-slots" className="underline">
           Time slots
+        </a>{' '}
+        page. Summer groups have their own days and times: manage them on the{' '}
+        <a href="/admin/summer-school" className="underline">
+          Summer school
         </a>{' '}
         page.
       </p>
@@ -54,38 +66,34 @@ export default async function AdminSessionsPage(props: { searchParams: Promise<{
       ) : null}
       {searchParams.saved ? <p className="mt-4 text-sm font-semibold text-emerald-600">Saved.</p> : null}
 
-      <form action={upsertCourseSession} className="mt-6 grid grid-cols-1 gap-4 rounded-2xl border border-ink/10 bg-white p-6 shadow-soft sm:grid-cols-2 lg:grid-cols-4">
-        <select name="courseSlug" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
-          <option value="">Course</option>
-          {content.courses.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.title.en} ({c.ageGroupSlug})
+      {/* Reopened after a failed save so the admin can fix it */}
+      <RevealForm buttonLabel="Add session" defaultOpen={Boolean(searchParams.error)}>
+        <form action={upsertCourseSession} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <CourseGroupPicker name="courseSlug" required groups={courseGroups} />
+          <select name="teacherId" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
+            <option value="">No teacher assigned yet</option>
+            {teachers.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.fullName}
+              </option>
+            ))}
+          </select>
+          <select name="timeSlotId" required defaultValue="" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
+            <option value="" disabled>
+              Time slot
             </option>
-          ))}
-        </select>
-        <select name="teacherId" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
-          <option value="">No teacher assigned yet</option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.fullName}
-            </option>
-          ))}
-        </select>
-        <select name="timeSlotId" required defaultValue="" className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent">
-          <option value="" disabled>
-            Time slot
-          </option>
-          {timeSlots.map((slot) => (
-            <option key={slot.id} value={slot.id}>
-              {slot.label} · {DAYS[slot.dayOfWeek]} {slot.startTime}–{slot.endTime}
-            </option>
-          ))}
-        </select>
-        <input name="location" placeholder="Location" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
-        <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent sm:col-span-2 lg:col-span-4">
-          Add session
-        </PendingSubmitButton>
-      </form>
+            {timeSlots.map((slot) => (
+              <option key={slot.id} value={slot.id}>
+                {slot.label} · {DAYS[slot.dayOfWeek]} {slot.startTime}–{slot.endTime}
+              </option>
+            ))}
+          </select>
+          <input name="location" placeholder="Classroom" required className="rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 outline-none focus:border-accent" />
+          <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent justify-self-end sm:col-span-2 lg:col-span-4">
+            Add session
+          </PendingSubmitButton>
+        </form>
+      </RevealForm>
 
       <div className="mt-8 overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-soft">
         <table className="w-full min-w-[720px] text-left text-sm">
@@ -102,15 +110,19 @@ export default async function AdminSessionsPage(props: { searchParams: Promise<{
           <tbody>
             {sessions.map((s) => {
               const course = content.courses.find((c) => c.slug === s.courseSlug);
-              const slotLabel = findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime);
+              const slotLabel = sessionGroupLabel(timeSlots, s);
               const teacher = s.teacherId ? teacherById.get(s.teacherId) : null;
               const enrollmentCount = enrollmentCountBySession.get(s.id) ?? 0;
               return (
                 <tr key={s.id} className="border-b border-ink/5 last:border-0">
-                  <td className="px-5 py-4 font-semibold text-ink">{course?.title.en ?? s.courseSlug}</td>
+                  <td className="px-5 py-4 font-semibold text-ink">
+                    {course?.title.en ?? s.courseSlug}
+                    {s.summer ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">Summer</span> : null}
+                  </td>
                   <td className="px-5 py-4 text-stone">{slotLabel ?? '—'}</td>
                   <td className="px-5 py-4 text-stone">
-                    {DAYS[s.dayOfWeek]} {s.startTime}–{s.endTime} · {s.location}
+                    {formatSessionDays(s, DAYS)} {s.startTime}–{s.endTime}
+                    {s.location ? ` · ${s.location}` : ''}
                   </td>
                   <td className="px-5 py-4 text-stone">{teacher?.fullName ?? '—'}</td>
                   <td className="px-5 py-4 text-stone">

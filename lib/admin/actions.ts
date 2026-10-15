@@ -1,25 +1,25 @@
 'use server';
 
-import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { readContent, writeContent } from '@/lib/content/store';
+import { saveUpload, type UploadFolder } from '@/lib/uploads';
 import { setMessageRead, deleteMessage as deleteMessageEntry } from '@/lib/messages/store';
 import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 import { destroyPortalSession } from '@/lib/portal-auth/session';
 import {
-  upsertFirebasePricingRule,
-  deleteFirebasePricingRulesByAgeGroup,
-  deleteFirebasePricingRulesByCourse,
-} from '@/lib/firebase/pricing';
+  upsertDbPricingRule,
+  deleteDbPricingRulesByAgeGroup,
+  deleteDbPricingRulesByCourse,
+} from '@/lib/db/pricing';
+import { listDbCourseSessionsByCourse, updateDbCourseSession } from '@/lib/db/sessions';
+import { SCHOOL_YEAR_PLAN_TYPES, SUMMER_PLAN_TYPES, summerTerm } from '@/lib/content/summer';
+import { DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
 import type { TimelineEntry, LocalizedString } from '@/lib/content/types';
-import type { PlanType } from '@/lib/firebase/pricing';
-
-const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
 
 function localizedField(formData: FormData, name: string): LocalizedString {
   return {
@@ -72,27 +72,18 @@ export async function logout(): Promise<void> {
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-const UPLOAD_FOLDERS = ['partners', 'ach', 'courses', 'age'] as const;
-type UploadFolder = (typeof UPLOAD_FOLDERS)[number];
-
 async function saveUploadedImage(file: File, folder: UploadFolder): Promise<string> {
   if (!file || file.size === 0) throw new Error('No file provided');
   if (!file.type.startsWith('image/')) throw new Error('File must be an image');
 
-  const ext = path.extname(file.name).slice(0, 10) || '.jpg';
+  const ext = path.extname(file.name).toLowerCase().replace(/[^a-z0-9.]/g, '').slice(0, 10) || '.jpg';
   const safeBase = path
     .basename(file.name, path.extname(file.name))
     .replace(/[^a-zA-Z0-9-_]+/g, '-')
     .slice(0, 40);
   const filename = `${Date.now()}-${safeBase}${ext}`;
 
-  const dir = path.join(process.cwd(), 'public', folder);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  fs.writeFileSync(path.join(dir, filename), buffer);
-
-  return `/${folder}/${filename}`;
+  return saveUpload(folder, filename, Buffer.from(await file.arrayBuffer()));
 }
 
 const COMBINING_MARKS = new RegExp('[\\u0300-\\u036f]', 'g');
@@ -124,18 +115,18 @@ export async function addSponsor(formData: FormData): Promise<void> {
   if (!file) redirect('/admin/sponsors?error=1');
 
   const src = await saveUploadedImage(file, 'partners');
-  const content = readContent();
+  const content = (await readContent());
   content.sponsors.push(src);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/sponsors?saved=1');
 }
 
 export async function deleteSponsor(src: string): Promise<void> {
   await requireAdminOnly();
-  const content = readContent();
+  const content = (await readContent());
   content.sponsors = content.sponsors.filter((s) => s !== src);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/sponsors?saved=1');
 }
@@ -150,11 +141,11 @@ export async function updateStats(formData: FormData): Promise<void> {
   const labelsFr = formData.getAll('label_fr').map(String);
   const values = formData.getAll('value').map((v) => Math.max(0, Math.round(Number(v)) || 0));
 
-  const content = readContent();
+  const content = (await readContent());
   content.stats = labelsEn
     .map((en, i) => ({ label: { en: en.trim(), fr: (labelsFr[i] ?? '').trim() }, value: values[i] ?? 0 }))
     .filter((s) => s.label.en.length > 0);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/stats?saved=1');
 }
@@ -167,14 +158,14 @@ export async function updateContact(formData: FormData): Promise<void> {
   await requireAdminOnly();
   const field = (name: string) => String(formData.get(name) ?? '').trim();
 
-  const content = readContent();
+  const content = (await readContent());
   content.contact = {
     email: { value: field('email_value'), href: field('email_href') },
     phone: { value: field('phone_value'), href: field('phone_href') },
     location: { value: field('location_value'), href: field('location_href') },
     mapsEmbedSrc: field('mapsEmbedSrc'),
   };
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/contact?saved=1');
 }
@@ -188,11 +179,11 @@ export async function updateSocials(formData: FormData): Promise<void> {
   const labels = formData.getAll('label').map(String);
   const hrefs = formData.getAll('href').map(String);
 
-  const content = readContent();
+  const content = (await readContent());
   content.socials = labels
     .map((label, i) => ({ label: label.trim(), href: (hrefs[i] ?? '').trim() }))
     .filter((s) => s.label.length > 0 && s.href.length > 0);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/socials?saved=1');
 }
@@ -207,18 +198,18 @@ export async function addAchievementImage(formData: FormData): Promise<void> {
   if (!file) redirect('/admin/achievements?error=1');
 
   const src = await saveUploadedImage(file, 'ach');
-  const content = readContent();
+  const content = (await readContent());
   content.achievementsImages.push(src);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/achievements?saved=1');
 }
 
 export async function deleteAchievementImage(src: string): Promise<void> {
   await requireAdminOnly();
-  const content = readContent();
+  const content = (await readContent());
   content.achievementsImages = content.achievementsImages.filter((s) => s !== src);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/achievements?saved=1');
 }
@@ -236,7 +227,7 @@ export async function addNews(formData: FormData): Promise<void> {
   const targetAgeGroups = formData.getAll('targetAgeGroups').map(String);
   const targetCourses = formData.getAll('targetCourses').map(String);
 
-  const content = readContent();
+  const content = (await readContent());
   content.news.unshift({
     id: crypto.randomUUID(),
     title,
@@ -245,16 +236,16 @@ export async function addNews(formData: FormData): Promise<void> {
     targetAgeGroups,
     targetCourses,
   });
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/news?saved=1');
 }
 
 export async function deleteNews(id: string): Promise<void> {
   await requireAdminOnly();
-  const content = readContent();
+  const content = (await readContent());
   content.news = content.news.filter((n) => n.id !== id);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/news?saved=1');
 }
@@ -273,7 +264,7 @@ export async function addCalendarEvent(formData: FormData): Promise<void> {
   const targetAgeGroups = formData.getAll('targetAgeGroups').map(String);
   const targetCourses = formData.getAll('targetCourses').map(String);
 
-  const content = readContent();
+  const content = (await readContent());
   content.calendarEvents.unshift({
     id: crypto.randomUUID(),
     label,
@@ -283,16 +274,16 @@ export async function addCalendarEvent(formData: FormData): Promise<void> {
     targetAgeGroups,
     targetCourses,
   });
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/calendar?saved=1');
 }
 
 export async function deleteCalendarEvent(id: string): Promise<void> {
   await requireAdmin();
-  const content = readContent();
+  const content = (await readContent());
   content.calendarEvents = content.calendarEvents.filter((e) => e.id !== id);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/calendar?saved=1');
 }
@@ -315,22 +306,22 @@ export async function upsertTimelineEntry(formData: FormData): Promise<void> {
     facebookUrl: facebookUrl || undefined,
   };
 
-  const content = readContent();
+  const content = (await readContent());
   if (index >= 0 && index < content.timeline.length) {
     content.timeline[index] = entry;
   } else {
     content.timeline.push(entry);
   }
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/timeline?saved=1');
 }
 
 export async function deleteTimelineEntry(index: number): Promise<void> {
   await requireAdminOnly();
-  const content = readContent();
+  const content = (await readContent());
   content.timeline.splice(index, 1);
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/timeline?saved=1');
 }
@@ -341,11 +332,11 @@ export async function deleteTimelineEntry(index: number): Promise<void> {
 // instead of redirecting — a redirect would fight the client's own state.
 export async function reorderTimeline(order: number[]): Promise<void> {
   await requireAdminOnly();
-  const content = readContent();
+  const content = (await readContent());
   const reordered = order.map((i) => content.timeline[i]).filter((entry): entry is TimelineEntry => Boolean(entry));
   if (reordered.length !== content.timeline.length) return;
   content.timeline = reordered;
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   revalidatePath('/admin/timeline');
 }
@@ -393,17 +384,20 @@ export async function upsertCourse(formData: FormData): Promise<void> {
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean);
+  const summer = String(formData.get('summer') ?? '') === 'on';
 
   if (!title.en || !ageGroupSlug) redirect('/admin/courses?error=1');
 
-  const content = readContent();
+  const content = (await readContent());
   const otherSlugs = content.courses.filter((c) => c.slug !== existingSlug).map((c) => c.slug);
 
   let slug: string;
+  let wasSummer = false;
   if (existingSlug) {
     slug = existingSlug;
     const idx = content.courses.findIndex((c) => c.slug === existingSlug);
     if (idx >= 0) {
+      wasSummer = Boolean(content.courses[idx].summer);
       const image = imageFile && imageFile.size > 0 ? await saveUploadedImage(imageFile, 'courses') : content.courses[idx].image;
       content.courses[idx] = {
         ...content.courses[idx],
@@ -421,6 +415,7 @@ export async function upsertCourse(formData: FormData): Promise<void> {
         icon,
         videoUrl: videoUrl || undefined,
         image,
+        summer: summer || undefined,
       };
     }
   } else {
@@ -446,39 +441,48 @@ export async function upsertCourse(formData: FormData): Promise<void> {
       icon,
       videoUrl: videoUrl || undefined,
       image,
+      summer: summer || undefined,
     });
   }
 
-  writeContent(content);
+  await writeContent(content);
+
+  // Moving a course in or out of the summer school moves its groups too
+  if (existingSlug && wasSummer !== summer) {
+    const term = summer ? summerTerm(content.summerSchool) : DEFAULT_SESSION_TERM;
+    const groups = await listDbCourseSessionsByCourse(slug);
+    await Promise.all(groups.map((group) => updateDbCourseSession(group.id, { summer, term })));
+  }
 
   // Pricing: either this course rides the age group's default rate (any
   // existing course-specific override is cleared), or it pins its own
   // monthly/quarterly/yearly amounts that win over that default (resolvePrice).
-  const useDefaultPricing = String(formData.get('useDefaultPricing') ?? '') === 'on';
-  if (useDefaultPricing) {
-    await deleteFirebasePricingRulesByCourse(slug);
-  } else {
+  // Summer courses always have their own monthly and full-season prices.
+  const useDefaultPricing = !summer && String(formData.get('useDefaultPricing') ?? '') === 'on';
+  await deleteDbPricingRulesByCourse(slug);
+  if (!useDefaultPricing) {
     const currency = String(formData.get('pricingCurrency') ?? 'TND').trim() || 'TND';
     await Promise.all(
-      PLAN_TYPES.map((planType) => {
+      (summer ? SUMMER_PLAN_TYPES : SCHOOL_YEAR_PLAN_TYPES).map((planType) => {
         const amount = Math.max(0, Number(formData.get(`amount_${planType}`)) || 0);
-        return upsertFirebasePricingRule({ planType, courseSlug: slug, amount, currency });
+        return upsertDbPricingRule({ planType, courseSlug: slug, amount, currency });
       }),
     );
   }
 
   revalidatePublicContent();
-  redirect('/admin/courses?saved=1');
+  redirect(summer ? '/admin/summer-school?saved=1' : '/admin/courses?saved=1');
 }
 
 export async function deleteCourse(slug: string): Promise<void> {
   await requireAdminOnly();
-  const content = readContent();
+  const content = (await readContent());
+  const summer = Boolean(content.courses.find((c) => c.slug === slug)?.summer);
   content.courses = content.courses.filter((c) => c.slug !== slug);
-  writeContent(content);
-  await deleteFirebasePricingRulesByCourse(slug);
+  await writeContent(content);
+  await deleteDbPricingRulesByCourse(slug);
   revalidatePublicContent();
-  redirect('/admin/courses?saved=1');
+  redirect(summer ? '/admin/summer-school?saved=1' : '/admin/courses?saved=1');
 }
 
 // ---------------------------------------------------------------------------
@@ -497,7 +501,7 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
 
   if (!label.en || Number.isNaN(minAge) || Number.isNaN(maxAge) || minAge > maxAge) redirect('/admin/age-groups?error=1');
 
-  const content = readContent();
+  const content = (await readContent());
   const otherSlugs = content.ageGroups.filter((g) => g.slug !== existingSlug).map((g) => g.slug);
 
   if (existingSlug) {
@@ -512,21 +516,21 @@ export async function upsertAgeGroup(formData: FormData): Promise<void> {
     content.ageGroups.push({ slug, label, description, icon: 'Puzzle', image, minAge, maxAge, stage });
   }
 
-  writeContent(content);
+  await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/age-groups?saved=1');
 }
 
 export async function deleteAgeGroup(slug: string): Promise<void> {
   await requireAdminOnly();
-  const content = readContent();
+  const content = (await readContent());
   const removedCourseSlugs = content.courses.filter((c) => c.ageGroupSlug === slug).map((c) => c.slug);
   content.ageGroups = content.ageGroups.filter((g) => g.slug !== slug);
   content.courses = content.courses.filter((c) => c.ageGroupSlug !== slug);
-  writeContent(content);
+  await writeContent(content);
   await Promise.all([
-    deleteFirebasePricingRulesByAgeGroup(slug),
-    ...removedCourseSlugs.map((cs) => deleteFirebasePricingRulesByCourse(cs)),
+    deleteDbPricingRulesByAgeGroup(slug),
+    ...removedCourseSlugs.map((cs) => deleteDbPricingRulesByCourse(cs)),
   ]);
   revalidatePublicContent();
   redirect('/admin/age-groups?saved=1');
@@ -538,12 +542,12 @@ export async function deleteAgeGroup(slug: string): Promise<void> {
 
 export async function markMessageRead(id: string, read: boolean): Promise<void> {
   await requireAdmin();
-  setMessageRead(id, read);
+  await setMessageRead(id, read);
   revalidatePath('/admin/messages');
 }
 
 export async function deleteMessage(id: string): Promise<void> {
   await requireAdmin();
-  deleteMessageEntry(id);
+  await deleteMessageEntry(id);
   redirect('/admin/messages?saved=1');
 }

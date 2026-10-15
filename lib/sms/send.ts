@@ -1,6 +1,6 @@
 import { getSmsProvider } from './index';
-import { logSmsSent, logSmsFailed } from '@/lib/firebase/sms-logs';
-import type { SmsPurpose } from '@/lib/firebase/sms-logs';
+import { logSmsSent, logSmsFailed } from '@/lib/db/sms-logs';
+import type { SmsPurpose } from '@/lib/db/sms-logs';
 
 export async function sendSms(params: {
   parentId: string;

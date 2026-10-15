@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, Sun, X } from 'lucide-react';
 import { upsertCourse, deleteCourse } from '@/lib/admin/actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import CourseIconPreview from '@/components/admin/CourseIconPreview';
@@ -10,8 +10,12 @@ import { getIcon, HIGHLIGHT_ICON_NAMES } from '@/lib/content/icons';
 import type { AgeGroupEntry, CourseEntry } from '@/lib/content/types';
 
 const NEW_KEY = '__new__';
+const NEW_SUMMER_KEY = '__new_summer__';
 
-type CourseOverride = { MONTHLY?: number; QUARTERLY?: number; YEARLY?: number; currency: string };
+type CourseOverride = { MONTHLY?: number; QUARTERLY?: number; YEARLY?: number; SEASON?: number; currency: string };
+
+const priceInputClassName =
+  'w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -141,6 +145,7 @@ function CourseFormFields({
   isNew: boolean;
   override?: CourseOverride;
 }) {
+  const [summer, setSummer] = useState(Boolean(course.summer));
   const ageGroupLabel = ageGroups.find((g) => g.slug === course.ageGroupSlug)?.label.en ?? 'this age group';
   return (
     <form action={upsertCourse} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -205,59 +210,91 @@ function CourseFormFields({
         />
       </Field>
 
-      <div className="sm:col-span-2 rounded-xl border border-ink/10 bg-slate-50 p-4">
-        {/* input/label/p/fields-div are flat siblings (not nested inside each
-            other) so Tailwind's peer-checked sibling selector can reach past
-            the label and helper text down to the fields div below. */}
-        <input
-          id="useDefaultPricing"
-          type="checkbox"
-          name="useDefaultPricing"
-          defaultChecked={!override}
-          className="peer mr-2 h-4 w-4 rounded border-ink/20 align-middle accent-accent"
-        />
-        <label htmlFor="useDefaultPricing" className="align-middle text-sm font-semibold text-ink">
-          Use {ageGroupLabel}&apos;s default pricing
+      <div className="sm:col-span-2 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+        <label className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <input
+            type="checkbox"
+            name="summer"
+            checked={summer}
+            onChange={(e) => setSummer(e.target.checked)}
+            className="h-4 w-4 rounded border-ink/20 accent-accent"
+          />
+          Summer school course
         </label>
         <p className="mt-1 text-xs text-stone">
-          Defaults are set per age group on the <a href="/admin/pricing" className="underline">Pricing</a> page. Uncheck to set a
-          different monthly / 3-months / full-year price just for this course.
+          Only shown on the site and in the parent portal while the summer school is open, and billed monthly or for the
+          whole season. Groups and season dates are on the <a href="/admin/summer-school" className="underline">Summer school</a> page.
         </p>
-        <input type="hidden" name="pricingCurrency" value={override?.currency ?? 'TND'} />
-
-        <div className="mt-3 grid grid-cols-1 gap-3 peer-checked:hidden sm:grid-cols-3">
-          <Field label="Monthly (TND)">
-            <input
-              name="amount_MONTHLY"
-              type="number"
-              min={0}
-              step="0.01"
-              defaultValue={override?.MONTHLY ?? ''}
-              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
-            />
-          </Field>
-          <Field label="3 months (TND)">
-            <input
-              name="amount_QUARTERLY"
-              type="number"
-              min={0}
-              step="0.01"
-              defaultValue={override?.QUARTERLY ?? ''}
-              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
-            />
-          </Field>
-          <Field label="Full year (TND)">
-            <input
-              name="amount_YEARLY"
-              type="number"
-              min={0}
-              step="0.01"
-              defaultValue={override?.YEARLY ?? ''}
-              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
-            />
-          </Field>
-        </div>
       </div>
+
+      {summer ? (
+        <div className="sm:col-span-2 rounded-xl border border-ink/10 bg-slate-50 p-4">
+          <p className="text-sm font-semibold text-ink">Summer prices</p>
+          <input type="hidden" name="pricingCurrency" value={override?.currency ?? 'TND'} />
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Monthly (TND)">
+              <input name="amount_MONTHLY" type="number" min={0} step="0.01" required defaultValue={override?.MONTHLY ?? ''} className={priceInputClassName} />
+            </Field>
+            <Field label="Full season (TND)">
+              <input name="amount_SEASON" type="number" min={0} step="0.01" required defaultValue={override?.SEASON ?? ''} className={priceInputClassName} />
+            </Field>
+          </div>
+        </div>
+      ) : (
+        <div className="sm:col-span-2 rounded-xl border border-ink/10 bg-slate-50 p-4">
+          {/* input/label/p/fields-div are flat siblings (not nested inside each
+              other) so Tailwind's peer-checked sibling selector can reach past
+              the label and helper text down to the fields div below. */}
+          <input
+            id="useDefaultPricing"
+            type="checkbox"
+            name="useDefaultPricing"
+            defaultChecked={!override}
+            className="peer mr-2 h-4 w-4 rounded border-ink/20 align-middle accent-accent"
+          />
+          <label htmlFor="useDefaultPricing" className="align-middle text-sm font-semibold text-ink">
+            Use {ageGroupLabel}&apos;s default pricing
+          </label>
+          <p className="mt-1 text-xs text-stone">
+            Defaults are set per age group on the <a href="/admin/pricing" className="underline">Pricing</a> page. Uncheck to set a
+            different monthly / 3-months / full-year price just for this course.
+          </p>
+          <input type="hidden" name="pricingCurrency" value={override?.currency ?? 'TND'} />
+
+          <div className="mt-3 grid grid-cols-1 gap-3 peer-checked:hidden sm:grid-cols-3">
+            <Field label="Monthly (TND)">
+              <input
+                name="amount_MONTHLY"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={override?.MONTHLY ?? ''}
+                className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+              />
+            </Field>
+            <Field label="3 months (TND)">
+              <input
+                name="amount_QUARTERLY"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={override?.QUARTERLY ?? ''}
+                className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+              />
+            </Field>
+            <Field label="Full year (TND)">
+              <input
+                name="amount_YEARLY"
+                type="number"
+                min={0}
+                step="0.01"
+                defaultValue={override?.YEARLY ?? ''}
+                className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+              />
+            </Field>
+          </div>
+        </div>
+      )}
 
       <Field label="Description (English)">
         <textarea
@@ -355,19 +392,30 @@ function CourseSquare({
 export default function CoursesManager({
   ageGroups,
   groupedCourses,
+  summerCourses,
   blank,
   courseOverrides,
+  initialOpenKey = null,
 }: {
   ageGroups: AgeGroupEntry[];
   groupedCourses: { group: AgeGroupEntry; color: string; courses: CourseEntry[] }[];
+  summerCourses: { group: AgeGroupEntry; courses: CourseEntry[] }[];
   blank: CourseEntry;
   courseOverrides: Record<string, CourseOverride>;
+  // Opens a course's form straight away ("?edit=slug", "?new=summer" links
+  // from the Summer school page)
+  initialOpenKey?: string | null;
 }) {
-  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(initialOpenKey);
 
+  const allCourses = [...groupedCourses.flatMap((g) => g.courses), ...summerCourses.flatMap((g) => g.courses)];
   const openCourse =
-    openKey === NEW_KEY ? blank : groupedCourses.flatMap((g) => g.courses).find((c) => c.slug === openKey) ?? null;
-  const isNew = openKey === NEW_KEY;
+    openKey === NEW_KEY
+      ? blank
+      : openKey === NEW_SUMMER_KEY
+        ? { ...blank, summer: true }
+        : allCourses.find((c) => c.slug === openKey) ?? null;
+  const isNew = openKey === NEW_KEY || openKey === NEW_SUMMER_KEY;
 
   return (
     <>
@@ -380,6 +428,14 @@ export default function CoursesManager({
           >
             <Plus className="h-6 w-6" />
             New course
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpenKey(NEW_SUMMER_KEY)}
+            className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-300 text-sm font-semibold text-amber-700 transition hover:border-amber-500"
+          >
+            <Sun className="h-6 w-6" />
+            New summer course
           </button>
         </div>
 
@@ -401,6 +457,20 @@ export default function CoursesManager({
             </div>
           );
         })}
+
+        {summerCourses.map(({ group, courses }) => (
+          <div key={`summer-${group.slug}`}>
+            <h2 className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-800">
+              <Sun className="h-3.5 w-3.5" />
+              Summer school · {group.label.en}
+            </h2>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+              {courses.map((course) => (
+                <CourseSquare key={course.slug} course={course} accentColor="#f59e0b" onOpen={() => setOpenKey(course.slug)} />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {openCourse ? (
@@ -414,7 +484,7 @@ export default function CoursesManager({
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <h3 className="font-display text-lg font-semibold text-ink">
-                {isNew ? 'New course' : openCourse.title.en || 'Untitled course'}
+                {isNew ? (openCourse.summer ? 'New summer course' : 'New course') : openCourse.title.en || 'Untitled course'}
               </h3>
               <button
                 type="button"
@@ -427,6 +497,7 @@ export default function CoursesManager({
             </div>
 
             <CourseFormFields
+              key={openKey}
               course={openCourse}
               ageGroups={ageGroups}
               isNew={isNew}

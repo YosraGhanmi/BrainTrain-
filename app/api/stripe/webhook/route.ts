@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { firestore } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { getStripeClient } from '@/lib/payments/stripe';
 
 // The one place in the app allowed to mark a Payment PAID from an online
@@ -29,34 +29,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as { id: string; payment_intent: string | null };
 
-    // Find the payment by Stripe session ID
-    const paymentSnap = await firestore.collection('payments').where('stripeSessionId', '==', session.id).limit(1).get();
-    if (!paymentSnap.empty) {
-      const paymentDoc = paymentSnap.docs[0];
-      const payment = paymentDoc.data();
+    const payment = await prisma.payment.findUnique({ where: { stripeSessionId: session.id } });
 
-      // Idempotent: re-delivered webhook for an already-paid payment is a no-op.
-      if (payment.status !== 'PAID') {
-        const batch = firestore.batch();
-        batch.update(paymentDoc.ref, {
-          status: 'PAID',
-          paidAt: new Date(),
-          stripePaymentIntentId: session.payment_intent ?? null,
-          parentNotifiedAt: null,
-        });
-
+    // Idempotent: re-delivered webhook for an already-paid payment is a no-op.
+    if (payment && payment.status !== 'PAID') {
+      await prisma.$transaction([
+        prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'PAID', paidAt: new Date(), stripePaymentIntentId: session.payment_intent ?? null, parentNotifiedAt: null },
+        }),
         // Activate the enrollment if not already active
-        const enrollmentSnap = await firestore
-          .collection('enrollments')
-          .where('__name__', '==', payment.enrollmentId)
-          .limit(1)
-          .get();
-        if (!enrollmentSnap.empty && enrollmentSnap.docs[0].data().status !== 'ACTIVE') {
-          batch.update(enrollmentSnap.docs[0].ref, { status: 'ACTIVE' });
-        }
-
-        await batch.commit();
-      }
+        prisma.enrollment.updateMany({
+          where: { id: payment.enrollmentId, status: { not: 'ACTIVE' } },
+          data: { status: 'ACTIVE' },
+        }),
+      ]);
     }
   }
 

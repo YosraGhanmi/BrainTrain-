@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminSocialsPage() {
   await requireAdminOnly();
-  const { socials } = readContent();
+  const { socials } = (await readContent());
 
   return (
     <div>

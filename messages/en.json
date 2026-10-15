@@ -64,12 +64,17 @@
     "lengthLabel": "length",
     "groupLabel": "kids max",
     "outcomeHeading": "By the end of the year",
+    "outcomeHeadingSummer": "By the end of the summer",
     "planMonthly": "Monthly",
     "planMonthlyText": "Pay every month",
     "planTerm": "Per term",
     "planTermText": "One payment every 3 months",
     "planYearly": "Full year",
-    "planYearlyText": "One payment for the year"
+    "planYearlyText": "One payment for the year",
+    "planSeason": "Full season",
+    "planSeasonText": "One payment for the whole summer",
+    "planSummerMonthlyText": "Pay each month of the summer",
+    "summerBadge": "Summer school"
   },
   "stats": {
     "heading": "Statistics"
@@ -311,7 +316,7 @@
       "payNow": "Pay now",
       "payAtDesk": "Pay at the front desk ({method})",
       "nextSession": "Next session",
-      "location": "Location",
+      "location": "Classroom",
       "teacher": "Teacher",
       "notYetAssigned": "Not yet assigned",
       "teacherUpdates": "Teacher updates",
@@ -340,13 +345,17 @@
       "startingFrom": "Starting from",
       "perMonth": "/ month",
       "otherPlansHint": "Term (3 months) and full-year plans available at enrollment.",
+      "summerOtherPlansHint": "A full-season plan is also available at enrollment.",
+      "summerBadge": "Summer school",
       "familyDiscount": "-{percent}% sibling discount applied",
       "enrollHeading": "Enroll: group, plan & payment",
       "noSessions": "No sessions are currently scheduled for this course.",
       "plans": {
         "monthly": { "label": "Monthly", "hint": "Billed every month" },
         "quarterly": { "label": "Term (3 months)", "hint": "Billed once for 3 months" },
-        "yearly": { "label": "Full year", "hint": "One payment, 15 Sep – 15 Jun" }
+        "yearly": { "label": "Full year", "hint": "One payment, 15 Sep – 15 Jun" },
+        "summerMonthly": { "label": "Monthly", "hint": "Billed each month of the summer" },
+        "season": { "label": "Full season", "hint": "One payment, {dates}" }
       },
       "methods": {
         "cash": "Cash",
@@ -361,7 +370,8 @@
         "ineligible": "That course isn't offered for this child's age group.",
         "capacity": "That group is full. Please pick another.",
         "duplicate": "This child is already enrolled in that group.",
-        "conflict": "This child is already scheduled for another class at that same day and time. Please pick a different group."
+        "conflict": "This child is already scheduled for another class at that same day and time. Please pick a different group.",
+        "closed": "Summer school enrollment is closed."
       }
     },
     "coursesExplorer": {
@@ -378,7 +388,8 @@
       },
       "sessionsCount": "{count} sessions",
       "viewSessions": "View sessions",
-      "enroll": "Enroll"
+      "enroll": "Enroll",
+      "summer": "Summer school"
     },
     "payments": {
       "empty": "No payments yet.",

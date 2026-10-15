@@ -8,12 +8,12 @@ import { logout } from '@/lib/admin/actions';
 import { requireAdmin } from '@/lib/admin/guard';
 import { getAdminNotifications } from '@/lib/admin/notifications';
 import { readMessages } from '@/lib/messages/store';
-import { countPendingFirebaseEnrollments } from '@/lib/firebase/enrollments';
+import { countPendingDbEnrollments } from '@/lib/db/enrollments';
 
 export default async function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin();
-  const unreadMessages = readMessages().filter((m) => !m.read).length;
-  const [pendingEnrollments, notifications] = await Promise.all([countPendingFirebaseEnrollments(), getAdminNotifications()]);
+  const unreadMessages = (await readMessages()).filter((m) => !m.read).length;
+  const [pendingEnrollments, notifications] = await Promise.all([countPendingDbEnrollments(), getAdminNotifications()]);
 
   const noticeBadges: Record<string, number> = {};
   for (const notice of [...notifications.paymentNotices, ...notifications.expenseNotices]) {

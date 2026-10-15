@@ -1,9 +1,9 @@
 import { TrendingUp } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { createEarning, deleteEarning } from '@/lib/admin/earnings';
-import { listFirebaseEarningsBetween } from '@/lib/firebase/earnings';
-import { firestore } from '@/lib/firebase/admin';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { listDbEarningsBetween } from '@/lib/db/earnings';
+import { prisma } from '@/lib/db/prisma';
+import { listCourseEntries } from '@/lib/content/lookup';
 import { monthNav } from '@/lib/admin/month';
 import LedgerPage, { type LedgerRow } from '@/components/admin/LedgerPage';
 
@@ -14,47 +14,30 @@ const METHOD_LABELS: Record<string, string> = { CASH: 'Cash', CHEQUE: 'Cheque', 
 // Tuition payments marked PAID in the month, shown read-only next to the
 // manual entries so this page adds up to the dashboard's "Total earnings".
 async function listPaidTuitionRows(monthStart: Date, monthEnd: Date): Promise<LedgerRow[]> {
-  const snapshot = await firestore
-    .collection('payments')
-    .where('status', '==', 'PAID')
-    .where('paidAt', '>=', monthStart)
-    .where('paidAt', '<', monthEnd)
-    .get();
+  const rows = await prisma.payment.findMany({
+    where: { status: 'PAID', paidAt: { gte: monthStart, lt: monthEnd } },
+    include: {
+      paymentPlan: { select: { method: true } },
+      enrollment: { select: { child: { select: { fullName: true } }, courseSession: { select: { courseSlug: true } } } },
+    },
+  });
+  const courses = await listCourseEntries();
+  const courseTitle = new Map(courses.map((c) => [c.slug, c.title.en]));
 
-  return Promise.all(
-    snapshot.docs.map(async (doc) => {
-      const data = doc.data();
-      const [enrollmentDoc, planDoc] = await Promise.all([
-        firestore.collection('enrollments').doc(String(data.enrollmentId ?? '')).get(),
-        firestore.collection('payment_plans').doc(String(data.paymentPlanId ?? '')).get(),
-      ]);
-      const childId = String(enrollmentDoc.data()?.childId ?? '');
-      const sessionId = String(enrollmentDoc.data()?.courseSessionId ?? '');
-      const [childDoc, sessionDoc] = await Promise.all([
-        childId ? firestore.collection('children').doc(childId).get() : null,
-        sessionId ? firestore.collection('course_sessions').doc(sessionId).get() : null,
-      ]);
-
-      let courseTitle: string | null = null;
-      try {
-        courseTitle = getCourseEntryOrThrow(String(sessionDoc?.data()?.courseSlug ?? '')).title.en;
-      } catch {
-        courseTitle = null;
-      }
-
-      const method = String(planDoc.data()?.method ?? '');
-      return {
-        id: `payment-${doc.id}`,
-        date: data.paidAt?.toDate?.() ?? new Date(),
-        label: String(childDoc?.data()?.fullName ?? 'Tuition payment'),
-        amount: Number(data.amount ?? 0),
-        currency: String(data.currency ?? 'TND'),
-        createdByName: method === 'CARD' ? 'Online' : 'Front desk',
-        note: [courseTitle, METHOD_LABELS[method]].filter(Boolean).join(', ') || null,
-        source: 'Tuition',
-      };
-    }),
-  );
+  return rows.map((row) => {
+    const method = row.paymentPlan.method;
+    const slug = row.enrollment.courseSession?.courseSlug;
+    return {
+      id: `payment-${row.id}`,
+      date: row.paidAt ?? new Date(),
+      label: row.enrollment.child?.fullName ?? 'Tuition payment',
+      amount: Number(row.amount),
+      currency: row.currency,
+      createdByName: method === 'CARD' ? 'Online' : 'Front desk',
+      note: [slug ? courseTitle.get(slug) : null, METHOD_LABELS[method]].filter(Boolean).join(', ') || null,
+      source: 'Tuition',
+    };
+  });
 }
 
 export default async function AdminEarningsPage(props: {
@@ -66,7 +49,7 @@ export default async function AdminEarningsPage(props: {
 
   const month = monthNav(searchParams.month);
   const [earnings, tuitionRows] = await Promise.all([
-    listFirebaseEarningsBetween(month.monthStart, month.monthEnd),
+    listDbEarningsBetween(month.monthStart, month.monthEnd),
     listPaidTuitionRows(month.monthStart, month.monthEnd),
   ]);
 

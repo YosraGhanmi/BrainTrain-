@@ -18,19 +18,25 @@ test.describe('Parent portal — registration, approval, and navigation', () => 
     const password = 'TestPass1234!';
 
     // --- Register ---------------------------------------------------------
+    // The page holds both the sign-in and sign-up forms (flip card)
+    const signUpForm = (p: typeof page) => p.locator('form', { has: p.locator('input[name="confirmPassword"]') });
+    const signInForm = (p: typeof page) => p.locator('form', { has: p.locator('#parent-login-email') });
+
     await page.goto('/en/parent-portal/register');
-    await page.locator('input[name="fullName"]').fill(fullName);
-    await page.locator('input[name="email"]').fill(email);
-    await page.locator('input[name="phone"]').fill(phone);
-    await page.locator('input[name="password"]').fill(password);
-    await page.locator('input[name="confirmPassword"]').fill(password);
-    await page.getByRole('button', { name: /create account/i }).click();
-    await page.waitForURL(/parent-portal\/login/, { timeout: 15_000 });
+    const register = signUpForm(page);
+    await register.locator('input[name="fullName"]').fill(fullName);
+    await register.locator('input[name="email"]').fill(email);
+    await register.locator('input[name="phone"]').fill(phone);
+    await register.locator('input[name="password"]').fill(password);
+    await register.locator('input[name="confirmPassword"]').fill(password);
+    await register.getByRole('button', { name: /create account/i }).click();
+    await page.waitForURL(/parent-portal\/pending/, { timeout: 15_000 });
 
     // Unapproved login should be rejected as pending.
-    await page.locator('#parent-login-email').fill(email);
-    await page.locator('input[name="password"]').fill(password);
-    await page.getByRole('button', { name: /log in/i }).click();
+    await page.goto('/en/parent-portal/login');
+    await signInForm(page).locator('#parent-login-email').fill(email);
+    await signInForm(page).locator('input[name="password"]').fill(password);
+    await signInForm(page).getByRole('button', { name: /log in/i }).click();
     await expect(page.getByText(/awaiting admin approval/i)).toBeVisible({ timeout: 10_000 });
 
     // --- Admin approves the account in a separate browser context --------
@@ -38,7 +44,7 @@ test.describe('Parent portal — registration, approval, and navigation', () => 
     const adminPage = await adminContext.newPage();
     await adminPage.goto('/admin/login?role=admin');
     await adminPage.getByLabel(/email/i).fill(ADMIN_EMAIL);
-    await adminPage.getByLabel(/password/i).fill(ADMIN_PASSWORD);
+    await adminPage.getByLabel('Password', { exact: true }).fill(ADMIN_PASSWORD);
     await adminPage.getByRole('button', { name: /log in/i }).click();
     await adminPage.waitForURL('**/admin', { timeout: 15_000 });
 
@@ -51,9 +57,9 @@ test.describe('Parent portal — registration, approval, and navigation', () => 
 
     // --- Parent logs in now that they're approved -------------------------
     await page.goto('/en/parent-portal/login');
-    await page.locator('#parent-login-email').fill(email);
-    await page.locator('input[name="password"]').fill(password);
-    await page.getByRole('button', { name: /log in/i }).click();
+    await signInForm(page).locator('#parent-login-email').fill(email);
+    await signInForm(page).locator('input[name="password"]').fill(password);
+    await signInForm(page).getByRole('button', { name: /log in/i }).click();
     await page.waitForURL(/\/parent-portal(?!\/login)/, { timeout: 15_000 });
     await expectNoHorizontalOverflow(page, 'parent dashboard after login');
 

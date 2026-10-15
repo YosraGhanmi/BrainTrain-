@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.github
+.claude
+uploads
+lib/generated
+test-results
+playwright-report
+tests
+.env
+.env.*
+!.env.example
+*.log
+tsconfig.tsbuildinfo
+Dockerfile
+docker-compose.yml

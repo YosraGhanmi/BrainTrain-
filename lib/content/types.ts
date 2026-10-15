@@ -60,6 +60,21 @@ export type CourseEntry = {
   outcome: LocalizedString;
   skills: LocalizedString[];
   tools: string[];
+  // Summer school course: only offered while the summer school is open,
+  // billed monthly or for the whole season instead of the school-year plans
+  summer?: boolean;
+};
+
+// Summer school settings. Summer courses stay hidden everywhere (site and
+// parent portal) until the admin opens it.
+export type SummerSchoolSettings = {
+  enabled: boolean;
+  startDate: string; // ISO date, "YYYY-MM-DD"
+  endDate: string;
+  // Percent off for every child after a family's first enrolled child
+  familyDiscountPercent: number;
+  intro: LocalizedString;
+  closingNote: LocalizedString;
 };
 
 export type AgeGroupEntry = {
@@ -129,4 +144,5 @@ export type SiteContent = {
   classFormat: ClassFormat;
   // Percent off for every child after a family's first enrolled child
   familyDiscountPercent: number;
+  summerSchool: SummerSchoolSettings;
 };

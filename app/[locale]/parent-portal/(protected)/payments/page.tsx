@@ -1,20 +1,21 @@
 import { getTranslations } from 'next-intl/server';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import MonthlyPaymentsTable from '@/components/portal/MonthlyPaymentsTable';
-import { listFirebaseChildren } from '@/lib/firebase/children';
-import { listFirebasePaymentsWithRelationsByChild } from '@/lib/firebase/read-models';
+import { listDbChildren } from '@/lib/db/children';
+import { listDbPaymentsWithRelationsByChild } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ParentPaymentsPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const courseOf = await courseLookup();
   const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
-  const children = await listFirebaseChildren(parent.parentId);
+  const children = await listDbChildren(parent.parentId);
   const selected = await resolveSelectedChild(children);
 
   if (!selected) {
@@ -28,10 +29,10 @@ export default async function ParentPaymentsPage(props: { params: Promise<{ loca
   const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
 
-  const payments = (await listFirebasePaymentsWithRelationsByChild(child.id))
+  const payments = (await listDbPaymentsWithRelationsByChild(child.id))
     .filter((payment) => payment.enrollment)
     .map((payment) => {
-      const course = getCourseEntryOrThrow(payment.enrollment!.courseSession.courseSlug);
+      const course = courseOf(payment.enrollment!.courseSession.courseSlug);
       return {
         id: payment.id,
         courseTitle: localized(course.title, params.locale),

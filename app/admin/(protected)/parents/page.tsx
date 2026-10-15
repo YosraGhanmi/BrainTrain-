@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
-import { deleteParent, setParentFrozen, approveParent, rejectParent } from '@/lib/admin/portal-actions';
+import { deleteParent, setParentFrozen, approveParent, rejectParent, setAccountPassword } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
+import SetPasswordButton from '@/components/admin/SetPasswordButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { listFirebaseParentProfiles } from '@/lib/firebase/portal-auth';
+import { listDbParentProfiles } from '@/lib/db/portal-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,11 +16,11 @@ const STATUS_BADGE: Record<string, string> = {
   REJECTED: 'bg-red-100 text-red-600',
 };
 
-export default async function AdminParentsPage(props: { searchParams: Promise<{ saved?: string; highlight?: string }> }) {
+export default async function AdminParentsPage(props: { searchParams: Promise<{ saved?: string; highlight?: string; passwordError?: string }> }) {
   const searchParams = await props.searchParams;
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
-  const parents = await listFirebaseParentProfiles();
+  const parents = await listDbParentProfiles();
   const pendingCount = parents.filter((p) => p.parentStatus === 'PENDING').length;
   // Set by the "parent" links on the children pages
   const highlighted = parents.find((p) => p.id === searchParams.highlight);
@@ -39,6 +40,9 @@ export default async function AdminParentsPage(props: { searchParams: Promise<{ 
         ) : null}
       </div>
 
+      {searchParams.passwordError ? (
+        <p className="mt-4 text-sm font-semibold text-red-600">Password not saved: use at least 8 characters.</p>
+      ) : null}
       {pendingCount > 0 ? (
         <p className="mt-2 text-sm font-semibold text-amber-700">
           {pendingCount} account{pendingCount === 1 ? '' : 's'} awaiting approval.
@@ -113,6 +117,9 @@ export default async function AdminParentsPage(props: { searchParams: Promise<{ 
                         </>
                       ) : canEdit ? (
                         <FreezeToggleButton action={setParentFrozen.bind(null, p.id, !p.isFrozen)} isFrozen={p.isFrozen} />
+                      ) : null}
+                      {canEdit ? (
+                        <SetPasswordButton action={setAccountPassword.bind(null, p.id)} accountName={p.fullName} returnTo="/admin/parents" />
                       ) : null}
                       {canEdit ? <DeleteIconButton action={deleteParent.bind(null, p.id)} /> : null}
                     </div>

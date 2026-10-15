@@ -3,13 +3,13 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { requireTeacher } from '@/lib/portal-auth/guard';
-import { getCourseEntryOrThrow, getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup, ageGroupLookup } from '@/lib/content/lookup';
 import { addTeacherNote, awardBadge } from '@/lib/teacher/actions';
 import { rotateHue } from '@/lib/color';
 import { localized, formatDate } from '@/lib/i18n/format';
 import StudentNotesPanel from '@/components/portal/teacher/StudentNotesPanel';
 import StudentBadgesPanel from '@/components/portal/teacher/StudentBadgesPanel';
-import { getFirebaseStudentSessionProfile } from '@/lib/firebase/read-models';
+import { getDbStudentSessionProfile } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -29,16 +29,17 @@ export default async function TeacherStudentProfilePage(
     searchParams: Promise<{ error?: string; saved?: string; badgeError?: string; badgeSaved?: string }>;
   }
 ) {
+  const [courseOf, ageGroupOf] = await Promise.all([courseLookup(), ageGroupLookup()]);
   const searchParams = await props.searchParams;
   const params = await props.params;
   const teacher = await requireTeacher(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.studentProfile' });
-  const profile = await getFirebaseStudentSessionProfile(params.childId, params.sessionId);
+  const profile = await getDbStudentSessionProfile(params.childId, params.sessionId);
   if (!profile || profile.session.teacherId !== teacher.teacherId) notFound();
   const { session, enrollment, child, notes, badges } = profile;
-  const course = getCourseEntryOrThrow(session.courseSlug);
+  const course = courseOf(session.courseSlug);
 
-  const ageGroup = getAgeGroupEntryOrThrow(child.ageGroupSlug);
+  const ageGroup = ageGroupOf(child.ageGroupSlug);
 
   const returnTo = `/teacher/sessions/${session.id}/students/${child.id}`;
   const baseColor = child.photoColor ?? course.color;

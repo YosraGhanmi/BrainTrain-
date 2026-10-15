@@ -2,23 +2,25 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { CalendarDays, Clock, MapPin, Users, ChevronRight, Sparkles, BookOpen, PenTool, Bot } from 'lucide-react';
 import { requireTeacher } from '@/lib/portal-auth/guard';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
-import { findSlotLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
-import { listFirebaseSessionsWithCountsByTeacher } from '@/lib/firebase/read-models';
+import { sessionGroupLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
+import { formatSessionDays } from '@/lib/scheduling/slots';
+import { listDbSessionsWithCountsByTeacher } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TeacherDashboardPage(props: { params: Promise<{ locale: AppLocale }> }) {
+  const courseOf = await courseLookup();
   const params = await props.params;
   const teacher = await requireTeacher(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.dashboard' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
   const [sessions, timeSlots] = await Promise.all([
-    listFirebaseSessionsWithCountsByTeacher(teacher.teacherId),
+    listDbSessionsWithCountsByTeacher(teacher.teacherId),
     listTimeSlots(),
   ]);
 
@@ -48,9 +50,9 @@ export default async function TeacherDashboardPage(props: { params: Promise<{ lo
       ) : (
         <div className="mt-6 space-y-4">
           {sessions.map((session) => {
-            const course = getCourseEntryOrThrow(session.courseSlug);
+            const course = courseOf(session.courseSlug);
             const Icon = getIcon(course.icon);
-            const groupLabel = findSlotLabel(timeSlots, session.dayOfWeek, session.startTime, session.endTime);
+            const groupLabel = sessionGroupLabel(timeSlots, session);
             return (
               <Link
                 key={session.id}
@@ -81,7 +83,7 @@ export default async function TeacherDashboardPage(props: { params: Promise<{ lo
                   <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-ink/5 pt-2.5 text-xs font-medium text-stone">
                     <span className="flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-accent" />
-                      {DAYS[session.dayOfWeek]} · {session.startTime}–{session.endTime}
+                      {formatSessionDays(session, DAYS)} · {session.startTime}–{session.endTime}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <MapPin className="h-3.5 w-3.5 text-accent" />

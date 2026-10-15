@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Users2, CreditCard, Wallet, Landmark, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
-import { firestore } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { monthNav } from '@/lib/admin/month';
 
 export const dynamic = 'force-dynamic';
@@ -113,47 +113,43 @@ export default async function AdminDashboardPage(props: { searchParams: Promise<
 
   const { monthStart, monthEnd, monthLabel, prevMonthParam, nextMonthParam, isCurrentMonth } = monthNav(searchParams.month);
 
-  const [parentSnap, teacherSnap, childSnap, enrollmentSnap, childGroupSnap, paidSnap, unpaidSnap, earningsSnap, manualEarningsSnap, dispensesSnap] =
-    await Promise.all([
-      firestore.collection('users').where('role', '==', 'PARENT').count().get(),
-      firestore.collection('users').where('role', '==', 'TEACHER').count().get(),
-      firestore.collection('children').count().get(),
-      firestore.collection('enrollments').where('status', '==', 'ACTIVE').count().get(),
-      firestore.collection('children').get(),
-      firestore.collection('payments').where('status', '==', 'PAID').where('paidAt', '>=', monthStart).where('paidAt', '<', monthEnd).count().get(),
-      firestore.collection('payments').where('status', '!=', 'PAID').where('dueDate', '>=', monthStart).where('dueDate', '<', monthEnd).count().get(),
-      firestore.collection('payments').where('status', '==', 'PAID').where('paidAt', '>=', monthStart).where('paidAt', '<', monthEnd).get(),
-      firestore.collection('earnings').where('date', '>=', monthStart).where('date', '<', monthEnd).get(),
-      firestore.collection('expenses').where('date', '>=', monthStart).where('date', '<', monthEnd).get(),
-    ]);
-
-  const parentsCount = parentSnap.data().count;
-  const teachersCount = teacherSnap.data().count;
-  const childrenCount = childSnap.data().count;
-  const activeEnrollments = enrollmentSnap.data().count;
-  const paidPayments = paidSnap.data().count;
-  const unpaidPayments = unpaidSnap.data().count;
+  const paidThisMonth = { status: 'PAID', paidAt: { gte: monthStart, lt: monthEnd } } as const;
+  const inMonth = { date: { gte: monthStart, lt: monthEnd } };
+  const [
+    parentsCount,
+    teachersCount,
+    childrenCount,
+    activeEnrollments,
+    childrenByAgeGroup,
+    paidPayments,
+    unpaidPayments,
+    paidSum,
+    manualEarningsSum,
+    dispensesByType,
+  ] = await Promise.all([
+    prisma.user.count({ where: { role: 'PARENT' } }),
+    prisma.user.count({ where: { role: 'TEACHER' } }),
+    prisma.child.count(),
+    prisma.enrollment.count({ where: { status: 'ACTIVE' } }),
+    prisma.child.groupBy({ by: ['ageGroupSlug'], _count: { _all: true } }),
+    prisma.payment.count({ where: paidThisMonth }),
+    prisma.payment.count({ where: { status: { not: 'PAID' }, dueDate: { gte: monthStart, lt: monthEnd } } }),
+    prisma.payment.aggregate({ where: paidThisMonth, _sum: { amount: true } }),
+    prisma.earning.aggregate({ where: inMonth, _sum: { amount: true } }),
+    prisma.expense.groupBy({ by: ['chargeType'], where: inMonth, _sum: { amount: true } }),
+  ]);
 
   // Paid tuition plus income logged by hand on the Earnings page
-  const totalEarnings = [...earningsSnap.docs, ...manualEarningsSnap.docs].reduce(
-    (sum, doc) => sum + Number(doc.data().amount ?? 0),
-    0,
-  );
-  const fixedDispenses = dispensesSnap.docs
-    .filter((doc) => doc.data().chargeType === 'FIXED')
-    .reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
-  const variableDispenses = dispensesSnap.docs
-    .filter((doc) => doc.data().chargeType !== 'FIXED')
-    .reduce((sum, doc) => sum + Number(doc.data().amount ?? 0), 0);
+  const totalEarnings = Number(paidSum._sum.amount ?? 0) + Number(manualEarningsSum._sum.amount ?? 0);
+  const dispensesOf = (type: 'FIXED' | 'VARIABLE') =>
+    Number(dispensesByType.find((row) => row.chargeType === type)?._sum.amount ?? 0);
+  const fixedDispenses = dispensesOf('FIXED');
+  const variableDispenses = dispensesOf('VARIABLE');
   const totalDispenses = fixedDispenses + variableDispenses;
 
-  // Build age group breakdown from the children collection
-  const countByAgeGroupSlug = new Map<string, number>();
-  childGroupSnap.docs.forEach((doc) => {
-    const slug = String(doc.data().ageGroupSlug ?? '');
-    countByAgeGroupSlug.set(slug, (countByAgeGroupSlug.get(slug) ?? 0) + 1);
-  });
-  const allAgeGroups = readContent().ageGroups;
+  // Age group breakdown of every child
+  const countByAgeGroupSlug = new Map(childrenByAgeGroup.map((row) => [row.ageGroupSlug, row._count._all]));
+  const allAgeGroups = (await readContent()).ageGroups;
   const colorByAgeGroupSlug = new Map(allAgeGroups.map((g, i) => [g.slug, AGE_GROUP_COLORS[i % AGE_GROUP_COLORS.length]]));
   const ageGroupStats = allAgeGroups
     .map((ageGroup) => ({ ageGroup, count: countByAgeGroupSlug.get(ageGroup.slug) ?? 0 }))

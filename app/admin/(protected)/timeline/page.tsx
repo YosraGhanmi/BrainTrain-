@@ -108,7 +108,7 @@ function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: numbe
 
 export default async function AdminTimelinePage() {
   await requireAdminOnly();
-  const { timeline } = readContent();
+  const { timeline } = (await readContent());
   const blank: TimelineEntry = {
     date: { en: '', fr: '' },
     title: { en: '', fr: '' },

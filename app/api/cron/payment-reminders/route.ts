@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { firestore } from '@/lib/firebase/admin';
+import { prisma } from '@/lib/db/prisma';
 import { sendSms } from '@/lib/sms/send';
-import { flipOverduePayments } from '@/lib/firebase/enrollments';
+import { flipOverduePayments } from '@/lib/db/enrollments';
 
 const REMINDER_WINDOW_DAYS = 3;
 
@@ -22,35 +22,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const windowEnd = new Date(now.getTime() + REMINDER_WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
   // Find payments due within the reminder window (or already overdue)
-  const paymentsSnap = await firestore
-    .collection('payments')
-    .where('status', 'in', ['PENDING', 'OVERDUE'])
-    .where('dueDate', '<=', windowEnd)
-    .get();
+  const payments = await prisma.payment.findMany({
+    where: { status: { in: ['PENDING', 'OVERDUE'] }, dueDate: { lte: windowEnd } },
+    include: { enrollment: { select: { child: { select: { parent: { select: { id: true, phone: true } } } } } } },
+  });
 
   let sent = 0;
   let failed = 0;
 
-  for (const doc of paymentsSnap.docs) {
-    const payment = doc.data();
-    // Resolve child → parent chain
-    const enrollmentDoc = await firestore.collection('enrollments').doc(String(payment.enrollmentId)).get();
-    const childId = enrollmentDoc.data()?.childId as string | undefined;
-    if (!childId) continue;
+  for (const payment of payments) {
+    const parent = payment.enrollment.child?.parent;
+    if (!parent?.phone) continue;
+    const parentId = parent.id;
+    const phone = parent.phone;
 
-    const childDoc = await firestore.collection('children').doc(childId).get();
-    const parentId = childDoc.data()?.parentId as string | undefined;
-    if (!parentId) continue;
-
-    const parentDoc = await firestore.collection('users').doc(parentId).get();
-    const phone = String(parentDoc.data()?.phone ?? '');
-    if (!phone) continue;
-
-    const isOverdue = payment.status === 'OVERDUE';
-    const dueDate = payment.dueDate?.toDate?.() ?? new Date(payment.dueDate ?? 0);
-    const message = isOverdue
-      ? `BrainTrain: your payment of ${payment.amount} ${payment.currency} is overdue. Please pay via the parent portal to avoid interruption.`
-      : `BrainTrain: your payment of ${payment.amount} ${payment.currency} is due soon (${dueDate.toDateString()}). Pay via the parent portal.`;
+    const amount = Number(payment.amount);
+    const message =
+      payment.status === 'OVERDUE'
+        ? `BrainTrain: your payment of ${amount} ${payment.currency} is overdue. Please pay via the parent portal to avoid interruption.`
+        : `BrainTrain: your payment of ${amount} ${payment.currency} is due soon (${payment.dueDate.toDateString()}). Pay via the parent portal.`;
 
     try {
       await sendSms({
@@ -58,7 +48,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         phone,
         message,
         purpose: 'PAYMENT_REMINDER',
-        relatedPaymentId: doc.id,
+        relatedPaymentId: payment.id,
       });
       sent += 1;
     } catch {
@@ -66,5 +56,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  return NextResponse.json({ flipped, checked: paymentsSnap.size, sent, failed });
+  return NextResponse.json({ flipped, checked: payments.length, sent, failed });
 }

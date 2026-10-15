@@ -33,9 +33,12 @@ export default function AdminShell({
         />
       ) : null}
 
+      {/* Closed on small screens it's hidden, not just slid off-screen, so its
+          links can't be reached with the keyboard; visibility flips after the
+          slide-out finishes */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] -translate-x-full flex-col overflow-y-auto border-r border-ink/10 bg-white px-4 py-6 transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:translate-x-0 ${
-          open ? 'translate-x-0' : ''
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] -translate-x-full flex-col overflow-y-auto border-r border-ink/10 bg-white px-4 py-6 transition-[transform,visibility] duration-300 lg:visible lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:translate-x-0 ${
+          open ? 'visible translate-x-0' : 'invisible'
         }`}
       >
         <button

@@ -1,6 +1,4 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
+import { prisma } from '@/lib/db/prisma';
 
 export type ContactMessage = {
   id: string;
@@ -11,41 +9,20 @@ export type ContactMessage = {
   read: boolean;
 };
 
-const MESSAGES_PATH = path.join(process.cwd(), 'data', 'messages.json');
-
-function ensureFile(): void {
-  const dir = path.dirname(MESSAGES_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(MESSAGES_PATH)) fs.writeFileSync(MESSAGES_PATH, '[]', 'utf-8');
+// Newest first
+export async function readMessages(): Promise<ContactMessage[]> {
+  const rows = await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } });
+  return rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
 }
 
-export function readMessages(): ContactMessage[] {
-  ensureFile();
-  const raw = fs.readFileSync(MESSAGES_PATH, 'utf-8');
-  const messages: ContactMessage[] = JSON.parse(raw);
-  return messages.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function addMessage(entry: { name: string; email: string; message: string }): Promise<void> {
+  await prisma.contactMessage.create({ data: entry });
 }
 
-function writeMessages(messages: ContactMessage[]): void {
-  ensureFile();
-  fs.writeFileSync(MESSAGES_PATH, JSON.stringify(messages, null, 2), 'utf-8');
+export async function setMessageRead(id: string, read: boolean): Promise<void> {
+  await prisma.contactMessage.update({ where: { id }, data: { read } });
 }
 
-export function addMessage(entry: { name: string; email: string; message: string }): void {
-  const messages = readMessages();
-  messages.push({
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    read: false,
-    ...entry,
-  });
-  writeMessages(messages);
-}
-
-export function setMessageRead(id: string, read: boolean): void {
-  writeMessages(readMessages().map((m) => (m.id === id ? { ...m, read } : m)));
-}
-
-export function deleteMessage(id: string): void {
-  writeMessages(readMessages().filter((m) => m.id !== id));
+export async function deleteMessage(id: string): Promise<void> {
+  await prisma.contactMessage.delete({ where: { id } });
 }

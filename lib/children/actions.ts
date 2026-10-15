@@ -1,15 +1,14 @@
 'use server';
 
-import fs from 'fs';
-import path from 'path';
+import { saveUpload } from '@/lib/uploads';
 import sharp from 'sharp';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
-import { ageGroupSlugForBirthDate, getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
-import { claimFirebaseChild, createFirebaseChild, getFirebaseChild, updateFirebaseChild } from '@/lib/firebase/children';
-import { createFirebaseNotification } from '@/lib/firebase/notifications';
+import { ageGroupSlugForBirthDate, listAgeGroupEntries, getAgeGroupEntryOrThrow } from '@/lib/content/lookup';
+import { claimDbChild, createDbChild, getDbChild, updateDbChild } from '@/lib/db/children';
+import { createDbNotification } from '@/lib/db/notifications';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -34,16 +33,16 @@ export async function addChild(formData: FormData): Promise<void> {
   // Detected from the date of birth; the picked one only when no group fits
   const ageGroupSlug = Number.isNaN(dateOfBirth.getTime())
     ? ''
-    : (ageGroupSlugForBirthDate(dateOfBirth) ?? field(formData, 'ageGroupSlug'));
+    : (ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? field(formData, 'ageGroupSlug'));
   if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
     redirect(localizedPath(locale, '/parent-portal/children/new?error=1'));
   }
 
   // Validates the age group slug exists in the JSON content store before
   // persisting a dangling reference.
-  getAgeGroupEntryOrThrow(ageGroupSlug);
+  await getAgeGroupEntryOrThrow(ageGroupSlug);
 
-  await createFirebaseChild({
+  await createDbChild({
     parentId: parent.parentId,
     fullName,
     dateOfBirth,
@@ -62,13 +61,13 @@ export async function claimChild(formData: FormData): Promise<void> {
   const locale = getLocale(formData);
   const parent = await requireParent(locale);
 
-  const child = await claimFirebaseChild(field(formData, 'code'), parent.parentId);
+  const child = await claimDbChild(field(formData, 'code'), parent.parentId);
   if (!child) {
     redirect(localizedPath(locale, '/parent-portal/children/new?codeError=1'));
   }
 
   try {
-    await createFirebaseNotification({
+    await createDbNotification({
       type: 'CHILD_LINKED',
       title: `${parent.fullName} linked ${child!.fullName}`,
       body: 'Used the code from the front desk',
@@ -93,7 +92,7 @@ export async function editChild(formData: FormData): Promise<void> {
   const institution = field(formData, 'institution');
   const specialNeeds = field(formData, 'specialNeeds');
 
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   if (!child || child.parentId !== parent.parentId) {
     redirect(localizedPath(locale, '/parent-portal?error=1'));
   }
@@ -101,13 +100,13 @@ export async function editChild(formData: FormData): Promise<void> {
   const dateOfBirth = new Date(dateOfBirthRaw);
   const ageGroupSlug = Number.isNaN(dateOfBirth.getTime())
     ? ''
-    : (ageGroupSlugForBirthDate(dateOfBirth) ?? field(formData, 'ageGroupSlug'));
+    : (ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? field(formData, 'ageGroupSlug'));
   if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
     redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&error=1`));
   }
-  getAgeGroupEntryOrThrow(ageGroupSlug);
+  await getAgeGroupEntryOrThrow(ageGroupSlug);
 
-  await updateFirebaseChild(childId, { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null });
+  await updateDbChild(childId, { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null });
 
   revalidatePath(`/${locale === 'fr' ? 'fr/' : ''}parent-portal/account`);
   redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&saved=1`));
@@ -121,7 +120,7 @@ export async function uploadChildPhoto(formData: FormData): Promise<void> {
   const file = formData.get('photo');
   if (!(file instanceof File) || file.size === 0 || !file.type.startsWith('image/')) return;
 
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   if (!child || child.parentId !== parent.parentId) return;
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -133,12 +132,8 @@ export async function uploadChildPhoto(formData: FormData): Promise<void> {
   const [r, g, b] = channels.map((c) => Math.round(c.mean));
   const photoColor = `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 
-  const filename = `${childId}-${Date.now()}.jpg`;
-  const dir = path.join(process.cwd(), 'public', 'children');
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, filename), resized);
-
-  await updateFirebaseChild(childId, { photoUrl: `/children/${filename}`, photoColor });
+  const photoUrl = saveUpload('children', `${childId}-${Date.now()}.jpg`, resized);
+  await updateDbChild(childId, { photoUrl, photoColor });
 
   revalidatePath('/parent-portal');
   revalidatePath('/parent-portal/account');

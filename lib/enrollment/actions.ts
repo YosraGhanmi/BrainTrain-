@@ -3,18 +3,19 @@
 import { redirect } from 'next/navigation';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getCourseEntryOrThrow } from '@/lib/content/lookup';
-import { resolvePrice } from '@/lib/pricing/compute';
-import { applyDiscount, getFamilyDiscountPercent } from '@/lib/pricing/family-discount';
+import { quoteEnrollment } from '@/lib/pricing/compute';
+import { readContent } from '@/lib/content/store';
+import { isCourseOffered, planTypesForCourse } from '@/lib/content/summer';
 import {
-  createFirebaseEnrollment,
-  updateFirebaseEnrollmentStatus,
-  getFirebaseEnrollment,
-} from '@/lib/firebase/enrollments';
-import { getFirebaseCourseSession } from '@/lib/firebase/sessions';
-import { getFirebaseChild } from '@/lib/firebase/children';
-import { createFirebaseNotification } from '@/lib/firebase/notifications';
+  createDbEnrollment,
+  updateDbEnrollmentStatus,
+  getDbEnrollment,
+} from '@/lib/db/enrollments';
+import { getDbCourseSession } from '@/lib/db/sessions';
+import { getDbChild } from '@/lib/db/children';
+import { createDbNotification } from '@/lib/db/notifications';
 import type { AppLocale } from '@/i18n/routing';
-import type { PlanType, PaymentMethod } from '@/lib/firebase/enrollments';
+import type { PlanType, PaymentMethod } from '@/lib/db/enrollments';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -24,7 +25,6 @@ function getLocale(formData: FormData): AppLocale {
   return field(formData, 'locale') === 'fr' ? 'fr' : 'en';
 }
 
-const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
 const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'CARD', 'CHEQUE'];
 
 export async function enrollChild(formData: FormData): Promise<void> {
@@ -40,28 +40,26 @@ export async function enrollChild(formData: FormData): Promise<void> {
   const detailPath = courseSlug ? `/parent-portal/courses/${courseSlug}` : '/parent-portal/courses';
   const fail = (reason: string) => redirect(localizedPath(locale, `${detailPath}?error=${reason}`));
 
-  if (!PLAN_TYPES.includes(planType)) fail('plan');
   if (!PAYMENT_METHODS.includes(paymentMethod)) fail('method');
 
-  const child = await getFirebaseChild(childId);
+  const child = await getDbChild(childId);
   if (!child || child.parentId !== parent.parentId) {
     redirect(localizedPath(locale, '/parent-portal?error=1'));
   }
 
-  const session = await getFirebaseCourseSession(courseSessionId);
+  const session = await getDbCourseSession(courseSessionId);
   if (!session) fail('session');
 
-  const course = getCourseEntryOrThrow(session!.courseSlug);
+  const course = await getCourseEntryOrThrow(session!.courseSlug);
   if (course.ageGroupSlug !== child!.ageGroupSlug) fail('ineligible');
+  if (!isCourseOffered(course, (await readContent()))) fail('closed');
+  if (!planTypesForCourse(course).includes(planType)) fail('plan');
 
-  const price = await resolvePrice(planType, session!.courseSlug, course.ageGroupSlug);
-  const discountPercent = await getFamilyDiscountPercent(child!);
-  const amount = applyDiscount(price.amount, discountPercent);
-  const { currency } = price;
+  const { amount, currency, discountPercent, laterDueDates } = await quoteEnrollment(course, planType, child!);
 
   let enrollmentId = '';
   try {
-    const result = await createFirebaseEnrollment({
+    const result = await createDbEnrollment({
       childId,
       courseSessionId,
       session: session!,
@@ -70,6 +68,7 @@ export async function enrollChild(formData: FormData): Promise<void> {
       amount,
       currency,
       discountPercent,
+      laterDueDates,
     });
     enrollmentId = result.enrollmentId;
   } catch (err) {
@@ -82,7 +81,7 @@ export async function enrollChild(formData: FormData): Promise<void> {
   if (paymentMethod !== 'CARD') {
     const methodLabel = paymentMethod === 'CASH' ? 'cash' : 'cheque';
     try {
-      await createFirebaseNotification({
+      await createDbNotification({
         type: 'OFFLINE_PAYMENT_DECLARED',
         title: `${parent.fullName} will pay in ${methodLabel}`,
         body: `${child!.fullName}, ${course.title.en}: ${amount.toFixed(2)} ${currency}${discountPercent ? ` (-${discountPercent}% sibling discount)` : ''} (added to payments as pending)`,
@@ -105,8 +104,8 @@ export async function unenrollChild(formData: FormData): Promise<void> {
 
   const detailPath = `/parent-portal/children/${childId}/courses/${enrollmentId}`;
 
-  const enrollment = await getFirebaseEnrollment(enrollmentId);
-  const child = enrollment ? await getFirebaseChild(enrollment.childId) : null;
+  const enrollment = await getDbEnrollment(enrollmentId);
+  const child = enrollment ? await getDbChild(enrollment.childId) : null;
   if (!enrollment || !child || child.parentId !== parent.parentId) {
     redirect(localizedPath(locale, '/parent-portal?error=1'));
   }
@@ -114,6 +113,6 @@ export async function unenrollChild(formData: FormData): Promise<void> {
     redirect(localizedPath(locale, `${detailPath}?error=already`));
   }
 
-  await updateFirebaseEnrollmentStatus(enrollmentId, 'CANCELLED');
+  await updateDbEnrollmentStatus(enrollmentId, 'CANCELLED');
   redirect(localizedPath(locale, '/parent-portal/courses?unsubscribed=1'));
 }

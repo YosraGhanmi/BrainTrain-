@@ -1,0 +1,45 @@
+import { prisma } from '@/lib/db/prisma';
+import { createDbNotification } from '@/lib/db/notifications';
+
+export type DbPreinscription = {
+  id: string;
+  childFullName: string;
+  childAge: number;
+  institution: string;
+  parentFullName: string;
+  parentPhone: string;
+  createdAt: Date;
+};
+
+const PREINSCRIPTION_SETTING = 'preinscription';
+
+export async function createDbPreinscription(data: Omit<DbPreinscription, 'id' | 'createdAt'>): Promise<void> {
+  await prisma.preinscription.create({ data });
+}
+
+export async function listDbPreinscriptions(): Promise<DbPreinscription[]> {
+  return prisma.preinscription.findMany({ orderBy: { createdAt: 'desc' } });
+}
+
+export async function getDbPreinscriptionSetting(): Promise<boolean> {
+  const row = await prisma.setting.findUnique({ where: { key: PREINSCRIPTION_SETTING } });
+  const value = row?.value as { routeRegisterToForm?: unknown } | null | undefined;
+  return value?.routeRegisterToForm === true;
+}
+
+export async function setDbPreinscriptionSetting(routeRegisterToForm: boolean): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: PREINSCRIPTION_SETTING },
+    create: { key: PREINSCRIPTION_SETTING, value: { routeRegisterToForm } },
+    update: { value: { routeRegisterToForm } },
+  });
+}
+
+export async function createDbPreinscriptionNotification(childFullName: string, parentFullName: string): Promise<void> {
+  await createDbNotification({
+    type: 'PREINSCRIPTION_SUBMITTED',
+    title: 'New preinscription received',
+    body: `${childFullName} - ${parentFullName}`,
+    link: '/admin/preinscriptions',
+  });
+}

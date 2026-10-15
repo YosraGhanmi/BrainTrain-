@@ -1,6 +1,5 @@
-import { firestore } from '@/lib/firebase/admin';
-import { listUnreadFirebaseNotifications, type FirebaseNotification } from '@/lib/firebase/notifications';
-import { isFirebaseConfigured } from '@/lib/firebase/portal-auth';
+import { prisma } from '@/lib/db/prisma';
+import { listUnreadDbNotifications, type DbNotification } from '@/lib/db/notifications';
 
 export type PendingParentNotice = {
   id: string;
@@ -42,81 +41,53 @@ export type AdminNotifications = {
   totalCount: number;
 };
 
-// Pending-parent and overdue-payment notices are derived live from
-// Firestore user/payment documents rather than stored notifications.
+// Pending-parent and overdue-payment notices are derived live from the
+// users and payments tables rather than stored notifications.
 export async function getAdminNotifications(): Promise<AdminNotifications> {
-  if (isFirebaseConfigured()) {
-    const [pendingParentSnap, expenseOnlyNotices, earningNotices, paymentNotices, childNotices, preinscriptionNotices, overduePaymentSnap] = await Promise.all([
-      firestore
-        .collection('users')
-        .where('role', '==', 'PARENT')
-        .where('parentStatus', '==', 'PENDING')
-        .get()
-        .catch(() => ({ docs: [] })),
-      listUnreadFirebaseNotifications('EXPENSE_ADDED').catch(() => []),
-      listUnreadFirebaseNotifications('EARNING_ADDED').catch(() => []),
-      listUnreadFirebaseNotifications('OFFLINE_PAYMENT_DECLARED').catch(() => []),
-      listUnreadFirebaseNotifications('CHILD_LINKED').catch(() => []),
-      listUnreadFirebaseNotifications('PREINSCRIPTION_SUBMITTED').catch(() => []),
-      firestore
-        .collection('payments')
-        .where('status', '==', 'OVERDUE')
-        .get()
-        .catch(() => ({ docs: [] })),
+  const [pendingParentRows, expenseOnlyNotices, earningNotices, paymentNotices, childNotices, preinscriptionNotices, overdueRows] =
+    await Promise.all([
+      prisma.user.findMany({
+        where: { role: 'PARENT', parentStatus: 'PENDING' },
+        select: { id: true, fullName: true, email: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      listUnreadDbNotifications('EXPENSE_ADDED'),
+      listUnreadDbNotifications('EARNING_ADDED'),
+      listUnreadDbNotifications('OFFLINE_PAYMENT_DECLARED'),
+      listUnreadDbNotifications('CHILD_LINKED'),
+      listUnreadDbNotifications('PREINSCRIPTION_SUBMITTED'),
+      prisma.payment.findMany({
+        where: { status: 'OVERDUE' },
+        include: { enrollment: { select: { child: { select: { fullName: true } } } } },
+        orderBy: { dueDate: 'asc' },
+        take: 20,
+      }),
     ]);
 
-    const pendingParents: PendingParentNotice[] = pendingParentSnap.docs
-      .map((doc) => ({
-        id: doc.id,
-        fullName: String(doc.data().fullName ?? ''),
-        email: String(doc.data().email ?? ''),
-        createdAt: doc.data().createdAt?.toDate?.() ?? new Date(),
-      }))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 20);
+  const pendingParents: PendingParentNotice[] = pendingParentRows;
 
-    const sortedOverdueDocs = overduePaymentSnap.docs
-      .sort((a, b) => {
-        const tA = a.data().dueDate?.toDate?.()?.getTime() ?? 0;
-        const tB = b.data().dueDate?.toDate?.()?.getTime() ?? 0;
-        return tA - tB;
-      })
-      .slice(0, 20);
+  const overduePayments: OverduePaymentNotice[] = overdueRows.map((row) => ({
+    id: row.id,
+    amount: Number(row.amount),
+    currency: row.currency,
+    dueDate: row.dueDate,
+    childName: row.enrollment.child?.fullName ?? '',
+  }));
 
-    // Enrich overdue payments with child name
-    const overduePayments: OverduePaymentNotice[] = await Promise.all(
-      sortedOverdueDocs.map(async (doc) => {
-        const data = doc.data();
-        const enrollmentDoc = await firestore.collection('enrollments').doc(String(data.enrollmentId)).get();
-        const childId = enrollmentDoc.data()?.childId as string | undefined;
-        const childDoc = childId ? await firestore.collection('children').doc(childId).get() : null;
-        return {
-          id: doc.id,
-          amount: Number(data.amount ?? 0),
-          currency: String(data.currency ?? 'TND'),
-          dueDate: data.dueDate?.toDate?.() ?? new Date(),
-          childName: String(childDoc?.data()?.fullName ?? ''),
-        };
-      }),
-    );
+  const toNotice = (n: DbNotification) => ({ id: n.id, title: n.title, body: n.body, link: n.link, createdAt: n.createdAt });
+  const expenseNotices = [...expenseOnlyNotices, ...earningNotices]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .map(toNotice);
 
-    const toNotice = (n: FirebaseNotification) => ({ id: n.id, title: n.title, body: n.body, link: n.link, createdAt: n.createdAt });
-    const expenseNotices = [...expenseOnlyNotices, ...earningNotices]
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .map(toNotice);
-
-    return {
-      pendingParents,
-      expenseNotices,
-      paymentNotices: paymentNotices.map(toNotice),
-      childNotices: childNotices.map(toNotice),
-      preinscriptionNotices: preinscriptionNotices.map(toNotice),
-      overduePayments,
-      totalCount:
-        pendingParents.length + expenseNotices.length + paymentNotices.length + childNotices.length + preinscriptionNotices.length + overduePayments.length,
-    };
-  }
-
-  // Firebase not configured — return empty
-  return { pendingParents: [], expenseNotices: [], paymentNotices: [], childNotices: [], preinscriptionNotices: [], overduePayments: [], totalCount: 0 };
+  return {
+    pendingParents,
+    expenseNotices,
+    paymentNotices: paymentNotices.map(toNotice),
+    childNotices: childNotices.map(toNotice),
+    preinscriptionNotices: preinscriptionNotices.map(toNotice),
+    overduePayments,
+    totalCount:
+      pendingParents.length + expenseNotices.length + paymentNotices.length + childNotices.length + preinscriptionNotices.length + overduePayments.length,
+  };
 }

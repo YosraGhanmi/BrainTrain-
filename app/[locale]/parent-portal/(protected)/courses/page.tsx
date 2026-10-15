@@ -3,13 +3,15 @@ import { getTranslations } from 'next-intl/server';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import { listCourseEntriesForAgeGroup } from '@/lib/content/lookup';
+import { readContent } from '@/lib/content/store';
+import { isCourseOffered } from '@/lib/content/summer';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CoursesExplorer from '@/components/portal/CoursesExplorer';
-import { listFirebaseChildren } from '@/lib/firebase/children';
-import { listFirebaseEnrollmentsWithSessionsByChild } from '@/lib/firebase/read-models';
-import type { EnrollmentStatus } from '@/lib/firebase/enrollments';
+import { listDbChildren } from '@/lib/db/children';
+import { listDbEnrollmentsWithSessionsByChild } from '@/lib/db/read-models';
+import type { EnrollmentStatus } from '@/lib/db/enrollments';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +20,7 @@ export default async function ParentCoursesPage(props: { params: Promise<{ local
   const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal' });
-  const children = await listFirebaseChildren(parent.parentId);
+  const children = await listDbChildren(parent.parentId);
   const selected = await resolveSelectedChild(children);
 
   if (!selected) {
@@ -31,9 +33,13 @@ export default async function ParentCoursesPage(props: { params: Promise<{ local
 
   const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
-  const enrollments = await listFirebaseEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']);
+  const enrollments = await listDbEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']);
 
-  const eligibleCourses = listCourseEntriesForAgeGroup(child.ageGroupSlug);
+  // Summer courses only while the summer school is open, listed first
+  const content = (await readContent());
+  const eligibleCourses = (await listCourseEntriesForAgeGroup(child.ageGroupSlug))
+    .filter((course) => isCourseOffered(course, content))
+    .sort((a, b) => Number(Boolean(b.summer)) - Number(Boolean(a.summer)));
 
   // If a child has both a PENDING and an ACTIVE session for the same course,
   // ACTIVE is the more relevant status to surface on the catalog card.
@@ -50,6 +56,7 @@ export default async function ParentCoursesPage(props: { params: Promise<{ local
     slug: course.slug,
     title: localized(course.title, params.locale),
     sessionsCount: course.sessions,
+    summer: Boolean(course.summer),
     status: enrollmentByCourse.get(course.slug)?.status ?? null,
     enrollmentId: enrollmentByCourse.get(course.slug)?.enrollmentId ?? null,
     childId: child.id,

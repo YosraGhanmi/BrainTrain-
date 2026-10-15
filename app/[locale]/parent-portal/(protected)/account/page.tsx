@@ -6,7 +6,7 @@ import PersonalInfoSection from '@/components/portal/settings/PersonalInfoSectio
 import SecuritySection from '@/components/portal/settings/SecuritySection';
 import ChildrenSection from '@/components/portal/settings/ChildrenSection';
 import type { AppLocale } from '@/i18n/routing';
-import { listFirebaseChildrenWithEnrollments } from '@/lib/firebase/read-models';
+import { listDbChildrenWithEnrollments } from '@/lib/db/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,8 +73,8 @@ async function ChildrenTab({
   parentId: string;
   selectedChildId: string;
 }) {
-  const kids = await listFirebaseChildrenWithEnrollments(parentId);
-  const ageGroups = listAgeGroupEntries();
+  const kids = await listDbChildrenWithEnrollments(parentId);
+  const ageGroups = await listAgeGroupEntries();
 
   return <ChildrenSection locale={locale} kids={kids} ageGroups={ageGroups} selectedChildId={selectedChildId} />;
 }

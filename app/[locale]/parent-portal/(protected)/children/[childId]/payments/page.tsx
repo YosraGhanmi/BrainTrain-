@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { requireParent } from '@/lib/portal-auth/guard';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import MonthlyPaymentsTable from '@/components/portal/MonthlyPaymentsTable';
-import { getFirebaseChild } from '@/lib/firebase/children';
-import { listFirebasePaymentsWithRelationsByChild } from '@/lib/firebase/read-models';
+import { getDbChild } from '@/lib/db/children';
+import { listDbPaymentsWithRelationsByChild } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -16,15 +16,16 @@ export default async function PaymentsPage(
     searchParams: Promise<{ paid?: string; cancelled?: string }>;
   }
 ) {
+  const courseOf = await courseLookup();
   const searchParams = await props.searchParams;
   const params = await props.params;
   const parent = await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.paymentsPage' });
-  const child = await getFirebaseChild(params.childId);
+  const child = await getDbChild(params.childId);
   if (!child || child.parentId !== parent.parentId) notFound();
 
-  const payments = (await listFirebasePaymentsWithRelationsByChild(child.id)).filter((payment) => payment.enrollment).map((payment) => {
-    const course = getCourseEntryOrThrow(payment.enrollment!.courseSession.courseSlug);
+  const payments = (await listDbPaymentsWithRelationsByChild(child.id)).filter((payment) => payment.enrollment).map((payment) => {
+    const course = courseOf(payment.enrollment!.courseSession.courseSlug);
     return {
       id: payment.id,
       courseTitle: localized(course.title, params.locale),

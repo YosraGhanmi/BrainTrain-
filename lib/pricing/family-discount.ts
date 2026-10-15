@@ -1,19 +1,23 @@
 import { readContent } from '@/lib/content/store';
-import { listFirebaseChildren } from '@/lib/firebase/children';
-import { listFirebaseEnrollmentsByChild } from '@/lib/firebase/enrollments';
+import { listDbChildren } from '@/lib/db/children';
+import { listDbEnrollmentsByChild } from '@/lib/db/enrollments';
 
 // Siblings discount: a family's first enrolled child (the one with the oldest
 // pending/active enrollment) pays full price, every other child gets the
 // admin-set percent off. Returns the percent to apply, 0 when none.
 // Children not yet linked to a parent account have no known siblings.
-export async function getFamilyDiscountPercent(child: { id: string; parentId: string }): Promise<number> {
-  const percent = readContent().familyDiscountPercent;
+// `percent` overrides the school-year setting (summer school has its own).
+export async function getFamilyDiscountPercent(
+  child: { id: string; parentId: string },
+  percent?: number,
+): Promise<number> {
+  percent ??= (await readContent()).familyDiscountPercent;
   if (!percent || !child.parentId) return 0;
 
-  const siblings = await listFirebaseChildren(child.parentId);
+  const siblings = await listDbChildren(child.parentId);
   const firstEnrolledAt = await Promise.all(
     siblings.map(async (sibling) => {
-      const active = (await listFirebaseEnrollmentsByChild(sibling.id)).filter((e) => e.status !== 'CANCELLED');
+      const active = (await listDbEnrollmentsByChild(sibling.id)).filter((e) => e.status !== 'CANCELLED');
       const times = active.map((e) => e.enrolledAt.getTime());
       return { childId: sibling.id, since: times.length ? Math.min(...times) : null };
     }),

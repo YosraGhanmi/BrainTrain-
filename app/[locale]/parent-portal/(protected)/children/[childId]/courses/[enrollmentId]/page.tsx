@@ -17,7 +17,8 @@ import {
   Clock3,
 } from 'lucide-react';
 import { requireParent } from '@/lib/portal-auth/guard';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
+import { formatSessionDays } from '@/lib/scheduling/slots';
 import { getIcon } from '@/lib/content/icons';
 import { localized, formatDate } from '@/lib/i18n/format';
 import { unenrollChild } from '@/lib/enrollment/actions';
@@ -28,8 +29,8 @@ import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import NotesList from '@/components/portal/course/NotesList';
 import PaymentConfirmedModal from '@/components/portal/course/PaymentConfirmedModal';
 import type { AppLocale } from '@/i18n/routing';
-import { listFirebaseBadgesByCourseSession } from '@/lib/firebase/badges';
-import { getFirebaseEnrollmentWithRelations } from '@/lib/firebase/read-models';
+import { listDbBadgesByCourseSession } from '@/lib/db/badges';
+import { getDbEnrollmentWithRelations } from '@/lib/db/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,7 @@ export default async function EnrolledCoursePage(
     searchParams: Promise<{ error?: string }>;
   }
 ) {
+  const courseOf = await courseLookup();
   const searchParams = await props.searchParams;
   const params = await props.params;
   const parent = await requireParent(params.locale);
@@ -54,14 +56,14 @@ export default async function EnrolledCoursePage(
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
 
-  const row = await getFirebaseEnrollmentWithRelations(params.enrollmentId);
+  const row = await getDbEnrollmentWithRelations(params.enrollmentId);
 
   if (!row || row.enrollment.childId !== params.childId || row.child.parentId !== parent.parentId) {
     notFound();
   }
 
   const { enrollment, child, notes, payments, teacherName } = row;
-  const course = getCourseEntryOrThrow(enrollment.courseSession.courseSlug);
+  const course = courseOf(enrollment.courseSession.courseSlug);
   const Icon = getIcon(course.icon);
   const session = enrollment.courseSession;
 
@@ -105,7 +107,7 @@ export default async function EnrolledCoursePage(
             <div className="mt-6 w-full rounded-2xl bg-white/70 p-4 text-left text-sm text-ink/80 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                 <span className="font-semibold text-ink">{localized(course.title, params.locale)}</span>
-                <span>{DAYS[session.dayOfWeek]} · {session.startTime}–{session.endTime}</span>
+                <span>{formatSessionDays(session, DAYS)} · {session.startTime}–{session.endTime}</span>
               </div>
               {pendingPayment ? (
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-ink/5 pt-2 text-ink/70">
@@ -127,10 +129,13 @@ export default async function EnrolledCoursePage(
     );
   }
 
-  const badges = (await listFirebaseBadgesByCourseSession(session.id)).filter((badge) => badge.childId === enrollment.childId);
+  const badges = (await listDbBadgesByCourseSession(session.id)).filter((badge) => badge.childId === enrollment.childId);
 
-  const outstandingPayment = payments.find((p) => p.status !== 'PAID');
-  const isFullyPaid = payments.length > 0 && !outstandingPayment;
+  // A monthly summer plan's later months exist ahead of time; only flag the
+  // ones already due
+  const now = new Date();
+  const outstandingPayment = payments.find((p) => p.status !== 'PAID' && p.dueDate <= now);
+  const isFullyPaid = payments.length > 0 && payments.every((p) => p.status === 'PAID');
 
   // Cash/cheque payments are confirmed by staff, not by the parent's own
   // checkout redirect (unlike card payments, which get instant feedback from
@@ -188,7 +193,7 @@ export default async function EnrolledCoursePage(
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-ink/70">
               <span className="flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4" />
-                {DAYS[session.dayOfWeek]} · {session.startTime}–{session.endTime}
+                {formatSessionDays(session, DAYS)} · {session.startTime}–{session.endTime}
               </span>
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4" />
@@ -248,7 +253,7 @@ export default async function EnrolledCoursePage(
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">{t('nextSession')}</p>
-            <p className="truncate text-base font-bold text-ink">{DAYS[session.dayOfWeek]}</p>
+            <p className="truncate text-base font-bold text-ink">{formatSessionDays(session, DAYS)}</p>
             <p className="text-xs text-stone">{session.startTime} – {session.endTime}</p>
           </div>
           <ChevronRight className="h-4 w-4 shrink-0 text-stone/40" />

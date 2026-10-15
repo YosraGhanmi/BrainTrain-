@@ -40,7 +40,7 @@ function Card({ icon: Icon, title, children }: { icon: LucideIcon; title: string
 
 export default async function AdminContactPage() {
   await requireAdminOnly();
-  const { contact } = readContent();
+  const { contact } = (await readContent());
 
   return (
     <div>

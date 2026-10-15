@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { uploadChildPhoto } from '@/lib/children/actions';
 import { rotateHue } from '@/lib/color';
 import ChildAvatarUploader from '@/components/portal/ChildAvatarUploader';
-import type { PastClass } from '@/lib/firebase/children';
+import type { PastClass } from '@/lib/db/children';
 import type { AppLocale } from '@/i18n/routing';
 
 const MAX_VISIBLE_COURSES = 3;

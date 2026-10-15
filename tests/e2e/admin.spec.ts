@@ -30,7 +30,7 @@ const ADMIN_ROUTES = [
 async function loginAsAdmin(page: import('@playwright/test').Page) {
   await page.goto('/admin/login?role=admin');
   await page.getByLabel(/email/i).fill(ADMIN_EMAIL);
-  await page.getByLabel(/password/i).fill(ADMIN_PASSWORD);
+  await page.getByLabel('Password', { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: /log in/i }).click();
   await page.waitForURL('**/admin', { timeout: 15_000 });
 }

@@ -3,9 +3,8 @@
 import { redirect } from 'next/navigation';
 import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { getStripeClient } from '@/lib/payments/stripe';
-import { getFirebasePayment, updateFirebasePayment } from '@/lib/firebase/enrollments';
-import { getFirebaseChild } from '@/lib/firebase/children';
-import { firestore } from '@/lib/firebase/admin';
+import { getDbEnrollment, getDbPayment, getDbPaymentPlan, updateDbPayment } from '@/lib/db/enrollments';
+import { getDbChild } from '@/lib/db/children';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -22,13 +21,12 @@ export async function payNow(formData: FormData): Promise<void> {
   const paymentId = field(formData, 'paymentId');
   const childId = field(formData, 'childId');
 
-  const payment = await getFirebasePayment(paymentId);
+  const payment = await getDbPayment(paymentId);
   if (!payment) redirect(localizedPath(locale, '/parent-portal?error=1'));
 
   // Ownership: resolve childId through enrollment → child → parentId
-  const enrollmentDoc = await firestore.collection('enrollments').doc(payment!.enrollmentId).get();
-  const enrollmentChildId = String(enrollmentDoc.data()?.childId ?? '');
-  const child = await getFirebaseChild(enrollmentChildId);
+  const enrollment = await getDbEnrollment(payment!.enrollmentId);
+  const child = await getDbChild(enrollment?.childId ?? '');
 
   const ownsPayment = child && child.parentId === parent.parentId;
   if (!ownsPayment) redirect(localizedPath(locale, '/parent-portal?error=1'));
@@ -38,8 +36,7 @@ export async function payNow(formData: FormData): Promise<void> {
   }
 
   // Resolve plan type for label from payment plan
-  const planSnap = await firestore.collection('payment_plans').doc(payment!.paymentPlanId).get();
-  const planType = String(planSnap.data()?.type ?? 'MONTHLY');
+  const planType = (await getDbPaymentPlan(payment!.paymentPlanId))?.type ?? 'MONTHLY';
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
   const successPath = localizedPath(locale, `/parent-portal/children/${childId}/payments?paid=1`);
@@ -67,20 +64,19 @@ export async function payNow(formData: FormData): Promise<void> {
     metadata: { paymentId: payment!.id },
   });
 
-  await updateFirebasePayment(paymentId, { stripeSessionId: checkoutSession.id });
+  await updateDbPayment(paymentId, { stripeSessionId: checkoutSession.id });
   redirect(checkoutSession.url!);
 }
 
 export async function acknowledgePaymentConfirmation(paymentId: string, locale: AppLocale): Promise<void> {
   const parent = await requireParent(locale);
 
-  const payment = await getFirebasePayment(paymentId);
+  const payment = await getDbPayment(paymentId);
   if (!payment) return;
 
-  const enrollmentDoc = await firestore.collection('enrollments').doc(payment.enrollmentId).get();
-  const enrollmentChildId = String(enrollmentDoc.data()?.childId ?? '');
-  const child = await getFirebaseChild(enrollmentChildId);
+  const enrollment = await getDbEnrollment(payment.enrollmentId);
+  const child = await getDbChild(enrollment?.childId ?? '');
   if (!child || child.parentId !== parent.parentId) return;
 
-  await updateFirebasePayment(paymentId, { parentNotifiedAt: new Date() });
+  await updateDbPayment(paymentId, { parentNotifiedAt: new Date() });
 }

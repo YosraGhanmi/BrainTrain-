@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminNewsPage(props: { searchParams: Promise<{ error?: string }> }) {
   const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const { news, ageGroups, courses } = readContent();
+  const { news, ageGroups, courses } = (await readContent());
 
   return (
     <div>

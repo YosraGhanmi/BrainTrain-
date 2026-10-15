@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, Sun } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import type { EnrollmentStatus } from '@/lib/firebase/enrollments';
+import type { EnrollmentStatus } from '@/lib/db/enrollments';
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: 'bg-emerald-50 text-emerald-700',
@@ -15,6 +15,7 @@ export type CourseInfo = {
   slug: string;
   title: string;
   sessionsCount: number;
+  summer: boolean;
   status: EnrollmentStatus | null;
   enrollmentId: string | null;
   childId: string;
@@ -118,6 +119,13 @@ export default function CoursesExplorer({ courses }: { courses: CourseInfo[] }) 
                   className={`absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide shadow-sm ${STATUS_STYLES[course.status]}`}
                 >
                   {t(`status.${course.status}`)}
+                </span>
+              ) : null}
+
+              {course.summer ? (
+                <span className="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800 shadow-sm">
+                  <Sun className="h-3 w-3" />
+                  {t('summer')}
                 </span>
               ) : null}
 

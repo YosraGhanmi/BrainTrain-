@@ -7,18 +7,19 @@ import {
   setTeacherFrozen,
   addTeacherCourse,
   removeTeacherCourse,
-  regenerateTeacherSecretCode,
+  regenerateTeacherSecretCode, setAccountPassword,
 } from '@/lib/admin/portal-actions';
 import { readContent } from '@/lib/content/store';
 import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
 import RegenerateCodeButton from '@/components/admin/RegenerateCodeButton';
+import SetPasswordButton from '@/components/admin/SetPasswordButton';
 import AddTeacherDialog from '@/components/admin/AddTeacherDialog';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import { parseTeacherCourseSlugs } from '@/lib/teachers/course-slugs';
-import { listFirebaseTeachers } from '@/lib/firebase/teachers';
-import { listFirebaseCourseSessionsByTeacher } from '@/lib/firebase/sessions';
+import { listDbTeachers } from '@/lib/db/teachers';
+import { listDbCourseSessionsByTeacher } from '@/lib/db/sessions';
 import type { CourseEntry, AgeGroupEntry } from '@/lib/content/types';
 
 function CourseSelect({
@@ -72,21 +73,21 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminTeachersPage(
   props: {
-    searchParams: Promise<{ error?: string; courseError?: string; saved?: string; code?: string; email?: string }>;
+    searchParams: Promise<{ error?: string; courseError?: string; saved?: string; code?: string; email?: string; passwordError?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
-  const content = readContent();
+  const content = (await readContent());
   const { courses, ageGroups } = content;
   const courseBySlug = new Map(courses.map((c) => [c.slug, c]));
   const ageGroupLabelBySlug = new Map(ageGroups.map((g) => [g.slug, g.label.en]));
 
-  const teacherProfiles = await listFirebaseTeachers();
+  const teacherProfiles = await listDbTeachers();
   const teachersWithSessionCount = await Promise.all(
     teacherProfiles.map(async (t) => {
-      const sessions = await listFirebaseCourseSessionsByTeacher(t.id);
+      const sessions = await listDbCourseSessionsByTeacher(t.id);
       return { ...t, sessionCount: sessions.length };
     }),
   );
@@ -118,6 +119,9 @@ export default async function AdminTeachersPage(
         </AddTeacherDialog>
       </div>
 
+      {searchParams.passwordError ? (
+        <p className="mt-4 text-sm font-semibold text-red-600">Password not saved: use at least 8 characters.</p>
+      ) : null}
       {searchParams.code ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
           <p className="text-sm font-semibold text-emerald-800">
@@ -237,6 +241,7 @@ export default async function AdminTeachersPage(
                 <td className="px-5 py-4 align-top">
                   {canEdit ? (
                     <div className="flex items-center justify-end gap-2">
+                      <SetPasswordButton action={setAccountPassword.bind(null, t.id)} accountName={t.fullName} returnTo="/admin/teachers" />
                       <RegenerateCodeButton action={regenerateTeacherSecretCode.bind(null, t.id)} />
                       <FreezeToggleButton action={setTeacherFrozen.bind(null, t.id, !t.isFrozen)} isFrozen={t.isFrozen} />
                       <DeleteIconButton action={deleteTeacher.bind(null, t.id)} />

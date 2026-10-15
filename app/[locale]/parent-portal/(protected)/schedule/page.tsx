@@ -3,13 +3,15 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { requireParent } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { readContent } from '@/lib/content/store';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
+import { sessionDays } from '@/lib/scheduling/slots';
+import { isInSummer } from '@/lib/content/summer';
 import type { AppLocale } from '@/i18n/routing';
-import { listFirebaseChildren } from '@/lib/firebase/children';
-import { listFirebaseEnrollmentsWithSessionsByChild } from '@/lib/firebase/read-models';
+import { listDbChildren } from '@/lib/db/children';
+import { listDbEnrollmentsWithSessionsByChild } from '@/lib/db/read-models';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +32,7 @@ export default async function ParentSchedulePage(
     searchParams: Promise<{ month?: string }>;
   }
 ) {
+  const courseOf = await courseLookup();
   const searchParams = await props.searchParams;
   const params = await props.params;
   const parent = await requireParent(params.locale);
@@ -38,7 +41,7 @@ export default async function ParentSchedulePage(
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const WEEKDAYS = tc.raw('daysShort') as string[];
   const MONTH_NAMES = tc.raw('months') as string[];
-  const children = await listFirebaseChildren(parent.parentId);
+  const children = await listDbChildren(parent.parentId);
   const selected = await resolveSelectedChild(children);
 
   if (!selected) {
@@ -51,20 +54,22 @@ export default async function ParentSchedulePage(
 
   const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
-  const enrollments = await listFirebaseEnrollmentsWithSessionsByChild(child.id, ['ACTIVE']);
+  const enrollments = await listDbEnrollmentsWithSessionsByChild(child.id, ['ACTIVE']);
 
   const byDayOfWeek = new Map<number, typeof enrollments>();
   for (const e of enrollments) {
-    const list = byDayOfWeek.get(e.courseSession.dayOfWeek) ?? [];
-    list.push(e);
-    byDayOfWeek.set(e.courseSession.dayOfWeek, list);
+    for (const day of sessionDays(e.courseSession)) {
+      const list = byDayOfWeek.get(day) ?? [];
+      list.push(e);
+      byDayOfWeek.set(day, list);
+    }
   }
   for (const list of byDayOfWeek.values()) {
     list.sort((a, b) => a.courseSession.startTime.localeCompare(b.courseSession.startTime));
   }
 
   const enrolledCourseSlugs = new Set(enrollments.map((e) => e.courseSession.courseSlug));
-  const { calendarEvents } = readContent();
+  const { calendarEvents, summerSchool } = (await readContent());
   const visibleEvents = calendarEvents.filter(
     (event) =>
       (event.targetAgeGroups.length === 0 || event.targetAgeGroups.includes(child.ageGroupSlug)) &&
@@ -100,7 +105,7 @@ export default async function ParentSchedulePage(
 
   // Distinct courses on this child's schedule, for the color/icon legend.
   const legend = [...new Set(enrollments.map((e) => e.courseSession.courseSlug))].map((slug) =>
-    getCourseEntryOrThrow(slug)
+    courseOf(slug)
   );
 
   return (
@@ -163,7 +168,12 @@ export default async function ParentSchedulePage(
           {cells.map((day, i) => {
             const dayOfWeek = i % 7;
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const sessionEvents = day ? byDayOfWeek.get(dayOfWeek) ?? [] : [];
+            // Summer groups only meet during the summer season
+            const sessionEvents = day
+              ? (byDayOfWeek.get(dayOfWeek) ?? []).filter(
+                  (e) => !e.courseSession.summer || isInSummer(summerSchool, new Date(year, month, day))
+                )
+              : [];
             const pinnedEvents = day ? eventsByDayOfMonth.get(day) ?? [] : [];
             const isToday = isCurrentMonth && day === today.getDate();
             return (
@@ -196,7 +206,7 @@ export default async function ParentSchedulePage(
                         </div>
                       ))}
                       {sessionEvents.map((e) => {
-                        const course = getCourseEntryOrThrow(e.courseSession.courseSlug);
+                        const course = courseOf(e.courseSession.courseSlug);
                         const Icon = getIcon(course.icon);
                         return (
                           <Link

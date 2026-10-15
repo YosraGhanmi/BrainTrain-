@@ -4,7 +4,10 @@ import { requireParent, localizedPath } from '@/lib/portal-auth/guard';
 import { resolveSelectedChild } from '@/lib/portal-auth/selected-child';
 import type { AppLocale } from '@/i18n/routing';
 import { LayoutDashboard, BookOpen, CalendarDays, CreditCard, Settings } from 'lucide-react';
-import { listFirebaseChildren } from '@/lib/firebase/children';
+import { listDbChildren } from '@/lib/db/children';
+
+// Reads the session cookie / URL parameters on every request
+export const dynamic = 'force-dynamic';
 
 export default async function ParentPortalLayout(
   props: {
@@ -21,7 +24,7 @@ export default async function ParentPortalLayout(
 
   const parent = await requireParent(locale);
   const t = await getTranslations({ locale, namespace: 'parentPortal.nav' });
-  const kids = (await listFirebaseChildren(parent.parentId)).map(({ id, fullName }) => ({ id, fullName }));
+  const kids = (await listDbChildren(parent.parentId)).map(({ id, fullName }) => ({ id, fullName }));
   const selectedKid = await resolveSelectedChild(kids);
 
   return (

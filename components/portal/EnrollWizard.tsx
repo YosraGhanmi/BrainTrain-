@@ -8,6 +8,8 @@ type Group = {
   id: string;
   label: string;
   dayOfWeek: number;
+  // "Monday & Wednesday" for a group meeting on several days, else null
+  daysLabel: string | null;
   startTime: string;
   endTime: string;
   seatsLeft: number;
@@ -117,6 +119,7 @@ export default function EnrollWizard({
                           } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${g.enrolled ? 'opacity-50' : ''}`}
                         >
                           <p className="text-sm font-bold text-white">{g.label}</p>
+                          {g.daysLabel ? <p className="mt-0.5 text-[0.65rem] font-semibold text-white/80">{g.daysLabel}</p> : null}
                           <p className="mt-0.5 text-xs text-white/80">
                             {g.startTime}–{g.endTime}
                           </p>
@@ -139,7 +142,7 @@ export default function EnrollWizard({
         ) : null}
 
         {step === 2 ? (
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className={`mt-5 grid grid-cols-1 gap-3 ${plans.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
             {plans.map((p) => {
               const checked = planType === p.type;
               return (
@@ -184,7 +187,8 @@ export default function EnrollWizard({
 
         {selectedGroup ? (
           <p className="mt-4 text-xs text-stone">
-            {selectedGroup.label} · {selectedGroup.startTime}–{selectedGroup.endTime}
+            {selectedGroup.label} · {selectedGroup.daysLabel ? `${selectedGroup.daysLabel} · ` : ''}
+            {selectedGroup.startTime}–{selectedGroup.endTime}
             {selectedPlan ? ` · ${selectedPlan.label} (${selectedPlan.amount} ${selectedPlan.currency})` : ''}
           </p>
         ) : null}

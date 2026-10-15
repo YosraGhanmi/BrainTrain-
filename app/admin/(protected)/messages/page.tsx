@@ -16,8 +16,8 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function AdminMessagesPage() {
-  const messages = readMessages();
+export default async function AdminMessagesPage() {
+  const messages = await readMessages();
 
   return (
     <div>

@@ -3,8 +3,8 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
-import { createFirebaseEarning, deleteFirebaseEarning } from '@/lib/firebase/earnings';
-import { createFirebaseNotification } from '@/lib/firebase/notifications';
+import { createDbEarning, deleteDbEarning } from '@/lib/db/earnings';
+import { createDbNotification } from '@/lib/db/notifications';
 
 function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
@@ -26,7 +26,7 @@ export async function createEarning(formData: FormData): Promise<void> {
 
   const createdByName = session.kind === 'admin' ? 'Admin' : session.fullName;
 
-  await createFirebaseEarning({
+  await createDbEarning({
     label,
     amount,
     currency,
@@ -38,7 +38,7 @@ export async function createEarning(formData: FormData): Promise<void> {
 
   // Notify admin when a secretary logs an earning
   if (session.kind === 'secretary') {
-    await createFirebaseNotification({
+    await createDbNotification({
       type: 'EARNING_ADDED',
       title: `${session.fullName} logged an earning`,
       body: `${label}: ${amount.toFixed(2)} ${currency}`,
@@ -53,7 +53,7 @@ export async function createEarning(formData: FormData): Promise<void> {
 
 export async function deleteEarning(id: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebaseEarning(id);
+  await deleteDbEarning(id);
   revalidatePath('/admin/earnings');
   revalidatePath('/admin');
 }

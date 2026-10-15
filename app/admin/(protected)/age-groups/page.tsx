@@ -130,7 +130,7 @@ function AgeGroupForm({ group, isNew }: { group: AgeGroupEntry; isNew: boolean }
 
 export default async function AdminAgeGroupsPage() {
   await requireAdminOnly();
-  const { ageGroups } = readContent();
+  const { ageGroups } = (await readContent());
   const blank: AgeGroupEntry = {
     slug: '',
     label: { en: '', fr: '' },

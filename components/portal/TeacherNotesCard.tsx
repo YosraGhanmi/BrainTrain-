@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { courseLookup } from '@/lib/content/lookup';
 import { formatShortDate, localized } from '@/lib/i18n/format';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -12,6 +12,7 @@ export type TeacherNoteCardItem = {
 };
 
 export default async function TeacherNotesCard({ notes, locale }: { notes: TeacherNoteCardItem[]; locale: AppLocale }) {
+  const courseOf = await courseLookup();
   const t = await getTranslations({ locale, namespace: 'parentPortal.dashboard.teacherNotes' });
   return (
     <div id="teacher-notes" className="flex-1 scroll-mt-6 rounded-3xl border border-ink/10 bg-white p-6 shadow-soft">
@@ -22,7 +23,7 @@ export default async function TeacherNotesCard({ notes, locale }: { notes: Teach
       ) : (
         <ul className="mt-4 max-h-[22rem] space-y-3 overflow-y-auto pr-1">
           {notes.map((note) => {
-            const course = getCourseEntryOrThrow(note.courseSlug);
+            const course = courseOf(note.courseSlug);
             return (
               <li key={note.id} className="rounded-2xl bg-slate-50 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">

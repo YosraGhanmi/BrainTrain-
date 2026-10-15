@@ -31,6 +31,7 @@ import {
   TrendingUp,
   Landmark,
   CalendarRange,
+  Sun,
 } from 'lucide-react';
 
 const customizationItems = [
@@ -70,6 +71,7 @@ const portalSections = [
     icon: CalendarClock,
     items: [
       { label: 'Course sessions', href: '/admin/sessions', icon: CalendarClock },
+      { label: 'Summer school', href: '/admin/summer-school', icon: Sun },
       { label: 'Time slots', href: '/admin/time-slots', icon: Clock4 },
       { label: 'Enrollments', href: '/admin/enrollments', icon: ClipboardList },
       { label: 'Preinscriptions', href: '/admin/preinscriptions', icon: FilePenLine },

@@ -3,7 +3,7 @@ import { readContent } from '@/lib/content/store';
 import { upsertAgeGroupPricing, clearCoursePricingOverride, updatePricingSettings } from '@/lib/admin/portal-actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import { listFirebasePricingRules, type PlanType } from '@/lib/firebase/pricing';
+import { listDbPricingRules, type PlanType } from '@/lib/db/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +29,7 @@ function SettingField({ label, ...input }: { label: string } & React.InputHTMLAt
 export default async function AdminPricingPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const [rules, content] = await Promise.all([listFirebasePricingRules(), Promise.resolve(readContent())]);
+  const [rules, content] = await Promise.all([listDbPricingRules(), (await readContent())]);
   const format = content.classFormat;
 
   const ageGroupDefaults: Record<string, Partial<Record<PlanType, number>> & { currency: string }> = {};
@@ -142,20 +142,21 @@ export default async function AdminPricingPage(props: { searchParams: Promise<{ 
       </p>
 
       <div className="mt-4 overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-soft">
-        <table className="w-full min-w-[560px] text-left text-sm">
+        <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="border-b border-ink/10 text-xs font-bold uppercase tracking-wide text-stone">
             <tr>
               <th className="px-5 py-3">Course</th>
               <th className="px-5 py-3">Monthly</th>
               <th className="px-5 py-3">3 months</th>
               <th className="px-5 py-3">Full year</th>
+              <th className="px-5 py-3">Summer season</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody>
             {Object.keys(courseOverrides).length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-6 text-center text-stone">
+                <td colSpan={6} className="px-5 py-6 text-center text-stone">
                   No course-specific overrides — every course uses its age group's default.
                 </td>
               </tr>
@@ -164,10 +165,14 @@ export default async function AdminPricingPage(props: { searchParams: Promise<{ 
                 const course = content.courses.find((c) => c.slug === courseSlug);
                 return (
                   <tr key={courseSlug} className="border-b border-ink/5 last:border-0">
-                    <td className="px-5 py-4 font-semibold text-ink">{course?.title.en ?? courseSlug}</td>
+                    <td className="px-5 py-4 font-semibold text-ink">
+                      {course?.title.en ?? courseSlug}
+                      {course?.summer ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">Summer</span> : null}
+                    </td>
                     <td className="px-5 py-4 text-stone">{amounts.MONTHLY ?? '—'} {amounts.currency}</td>
                     <td className="px-5 py-4 text-stone">{amounts.QUARTERLY ?? '—'} {amounts.currency}</td>
                     <td className="px-5 py-4 text-stone">{amounts.YEARLY ?? '—'} {amounts.currency}</td>
+                    <td className="px-5 py-4 text-stone">{amounts.SEASON ?? '—'} {amounts.currency}</td>
                     <td className="px-5 py-4 text-right">
                       <DeleteIconButton action={clearCoursePricingOverride.bind(null, courseSlug)} />
                     </td>

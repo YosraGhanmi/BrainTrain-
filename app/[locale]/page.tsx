@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home(props: { params: Promise<{ locale: AppLocale }> }) {
   const params = await props.params;
-  const content = readContent();
+  const [content, courseKinds] = await Promise.all([readContent(), getCourseKinds(params.locale)]);
   const registerHref = await getRegisterHref();
 
   return (
@@ -30,7 +30,7 @@ export default async function Home(props: { params: Promise<{ locale: AppLocale 
         <PhilosophySection />
         <QuickStats quickStats={content.stats} />
         <CoursesSection
-          courses={getCourseKinds(params.locale).map(({ slug, title, icon, color }) => ({ slug, title, icon, color }))}
+          courses={courseKinds.map(({ slug, title, icon, color }) => ({ slug, title, icon, color }))}
         />
         <StatsSection achievementsImages={content.achievementsImages} />
         <MilestonesSection milestones={content.timeline} />

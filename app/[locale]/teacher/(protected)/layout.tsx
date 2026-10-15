@@ -4,6 +4,9 @@ import { requireTeacher, localizedPath } from '@/lib/portal-auth/guard';
 import type { AppLocale } from '@/i18n/routing';
 import { Users, CalendarDays } from 'lucide-react';
 
+// Reads the session cookie / URL parameters on every request
+export const dynamic = 'force-dynamic';
+
 export default async function TeacherPortalLayout(
   props: {
     children: React.ReactNode;

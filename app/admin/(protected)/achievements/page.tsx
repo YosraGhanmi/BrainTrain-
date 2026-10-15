@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminAchievementsPage(props: { searchParams: Promise<{ error?: string }> }) {
   const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const { achievementsImages } = readContent();
+  const { achievementsImages } = (await readContent());
 
   return (
     <div>

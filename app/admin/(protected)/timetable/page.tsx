@@ -1,11 +1,13 @@
+import Link from 'next/link';
 import { Clock, MapPin, Pin, UserRound, Users } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { getIcon } from '@/lib/content/icons';
-import { listTimeSlots, findSlotLabel } from '@/lib/scheduling/time-slots';
-import { listFirebaseCourseSessions } from '@/lib/firebase/sessions';
-import { listFirebaseTeachers } from '@/lib/firebase/teachers';
-import { firestore } from '@/lib/firebase/admin';
+import { listTimeSlots, sessionGroupLabel } from '@/lib/scheduling/time-slots';
+import { sessionDays } from '@/lib/scheduling/slots';
+import { listDbCourseSessions } from '@/lib/db/sessions';
+import { listDbTeachers } from '@/lib/db/teachers';
+import { prisma } from '@/lib/db/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,32 +17,34 @@ const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 // Read-only weekly timetable of every group, for Reception (and Admin) to
 // answer "when does this group meet / who teaches it / is there a seat".
-// Editing groups stays on the admin-only Course sessions page.
-export default async function AdminTimetablePage() {
+// Editing groups stays on the admin-only Course sessions page. School-year
+// and summer groups never run at the same time, so they're shown apart.
+export default async function AdminTimetablePage(props: { searchParams: Promise<{ season?: string }> }) {
+  const summerView = (await props.searchParams).season === 'summer';
   await requireAdmin();
-  const [sessions, teachers, timeSlots, seatSnap] = await Promise.all([
-    listFirebaseCourseSessions(),
-    listFirebaseTeachers(),
+  const [allSessions, teachers, timeSlots, seatCounts, content] = await Promise.all([
+    listDbCourseSessions(),
+    listDbTeachers(),
     listTimeSlots(),
     // Same statuses the capacity check counts as a taken seat
-    firestore.collection('enrollments').where('status', 'in', ['PENDING', 'ACTIVE']).get(),
+    prisma.enrollment.groupBy({ by: ['courseSessionId'], where: { status: { in: ['PENDING', 'ACTIVE'] } }, _count: { _all: true } }),
+    (await readContent()),
   ]);
-  const { courses, ageGroups, calendarEvents } = readContent();
+  const { courses, ageGroups, calendarEvents } = content;
+  const sessions = allSessions.filter((s) => s.summer === summerView);
 
-  const seatsBySession = new Map<string, number>();
-  seatSnap.docs.forEach((doc) => {
-    const sessionId = String(doc.data().courseSessionId ?? '');
-    seatsBySession.set(sessionId, (seatsBySession.get(sessionId) ?? 0) + 1);
-  });
+  const seatsBySession = new Map(seatCounts.map((row) => [row.courseSessionId ?? '', row._count._all]));
   const teacherById = new Map(teachers.map((t) => [t.id, t]));
   const courseBySlug = new Map(courses.map((c) => [c.slug, c]));
   const ageGroupBySlug = new Map(ageGroups.map((g) => [g.slug, g]));
 
   const sessionsByDay = new Map<number, typeof sessions>();
   for (const s of sessions) {
-    const list = sessionsByDay.get(s.dayOfWeek) ?? [];
-    list.push(s);
-    sessionsByDay.set(s.dayOfWeek, list);
+    for (const day of sessionDays(s)) {
+      const list = sessionsByDay.get(day) ?? [];
+      list.push(s);
+      sessionsByDay.set(day, list);
+    }
   }
   for (const list of sessionsByDay.values()) list.sort((a, b) => a.startTime.localeCompare(b.startTime));
   const days = DAY_ORDER.filter((day) => sessionsByDay.has(day));
@@ -56,6 +60,21 @@ export default async function AdminTimetablePage() {
       <h1 className="font-display text-3xl font-semibold text-ink">Group timetable</h1>
       <p className="mt-1 text-sm text-stone">Every group&apos;s weekly day and time, with its teacher, room and seats taken.</p>
 
+      <div className="mt-4 inline-flex rounded-full border border-ink/10 bg-white p-1 text-xs font-semibold">
+        {[
+          { href: '/admin/timetable', label: 'School year', active: !summerView },
+          { href: '/admin/timetable?season=summer', label: 'Summer school', active: summerView },
+        ].map((tab) => (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            className={`rounded-full px-4 py-1.5 transition ${tab.active ? 'bg-ink text-white' : 'text-stone hover:text-ink'}`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+
       {days.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
           No groups scheduled yet.
@@ -70,7 +89,7 @@ export default async function AdminTimetablePage() {
                   const course = courseBySlug.get(s.courseSlug);
                   const ageGroup = course ? ageGroupBySlug.get(course.ageGroupSlug) : undefined;
                   const teacher = s.teacherId ? teacherById.get(s.teacherId) : null;
-                  const groupLabel = findSlotLabel(timeSlots, s.dayOfWeek, s.startTime, s.endTime);
+                  const groupLabel = sessionGroupLabel(timeSlots, s);
                   const seats = seatsBySession.get(s.id) ?? 0;
                   const isFull = seats >= s.capacity;
                   const color = course?.color ?? '#64748b';

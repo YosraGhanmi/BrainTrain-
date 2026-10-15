@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Baby, Banknote, CalendarDays, Check, Clock, Coins, PiggyBank, Target, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Baby, Banknote, CalendarDays, Check, Clock, Coins, PiggyBank, Sun, Target, Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
@@ -11,10 +11,12 @@ import { Link } from '@/i18n/navigation';
 import { readContent } from '@/lib/content/store';
 import { getAgeGroup, getCourse } from '@/lib/coursesData';
 import { getIcon } from '@/lib/content/icons';
+import { formatSummerDates } from '@/lib/content/summer';
 import type { AppLocale } from '@/i18n/routing';
 import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
-export const revalidate = 300;
+// Reads ?age= (the age group the visitor came from) on every request
+export const dynamic = 'force-dynamic';
 
 // 2 -> "2h", 1.5 -> "1h30"
 function formatHours(hours: number): string {
@@ -29,13 +31,9 @@ const HIGHLIGHT_TINTS = ['bg-[#fff4d6] text-[#d99a00]', 'bg-[#e8efff] text-accen
 // Where each highlight floats around the robot
 const CHIP_POSITIONS = ['-right-4 top-[2%]', '-left-8 top-[58%]', '-right-4 bottom-[16%]'];
 
-export function generateStaticParams() {
-  return readContent().courses.map((c) => ({ slug: c.slug }));
-}
-
 export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
   const params = await props.params;
-  const course = getCourse(params.slug, params.locale);
+  const course = await getCourse(params.slug, params.locale);
   if (!course) return { title: 'Course | BrainTrain' };
 
   const title = `${course.title} | BrainTrain`;
@@ -73,7 +71,7 @@ export default async function CourseDetailPage(
 ) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const course = getCourse(params.slug, params.locale);
+  const course = await getCourse(params.slug, params.locale);
   if (!course) notFound();
 
   // Arrived from a specific age group's course list — send "All courses" back
@@ -81,14 +79,20 @@ export default async function CourseDetailPage(
   const backHref = searchParams.age ? `/courses/${searchParams.age}` : '/courses';
   const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'coursePage' });
-  const { classFormat, familyDiscountPercent } = readContent();
-  const ageLabel = getAgeGroup(course.ageGroupSlug, params.locale)?.label ?? '';
+  const { classFormat, familyDiscountPercent: schoolYearDiscount, summerSchool } = (await readContent());
+  const familyDiscountPercent = course.summer ? summerSchool.familyDiscountPercent : schoolYearDiscount;
+  const ageLabel = (await getAgeGroup(course.ageGroupSlug, params.locale))?.label ?? '';
 
-  const plans = [
-    { Icon: Banknote, title: tc('planMonthly'), text: tc('planMonthlyText') },
-    { Icon: Coins, title: tc('planTerm'), text: tc('planTermText') },
-    { Icon: PiggyBank, title: tc('planYearly'), text: tc('planYearlyText') },
-  ];
+  const plans = course.summer
+    ? [
+        { Icon: Banknote, title: tc('planMonthly'), text: tc('planSummerMonthlyText') },
+        { Icon: PiggyBank, title: tc('planSeason'), text: tc('planSeasonText') },
+      ]
+    : [
+        { Icon: Banknote, title: tc('planMonthly'), text: tc('planMonthlyText') },
+        { Icon: Coins, title: tc('planTerm'), text: tc('planTermText') },
+        { Icon: PiggyBank, title: tc('planYearly'), text: tc('planYearlyText') },
+      ];
 
   // "6-9 ans" -> big "6-9" over "ans"
   const ageMatch = /^([\d\s–-]+?)\s+(\S.*)$/.exec(ageLabel);
@@ -139,6 +143,12 @@ export default async function CourseDetailPage(
                 <ArrowLeft className="size-4" />
                 {t('allCourses')}
               </Link>
+              {course.summer ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
+                  <Sun className="size-3.5" />
+                  {tc('summerBadge')} · {formatSummerDates(summerSchool, params.locale)}
+                </span>
+              ) : null}
             </div>
 
             <h1 className="mt-4 text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight text-navy lg:mt-3 lg:text-4xl xl:text-[2.6rem]">
@@ -147,7 +157,7 @@ export default async function CourseDetailPage(
             {course.tagline ? <CourseTagline text={course.tagline} /> : null}
             <p className="mt-5 max-w-2xl text-pretty leading-relaxed text-stone lg:mt-3 lg:line-clamp-2 lg:text-sm xl:line-clamp-3">{course.description}</p>
 
-            <ul className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3 lg:mt-4 lg:gap-4 xl:mt-5">
+            <ul className={`mt-8 grid grid-cols-1 gap-5 lg:mt-4 lg:gap-4 xl:mt-5 ${plans.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
               {plans.map(({ Icon, title, text }) => (
                 <li key={title} className="flex items-start gap-3">
                   <span className={`flex size-11 shrink-0 items-center justify-center rounded-full lg:size-9 bg-[#e8efff] text-accent`}>
@@ -182,7 +192,7 @@ export default async function CourseDetailPage(
                     <Target className="size-5" strokeWidth={1.75} />
                   </span>
                   <div>
-                    <h2 className="font-display font-bold text-navy">{tc('outcomeHeading')}</h2>
+                    <h2 className="font-display font-bold text-navy">{course.summer ? tc('outcomeHeadingSummer') : tc('outcomeHeading')}</h2>
                     {course.outcome ? <p className="mt-1.5 text-pretty text-sm leading-relaxed text-ink/80 lg:mt-1 lg:text-[13px] lg:leading-snug">{course.outcome}</p> : null}
                     {course.tools.length > 0 ? (
                       <ul className="mt-3 flex flex-wrap gap-2 lg:mt-2 lg:gap-1.5 xl:gap-2">

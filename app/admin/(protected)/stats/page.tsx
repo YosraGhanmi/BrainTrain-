@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminStatsPage() {
   await requireAdminOnly();
-  const { stats } = readContent();
+  const { stats } = (await readContent());
 
   return (
     <div>

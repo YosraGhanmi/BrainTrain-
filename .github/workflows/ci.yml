@@ -9,7 +9,24 @@ jobs:
   validate:
     runs-on: ubuntu-latest
 
+    # Pages are pre-rendered at build time from the database
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: braintrain
+          POSTGRES_PASSWORD: braintrain
+          POSTGRES_DB: braintrain
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
+      DATABASE_URL: postgresql://braintrain:braintrain@localhost:5432/braintrain?schema=public
       ADMIN_PASSWORD: ci-admin-password
       ADMIN_SESSION_SECRET: ci-admin-session-secret
       PORTAL_SESSION_SECRET: ci-portal-session-secret
@@ -28,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -36,6 +53,9 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
+
+      - name: Create database tables
+        run: npx prisma migrate deploy
 
       - name: Type-check
         run: npx tsc --noEmit

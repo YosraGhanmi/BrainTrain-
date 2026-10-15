@@ -1,7 +1,7 @@
 import { Landmark, Wallet } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { createExpense, deleteExpense } from '@/lib/admin/expenses';
-import { listFirebaseExpenses, type ExpenseChargeType } from '@/lib/firebase/expenses';
+import { listDbExpenses, type ExpenseChargeType } from '@/lib/db/expenses';
 import { monthNav } from '@/lib/admin/month';
 import LedgerPage from '@/components/admin/LedgerPage';
 
@@ -36,7 +36,7 @@ export default async function ExpenseLedger({
   const copy = COPY[chargeType];
 
   const month = monthNav(searchParams.month);
-  const allExpenses = await listFirebaseExpenses();
+  const allExpenses = await listDbExpenses();
   const expenses = allExpenses.filter(
     (e) => e.chargeType === chargeType && e.date >= month.monthStart && e.date < month.monthEnd,
   );

@@ -20,7 +20,7 @@ export default async function AddChildPage(
   const params = await props.params;
   await requireParent(params.locale);
   const t = await getTranslations({ locale: params.locale, namespace: 'parentPortal.addChild' });
-  const ageGroups = listAgeGroupEntries();
+  const ageGroups = await listAgeGroupEntries();
 
   return (
     <div className="mx-auto max-w-xl">

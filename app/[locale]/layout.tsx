@@ -43,8 +43,11 @@ const body = localFont({
   display: 'swap',
 });
 
+// Pages are rendered on their first visit and then cached (revalidate
+// above), not during `next build`: they read the database, which the Docker
+// build can't reach.
 export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
+  return [];
 }
 
 const METADATA_BY_LOCALE: Record<string, { tagline: string; description: string }> = {
@@ -107,7 +110,7 @@ export default async function LocaleLayout(
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const { socials, contact } = readContent();
+  const { socials, contact } = (await readContent());
 
   const organizationJsonLd = {
     '@context': 'https://schema.org',

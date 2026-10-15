@@ -1,41 +1,43 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
-import { firebaseAdminAuth } from '@/lib/firebase/admin';
-import { getFirebasePortalProfile, isFirebaseConfigured } from '@/lib/firebase/portal-auth';
+import { prisma } from '@/lib/db/prisma';
+import { mapPortalProfile } from '@/lib/db/portal-auth';
 
 // Node's crypto module (not Edge-compatible) — server-only.
 export const PORTAL_SESSION_COOKIE_NAME = 'braintrain_portal_session';
-const FIREBASE_SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const PORTAL_SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
-// DB-backed sessions are gone — all sessions are now Firebase session cookies,
-// which are verified server-side via the Firebase Admin SDK and can be revoked
-// immediately by calling revokeRefreshTokens (see revokeAllSessions below).
-export async function createPortalSession(userId: string, firebaseIdToken?: string): Promise<void> {
-  if (firebaseIdToken) {
-    const sessionCookie = await firebaseAdminAuth.createSessionCookie(firebaseIdToken, { expiresIn: FIREBASE_SESSION_TTL_MS });
-    (await cookies()).set(PORTAL_SESSION_COOKIE_NAME, sessionCookie, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: FIREBASE_SESSION_TTL_MS / 1000,
-    });
-    return;
-  }
-  // No idToken provided — this should not happen in production; log a warning.
-  console.warn('[session] createPortalSession called without a Firebase idToken for userId:', userId);
+// The cookie holds a random token; the database only keeps its sha256, so a
+// leaked database dump can't be replayed as a login.
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+export async function createPortalSession(userId: string): Promise<void> {
+  const token = crypto.randomBytes(32).toString('base64url');
+  await prisma.portalSession.create({
+    data: { userId, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + PORTAL_SESSION_TTL_MS) },
+  });
+  (await cookies()).set(PORTAL_SESSION_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: PORTAL_SESSION_TTL_MS / 1000,
+  });
 }
 
 export async function destroyPortalSession(): Promise<void> {
-  (await cookies()).delete(PORTAL_SESSION_COOKIE_NAME);
+  const store = await cookies();
+  const token = store.get(PORTAL_SESSION_COOKIE_NAME)?.value;
+  if (token) await prisma.portalSession.deleteMany({ where: { tokenHash: hashToken(token) } });
+  store.delete(PORTAL_SESSION_COOKIE_NAME);
 }
 
-// Revokes every existing session for a user — called on password change so
-// stolen/old cookies stop working immediately. Firebase session cookies are
-// derived from the user's refresh token; revoking refresh tokens invalidates
-// all outstanding session cookies immediately.
+// Signs a user out everywhere — called on password change and when an
+// account is frozen, so old cookies stop working immediately.
 export async function revokeAllSessions(userId: string): Promise<void> {
-  await firebaseAdminAuth.revokeRefreshTokens(userId).catch(() => undefined);
+  await prisma.portalSession.deleteMany({ where: { userId } });
 }
 
 // ---------------------------------------------------------------------------
@@ -103,12 +105,7 @@ export async function getPortalSessionUser(): Promise<PortalSessionUser | null> 
   const token = (await cookies()).get(PORTAL_SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
 
-  try {
-    const decoded = await firebaseAdminAuth.verifySessionCookie(token, true);
-    const profile = await getFirebasePortalProfile(decoded.uid);
-    if (!profile || profile.isFrozen) return null;
-    return profile;
-  } catch {
-    return null;
-  }
+  const session = await prisma.portalSession.findUnique({ where: { tokenHash: hashToken(token) }, include: { user: true } });
+  if (!session || session.expiresAt < new Date() || session.user.isFrozen) return null;
+  return mapPortalProfile(session.user);
 }

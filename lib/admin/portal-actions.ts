@@ -16,50 +16,50 @@ import { getCourseEntryOrThrow } from '@/lib/content/lookup';
 import { readContent, writeContent } from '@/lib/content/store';
 import { parseTeacherCourseSlugs, stringifyTeacherCourseSlugs } from '@/lib/teachers/course-slugs';
 import {
-  createFirebaseTeacherProfile,
-  deleteFirebaseTeacherProfile,
-  getFirebaseTeacherProfile,
-  updateFirebaseTeacherProfile,
-} from '@/lib/firebase/teachers';
+  createDbTeacherProfile,
+  deleteDbTeacherProfile,
+  getDbTeacherProfile,
+  updateDbTeacherProfile,
+} from '@/lib/db/teachers';
 import {
-  createFirebaseSecretaryProfile,
-  deleteFirebaseSecretaryProfile,
-  updateFirebaseSecretaryProfile,
-} from '@/lib/firebase/secretaries';
+  createDbSecretaryProfile,
+  deleteDbSecretaryProfile,
+  updateDbSecretaryProfile,
+} from '@/lib/db/secretaries';
 import {
-  deleteFirebasePortalProfile,
-  getFirebasePortalProfile,
-  isFirebaseConfigured,
-  updateFirebasePortalProfile,
-} from '@/lib/firebase/portal-auth';
-import { deleteFirebaseChild } from '@/lib/firebase/children';
+  deleteDbPortalProfile,
+  getDbPortalProfile,
+  setDbUserPassword,
+  updateDbPortalProfile,
+} from '@/lib/db/portal-auth';
+import { deleteDbChild, getDbChild } from '@/lib/db/children';
 import {
-  createFirebaseCourseSession,
-  updateFirebaseCourseSession,
-  deleteFirebaseCourseSession,
-  getFirebaseCourseSession,
-  listFirebaseCourseSessionsByTeacher,
-} from '@/lib/firebase/sessions';
+  createDbCourseSession,
+  updateDbCourseSession,
+  deleteDbCourseSession,
+  getDbCourseSession,
+  listDbCourseSessionsByTeacher,
+} from '@/lib/db/sessions';
 import {
-  getFirebaseEnrollment,
-  listFirebaseEnrollmentsByCourseSession,
-  updateFirebaseEnrollmentStatus,
-  moveFirebaseEnrollment,
-} from '@/lib/firebase/enrollments';
-import { getFirebasePayment, updateFirebasePayment } from '@/lib/firebase/enrollments';
+  getDbEnrollment,
+  listDbEnrollmentsByCourseSession,
+  updateDbEnrollmentStatus,
+  moveDbEnrollment,
+} from '@/lib/db/enrollments';
+import { getDbPayment, updateDbPayment } from '@/lib/db/enrollments';
 import {
-  upsertFirebasePricingRule,
-  deleteFirebasePricingRulesByAgeGroup,
-  deleteFirebasePricingRulesByCourse,
-} from '@/lib/firebase/pricing';
+  upsertDbPricingRule,
+  deleteDbPricingRulesByAgeGroup,
+  deleteDbPricingRulesByCourse,
+} from '@/lib/db/pricing';
 import {
-  markFirebaseNotificationRead,
-  markAllFirebaseNotificationsRead,
-} from '@/lib/firebase/notifications';
-import { listFirebaseCourseSessions as _listSessions } from '@/lib/firebase/sessions';
-import { getFirebaseTimeSlot } from '@/lib/firebase/time-slots';
-import { firestore, firebaseAdminAuth } from '@/lib/firebase/admin';
-import type { EnrollmentStatus, PlanType } from '@/lib/firebase/enrollments';
+  markDbNotificationRead,
+  markAllDbNotificationsRead,
+} from '@/lib/db/notifications';
+import { listDbCourseSessions as _listSessions } from '@/lib/db/sessions';
+import { getDbTimeSlot } from '@/lib/db/time-slots';
+import { prisma } from '@/lib/db/prisma';
+import type { EnrollmentStatus, PlanType } from '@/lib/db/enrollments';
 
 const PLAN_TYPES: PlanType[] = ['MONTHLY', 'QUARTERLY', 'YEARLY'];
 
@@ -86,7 +86,7 @@ export async function createTeacher(formData: FormData): Promise<void> {
   const [secretCodeHash] = await Promise.all([hashPassword(secretCode)]);
 
   try {
-    await createFirebaseTeacherProfile({
+    await createDbTeacherProfile({
       email,
       password: DEFAULT_TEACHER_PASSWORD,
       fullName,
@@ -104,19 +104,19 @@ export async function createTeacher(formData: FormData): Promise<void> {
 
 export async function deleteTeacher(userId: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebaseTeacherProfile(userId);
+  await deleteDbTeacherProfile(userId);
   redirect('/admin/teachers?saved=1');
 }
 
 export async function regenerateTeacherSecretCode(userId: string): Promise<void> {
   await requireAdminOnly();
-  const profile = await getFirebaseTeacherProfile(userId);
+  const profile = await getDbTeacherProfile(userId);
   if (!profile || profile.role !== 'TEACHER') redirect('/admin/teachers?error=1');
 
   const secretCode = crypto.randomInt(0, 10000).toString().padStart(4, '0');
   const teacherSecretCodeHash = await hashPassword(secretCode);
 
-  await updateFirebaseTeacherProfile(userId, { teacherSecretCodeHash, teacherSecretCode: secretCode });
+  await updateDbTeacherProfile(userId, { teacherSecretCodeHash, teacherSecretCode: secretCode });
   await revokeAllSessions(userId);
 
   redirect(`/admin/teachers?saved=1&code=${secretCode}&email=${encodeURIComponent(profile!.email)}`);
@@ -127,11 +127,11 @@ export async function addTeacherCourse(teacherId: string, formData: FormData): P
   const courseSlug = field(formData, 'courseSlug');
   if (!courseSlug) redirect('/admin/teachers?courseError=1');
 
-  const profile = await getFirebaseTeacherProfile(teacherId);
+  const profile = await getDbTeacherProfile(teacherId);
   if (profile) {
     const slugs = parseTeacherCourseSlugs(profile.courseSlugs);
     if (!slugs.includes(courseSlug)) {
-      await updateFirebaseTeacherProfile(teacherId, {
+      await updateDbTeacherProfile(teacherId, {
         courseSlugs: stringifyTeacherCourseSlugs([...slugs, courseSlug]),
       });
     }
@@ -141,10 +141,10 @@ export async function addTeacherCourse(teacherId: string, formData: FormData): P
 
 export async function removeTeacherCourse(teacherId: string, courseSlug: string): Promise<void> {
   await requireAdminOnly();
-  const profile = await getFirebaseTeacherProfile(teacherId);
+  const profile = await getDbTeacherProfile(teacherId);
   if (profile) {
     const slugs = parseTeacherCourseSlugs(profile.courseSlugs);
-    await updateFirebaseTeacherProfile(teacherId, {
+    await updateDbTeacherProfile(teacherId, {
       courseSlugs: stringifyTeacherCourseSlugs(slugs.filter((s) => s !== courseSlug)),
     });
   }
@@ -153,7 +153,7 @@ export async function removeTeacherCourse(teacherId: string, courseSlug: string)
 
 export async function setTeacherFrozen(userId: string, isFrozen: boolean): Promise<void> {
   await requireAdminOnly();
-  await updateFirebaseTeacherProfile(userId, { isFrozen });
+  await updateDbTeacherProfile(userId, { isFrozen });
   if (isFrozen) await revokeAllSessions(userId);
   redirect('/admin/teachers?saved=1');
 }
@@ -175,7 +175,7 @@ export async function createSecretary(formData: FormData): Promise<void> {
 
   const passwordHash = await hashPassword(password);
   try {
-    await createFirebaseSecretaryProfile({ email, password, fullName, phone, passwordHash });
+    await createDbSecretaryProfile({ email, fullName, phone, passwordHash });
   } catch {
     redirect('/admin/secretaries?error=exists');
   }
@@ -185,15 +185,35 @@ export async function createSecretary(formData: FormData): Promise<void> {
 
 export async function deleteSecretary(userId: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebaseSecretaryProfile(userId);
+  await deleteDbSecretaryProfile(userId);
   redirect('/admin/secretaries?saved=1');
 }
 
 export async function setSecretaryFrozen(userId: string, isFrozen: boolean): Promise<void> {
   await requireAdminOnly();
-  await updateFirebaseSecretaryProfile(userId, { isFrozen });
+  await updateDbSecretaryProfile(userId, { isFrozen });
   if (isFrozen) await revokeAllSessions(userId);
   redirect('/admin/secretaries?saved=1');
+}
+
+// ---------------------------------------------------------------------------
+// Passwords
+// ---------------------------------------------------------------------------
+
+const PASSWORD_PAGES = ['/admin/teachers', '/admin/parents', '/admin/secretaries'];
+
+// Sets a new password on a parent, teacher or reception account, e.g. for
+// someone locked out, and signs them out everywhere. The admin passes the new
+// password on to them.
+export async function setAccountPassword(userId: string, formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const returnTo = PASSWORD_PAGES.includes(field(formData, 'returnTo')) ? field(formData, 'returnTo') : '/admin';
+  const password = field(formData, 'password');
+  if (password.length < 8 || !(await getDbPortalProfile(userId))) redirect(`${returnTo}?passwordError=1`);
+
+  await setDbUserPassword(userId, password);
+  await revokeAllSessions(userId);
+  redirect(`${returnTo}?saved=password`);
 }
 
 // ---------------------------------------------------------------------------
@@ -202,22 +222,22 @@ export async function setSecretaryFrozen(userId: string, isFrozen: boolean): Pro
 
 export async function deleteParent(userId: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebasePortalProfile(userId);
+  await deleteDbPortalProfile(userId);
   redirect('/admin/parents?saved=1');
 }
 
 export async function setParentFrozen(userId: string, isFrozen: boolean): Promise<void> {
   await requireAdminOnly();
-  await updateFirebasePortalProfile(userId, { isFrozen });
+  await updateDbPortalProfile(userId, { isFrozen });
   if (isFrozen) await revokeAllSessions(userId);
   redirect('/admin/parents?saved=1');
 }
 
 export async function approveParent(userId: string): Promise<void> {
   await requireAdmin();
-  const user = await getFirebasePortalProfile(userId);
+  const user = await getDbPortalProfile(userId);
   if (!user) redirect('/admin/parents?error=1');
-  await updateFirebasePortalProfile(userId, { parentStatus: 'APPROVED' });
+  await updateDbPortalProfile(userId, { parentStatus: 'APPROVED' });
   const loginUrl = absoluteUrl(routing.defaultLocale, '/parent-portal/login');
   await sendEmail({
     to: user!.email,
@@ -229,13 +249,13 @@ export async function approveParent(userId: string): Promise<void> {
 
 export async function rejectParent(userId: string): Promise<void> {
   await requireAdmin();
-  await updateFirebasePortalProfile(userId, { parentStatus: 'REJECTED' });
+  await updateDbPortalProfile(userId, { parentStatus: 'REJECTED' });
   redirect('/admin/parents?saved=1');
 }
 
 export async function deleteChild(childId: string): Promise<void> {
   await requireAdmin();
-  await deleteFirebaseChild(childId);
+  await deleteDbChild(childId);
   redirect('/admin/children?saved=1');
 }
 
@@ -251,16 +271,18 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
   const location = field(formData, 'location');
   const timeSlotId = field(formData, 'timeSlotId');
 
-  const { getFirebaseTimeSlot: getSlot } = await import('@/lib/firebase/time-slots');
+  const { getDbTimeSlot: getSlot } = await import('@/lib/db/time-slots');
   const slot = timeSlotId ? await getSlot(timeSlotId) : null;
 
-  if (!courseSlug || !location || !slot) {
+  // Summer groups are managed on the Summer school page
+  const summerCourse = (await readContent()).courses.some((c) => c.slug === courseSlug && c.summer);
+  if (!courseSlug || !location || !slot || summerCourse) {
     redirect('/admin/sessions?error=1');
   }
 
   // Teacher conflict check
   if (teacherId) {
-    const teacherSessions = await listFirebaseCourseSessionsByTeacher(teacherId);
+    const teacherSessions = await listDbCourseSessionsByTeacher(teacherId);
     const others = id ? teacherSessions.filter((s) => s.id !== id) : teacherSessions;
     if (others.some((s) => sessionsConflict(slot!, s))) {
       redirect('/admin/sessions?error=teacherConflict');
@@ -271,6 +293,9 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
     courseSlug,
     teacherId: teacherId || null,
     dayOfWeek: slot!.dayOfWeek,
+    extraDays: [],
+    label: '',
+    summer: false,
     startTime: slot!.startTime,
     endTime: slot!.endTime,
     location,
@@ -279,9 +304,9 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
   };
 
   if (id) {
-    await updateFirebaseCourseSession(id, data);
+    await updateDbCourseSession(id, data);
   } else {
-    await createFirebaseCourseSession(data);
+    await createDbCourseSession(data);
   }
 
   redirect('/admin/sessions?saved=1');
@@ -289,7 +314,7 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
 
 export async function deleteCourseSession(id: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebaseCourseSession(id);
+  await deleteDbCourseSession(id);
   redirect('/admin/sessions?saved=1');
 }
 
@@ -299,43 +324,38 @@ export async function deleteCourseSession(id: string): Promise<void> {
 
 export async function updateEnrollmentStatus(id: string, status: EnrollmentStatus): Promise<void> {
   await requireAdmin();
-  await updateFirebaseEnrollmentStatus(id, status);
+  await updateDbEnrollmentStatus(id, status);
   revalidatePath('/admin/enrollments');
 }
 
 export async function approveEnrollment(enrollmentId: string): Promise<void> {
   await requireAdmin();
 
-  const enrollment = await getFirebaseEnrollment(enrollmentId);
+  const enrollment = await getDbEnrollment(enrollmentId);
   if (!enrollment) redirect('/admin/enrollments?error=1');
 
-  const sessionDoc = await firestore.collection('course_sessions').doc(enrollment!.courseSessionId).get();
-  const childDoc = await firestore.collection('children').doc(enrollment!.childId).get();
-  const parentId = childDoc.data()?.parentId as string | undefined;
-  const parentDoc = parentId ? await firestore.collection('users').doc(parentId).get() : null;
+  const [session, child] = await Promise.all([getDbCourseSession(enrollment!.courseSessionId), getDbChild(enrollment!.childId)]);
+  const parent = await getDbPortalProfile(child?.parentId ?? '');
 
   // Mark enrollment active
-  await updateFirebaseEnrollmentStatus(enrollmentId, 'ACTIVE');
+  await updateDbEnrollmentStatus(enrollmentId, 'ACTIVE');
 
-  // Mark all unpaid payments for this enrollment as PAID
-  const paymentsSnap = await firestore
-    .collection('payments')
-    .where('enrollmentId', '==', enrollmentId)
-    .where('status', '!=', 'PAID')
-    .get();
-  const batch = firestore.batch();
+  // Mark the enrollment's unpaid payments that are already due as PAID; a
+  // monthly summer plan's later months stay pending until their own date
   const now = new Date();
-  paymentsSnap.docs.forEach((doc) => batch.update(doc.ref, { status: 'PAID', paidAt: now, parentNotifiedAt: null }));
-  await batch.commit();
+  await prisma.payment.updateMany({
+    where: { enrollmentId, status: { not: 'PAID' }, dueDate: { lte: now } },
+    data: { status: 'PAID', paidAt: now, parentNotifiedAt: null },
+  });
 
   // Send SMS
-  const course = getCourseEntryOrThrow(String(sessionDoc.data()?.courseSlug ?? ''));
-  if (parentId && parentDoc) {
+  const course = await getCourseEntryOrThrow(session?.courseSlug ?? '');
+  if (parent && child) {
     try {
       await sendSms({
-        parentId,
-        phone: String(parentDoc.data()?.phone ?? ''),
-        message: `BrainTrain: ${childDoc.data()?.fullName}'s enrollment in ${course.title.en} is confirmed! See the parent portal for details.`,
+        parentId: parent.id,
+        phone: parent.phone,
+        message: `BrainTrain: ${child.fullName}'s enrollment in ${course.title.en} is confirmed! See the parent portal for details.`,
         purpose: 'ENROLLMENT_APPROVED',
       });
     } catch {
@@ -352,11 +372,11 @@ export async function moveEnrollment(enrollmentId: string, formData: FormData): 
   const newCourseSessionId = field(formData, 'courseSessionId');
   if (!newCourseSessionId) redirect('/admin/enrollments?error=1');
 
-  const newSession = await getFirebaseCourseSession(newCourseSessionId);
+  const newSession = await getDbCourseSession(newCourseSessionId);
   if (!newSession) redirect('/admin/enrollments?error=1');
 
   try {
-    await moveFirebaseEnrollment(enrollmentId, newCourseSessionId, newSession);
+    await moveDbEnrollment(enrollmentId, newCourseSessionId, newSession);
   } catch (err) {
     if (err instanceof Error && err.message === 'CAPACITY_FULL') redirect('/admin/enrollments?error=full');
     if (err instanceof Error && err.message === 'SCHEDULE_CONFLICT') redirect('/admin/enrollments?error=conflict');
@@ -371,7 +391,7 @@ export async function moveEnrollment(enrollmentId: string, formData: FormData): 
 
 export async function setPaymentStatus(id: string, status: 'PENDING' | 'PAID' | 'OVERDUE' | 'FAILED'): Promise<void> {
   await requireAdmin();
-  await updateFirebasePayment(id, {
+  await updateDbPayment(id, {
     status,
     paidAt: status === 'PAID' ? new Date() : null,
     parentNotifiedAt: status === 'PAID' ? null : undefined,
@@ -392,7 +412,7 @@ export async function upsertAgeGroupPricing(formData: FormData): Promise<void> {
   await Promise.all(
     PLAN_TYPES.map((planType) => {
       const amount = Math.max(0, Number(formData.get(`amount_${planType}`)) || 0);
-      return upsertFirebasePricingRule({ planType, ageGroupSlug, amount, currency });
+      return upsertDbPricingRule({ planType, ageGroupSlug, amount, currency });
     }),
   );
 
@@ -415,13 +435,13 @@ export async function updatePricingSettings(formData: FormData): Promise<void> {
     redirect('/admin/pricing?error=1');
   }
 
-  const content = readContent();
+  const content = (await readContent());
   content.classFormat = {
     sessionHours: sessionHours!,
     maxGroupSize: maxGroupSize!,
   };
   content.familyDiscountPercent = discount;
-  writeContent(content);
+  await writeContent(content);
 
   revalidatePath('/[locale]', 'layout');
   redirect('/admin/pricing?saved=1');
@@ -429,7 +449,7 @@ export async function updatePricingSettings(formData: FormData): Promise<void> {
 
 export async function clearCoursePricingOverride(courseSlug: string): Promise<void> {
   await requireAdminOnly();
-  await deleteFirebasePricingRulesByCourse(courseSlug);
+  await deleteDbPricingRulesByCourse(courseSlug);
   redirect('/admin/pricing?saved=1');
 }
 
@@ -439,12 +459,12 @@ export async function clearCoursePricingOverride(courseSlug: string): Promise<vo
 
 export async function markNotificationRead(id: string): Promise<void> {
   await requireAdmin();
-  await markFirebaseNotificationRead(id);
+  await markDbNotificationRead(id);
   revalidatePath('/admin');
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
   await requireAdmin();
-  await markAllFirebaseNotificationsRead();
+  await markAllDbNotificationsRead();
   revalidatePath('/admin');
 }

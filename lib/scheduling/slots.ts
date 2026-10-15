@@ -27,13 +27,28 @@ export function timeRangesOverlap(aStart: string, aEnd: string, bStart: string, 
   return aStart < bEnd && bStart < aEnd;
 }
 
-export type WeeklyTimeRange = { dayOfWeek: number; startTime: string; endTime: string };
+export type WeeklyTimeRange = { dayOfWeek: number; extraDays?: number[]; startTime: string; endTime: string; summer?: boolean };
+
+// Every weekday a group meets on, its main day first
+export function sessionDays(session: Pick<WeeklyTimeRange, 'dayOfWeek' | 'extraDays'>): number[] {
+  return [session.dayOfWeek, ...(session.extraDays ?? []).filter((d) => d !== session.dayOfWeek)];
+}
 
 // True when two course sessions would ask the same child to be in two
-// places at once — same weekday, overlapping time range. Different courses
+// places at once — a shared weekday, overlapping time range. Different courses
 // can otherwise reuse the exact same time slot (e.g. two unrelated groups
 // both scheduled "G1"), so this has to be checked per enrollment, not
-// prevented at the slot level.
+// prevented at the slot level. A summer group never clashes with a
+// school-year group: the school year is over by the time summer starts.
 export function sessionsConflict(a: WeeklyTimeRange, b: WeeklyTimeRange): boolean {
-  return a.dayOfWeek === b.dayOfWeek && timeRangesOverlap(a.startTime, a.endTime, b.startTime, b.endTime);
+  if (Boolean(a.summer) !== Boolean(b.summer)) return false;
+  const bDays = sessionDays(b);
+  return sessionDays(a).some((day) => bDays.includes(day)) && timeRangesOverlap(a.startTime, a.endTime, b.startTime, b.endTime);
+}
+
+// "Monday & Wednesday" from a list of day names indexed by weekday
+export function formatSessionDays(session: Pick<WeeklyTimeRange, 'dayOfWeek' | 'extraDays'>, dayNames: string[]): string {
+  return sessionDays(session)
+    .map((day) => dayNames[day])
+    .join(' & ');
 }

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Baby, Users } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { updateChildDetails } from '@/lib/admin/children-actions';
-import { getFirebaseChild } from '@/lib/firebase/children';
+import { getDbChild } from '@/lib/db/children';
 import { ADMIN_BIRTH_DATE_LABELS, adminAgeGroupOptions } from '@/lib/admin/staff-enrollment';
 import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
@@ -39,7 +39,7 @@ export default async function EditChildPage(props: {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   await requireAdmin();
 
-  const child = await getFirebaseChild(params.childId);
+  const child = await getDbChild(params.childId);
   if (!child) notFound();
   const profileHref = `/admin/children/${child.id}`;
 
@@ -66,7 +66,7 @@ export default async function EditChildPage(props: {
               <input name="fullName" required defaultValue={child.fullName} className={inputClassName} />
             </label>
             <BirthDateAgeGroupFields
-              groups={adminAgeGroupOptions()}
+              groups={await adminAgeGroupOptions()}
               defaultDateOfBirth={toDateInput(child.dateOfBirth)}
               defaultAgeGroupSlug={child.ageGroupSlug}
               labels={ADMIN_BIRTH_DATE_LABELS}

@@ -5,22 +5,22 @@ import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import { Link } from '@/i18n/navigation';
-import { getCourseKind, getAgeGroup, getCourseKinds } from '@/lib/coursesData';
+import { getCourseKind, getAgeGroups } from '@/lib/coursesData';
 import { getIcon } from '@/lib/content/icons';
 import type { AppLocale } from '@/i18n/routing';
 import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
 export const revalidate = 300;
 
+// Rendered on first visit, then cached: see generateStaticParams in
+// app/[locale]/layout.tsx
 export function generateStaticParams() {
-  // Kind slugs are derived from the English title (see coursesData.ts), so
-  // they're the same regardless of which locale generates the list.
-  return getCourseKinds('en').map((kind) => ({ slug: kind.slug }));
+  return [];
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
   const params = await props.params;
-  const kind = getCourseKind(params.slug, params.locale);
+  const kind = await getCourseKind(params.slug, params.locale);
   if (!kind) return { title: 'Course | BrainTrain' };
 
   const title = `${kind.title} | BrainTrain`;
@@ -36,11 +36,12 @@ export async function generateMetadata(props: { params: Promise<{ slug: string; 
 
 export default async function CourseKindPage(props: { params: Promise<{ slug: string; locale: AppLocale }> }) {
   const params = await props.params;
-  const kind = getCourseKind(params.slug, params.locale);
+  const kind = await getCourseKind(params.slug, params.locale);
   if (!kind) notFound();
 
   const Icon = getIcon(kind.icon);
   const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
+  const ageGroups = await getAgeGroups(params.locale);
 
   return (
     <div className="flex min-h-screen flex-col bg-surface text-ink">
@@ -70,7 +71,7 @@ export default async function CourseKindPage(props: { params: Promise<{ slug: st
 
           <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {kind.variants.map((variant) => {
-              const group = getAgeGroup(variant.ageGroupSlug, params.locale);
+              const group = ageGroups.find((g) => g.slug === variant.ageGroupSlug);
               return (
                 <Link
                   key={variant.slug}

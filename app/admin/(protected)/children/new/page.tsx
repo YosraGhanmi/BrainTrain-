@@ -18,7 +18,7 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
   const searchParams = await props.searchParams;
   await requireAdmin();
   const enrollmentOptions = await loadStaffEnrollmentOptions();
-  const courseSuggestions = [...new Set(readContent().courses.map((c) => c.title.en))];
+  const courseSuggestions = [...new Set((await readContent()).courses.map((c) => c.title.en))];
   const today = new Date().toISOString().slice(0, 10);
 
   return (
@@ -61,7 +61,7 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
                   <input name="fullName" required autoFocus className={inputClassName} />
                 </label>
                 <BirthDateAgeGroupFields
-                  groups={adminAgeGroupOptions()}
+                  groups={await adminAgeGroupOptions()}
                   labels={ADMIN_BIRTH_DATE_LABELS}
                   labelClassName={labelClassName}
                   inputClassName={inputClassName}

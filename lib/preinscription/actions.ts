@@ -4,11 +4,11 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 import {
-  createFirebasePreinscription,
-  createFirebasePreinscriptionNotification,
-  getFirebasePreinscriptionSetting,
-  setFirebasePreinscriptionSetting,
-} from '@/lib/firebase/preinscriptions';
+  createDbPreinscription,
+  createDbPreinscriptionNotification,
+  getDbPreinscriptionSetting,
+  setDbPreinscriptionSetting,
+} from '@/lib/db/preinscriptions';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -20,14 +20,14 @@ function getLocale(formData: FormData): AppLocale {
 }
 
 export async function getRegisterHref(): Promise<'/courses' | '/preinscription'> {
-  return (await getFirebasePreinscriptionSetting()) ? '/preinscription' : '/courses';
+  return (await getDbPreinscriptionSetting()) ? '/preinscription' : '/courses';
 }
 
 export async function updatePreinscriptionRouting(formData: FormData): Promise<void> {
   await requireAdminOnly();
   const routeRegisterToForm = field(formData, 'routeRegisterToForm') === 'on';
 
-  await setFirebasePreinscriptionSetting(routeRegisterToForm);
+  await setDbPreinscriptionSetting(routeRegisterToForm);
 
   revalidatePath('/[locale]', 'layout');
   revalidatePath('/admin/preinscriptions');
@@ -46,8 +46,8 @@ export async function submitPreinscription(formData: FormData): Promise<void> {
     redirect(`/${locale}/preinscription?error=1`);
   }
 
-  await createFirebasePreinscription({ childFullName, childAge, institution, parentFullName, parentPhone });
-  await createFirebasePreinscriptionNotification(childFullName, parentFullName);
+  await createDbPreinscription({ childFullName, childAge, institution, parentFullName, parentPhone });
+  await createDbPreinscriptionNotification(childFullName, parentFullName);
 
   revalidatePath('/admin/preinscriptions');
   revalidatePath('/admin');
