@@ -36,12 +36,15 @@ export default function ParentAuthScreen({
   loginError,
   loginSaved,
   registerError,
+  returnTo = null,
 }: {
   locale: AppLocale;
   initialMode: Mode;
   loginError?: string;
   loginSaved?: string;
   registerError?: string;
+  // Public page the visitor came from (already validated), for the back link
+  returnTo?: string | null;
 }) {
   const t = useTranslations('parentPortal.auth');
   const [mode, setMode] = useState<Mode>(initialMode);
@@ -106,7 +109,7 @@ export default function ParentAuthScreen({
   return (
     <div className="relative isolate min-h-screen w-full overflow-hidden bg-white">
       <Link
-        href="/"
+        href={returnTo ?? '/'}
         className="absolute left-4 top-4 z-30 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone transition hover:text-ink xs:left-6 xs:top-6"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -125,6 +128,7 @@ export default function ParentAuthScreen({
 
           <form action={loginParent} className="mt-12 space-y-7 short:mt-8 short:space-y-5 shorter:mt-6 shorter:space-y-4">
             <input type="hidden" name="locale" value={locale} />
+            {returnTo ? <input type="hidden" name="from" value={returnTo} /> : null}
 
             <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label htmlFor="parent-login-email" className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">
@@ -203,6 +207,7 @@ export default function ParentAuthScreen({
 
           <form action={registerParent} className="mt-10 space-y-5 short:mt-6 short:space-y-3 shorter:mt-5 shorter:space-y-2.5">
             <input type="hidden" name="locale" value={locale} />
+            {returnTo ? <input type="hidden" name="from" value={returnTo} /> : null}
 
             <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('fullName')}</label>

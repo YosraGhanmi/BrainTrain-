@@ -16,6 +16,7 @@ import {
   PENDING_TEACHER_COOKIE_NAME,
 } from '@/lib/portal-auth/session';
 import { localizedPath } from '@/lib/portal-auth/guard';
+import { safeReturnPath, withReturnPath } from '@/lib/portal-auth/return-path';
 import { SESSION_COOKIE_NAME } from '@/lib/auth/session';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import { sendSms } from '@/lib/sms/send';
@@ -56,6 +57,7 @@ const registerSchema = z.object({
 
 export async function registerParent(formData: FormData): Promise<void> {
   const locale = getLocale(formData);
+  const from = safeReturnPath(field(formData, 'from'));
   const parsed = registerSchema.safeParse({
     fullName: field(formData, 'fullName'),
     email: field(formData, 'email').toLowerCase(),
@@ -65,31 +67,32 @@ export async function registerParent(formData: FormData): Promise<void> {
   const confirmPassword = field(formData, 'confirmPassword');
 
   if (!parsed.success || parsed.data.password !== confirmPassword) {
-    redirect(localizedPath(locale, '/parent-portal/register?error=1'));
+    redirect(localizedPath(locale, withReturnPath('/parent-portal/register?error=1', from)));
   }
 
   const { fullName, email, phone, password } = parsed.data;
   try {
     await createDbParentProfile({ fullName, email, phone, password });
   } catch {
-    redirect(localizedPath(locale, '/parent-portal/register?error=exists'));
+    redirect(localizedPath(locale, withReturnPath('/parent-portal/register?error=exists', from)));
   }
   redirect(localizedPath(locale, '/parent-portal/pending'));
 }
 
 export async function loginParent(formData: FormData): Promise<void> {
   const locale = getLocale(formData);
+  const from = safeReturnPath(field(formData, 'from'));
   const email = field(formData, 'email').toLowerCase();
   const password = field(formData, 'password');
 
   const userId = await verifyDbUserPassword(email, password);
   const profile = userId ? await getDbPortalProfile(userId) : null;
   if (!profile || profile.role !== 'PARENT') {
-    redirect(localizedPath(locale, '/parent-portal/login?error=1'));
+    redirect(localizedPath(locale, withReturnPath('/parent-portal/login?error=1', from)));
   }
-  if (profile.isFrozen) redirect(localizedPath(locale, '/parent-portal/login?error=frozen'));
-  if (profile.parentStatus === 'PENDING') redirect(localizedPath(locale, '/parent-portal/login?error=pending'));
-  if (profile.parentStatus === 'REJECTED') redirect(localizedPath(locale, '/parent-portal/login?error=rejected'));
+  if (profile.isFrozen) redirect(localizedPath(locale, withReturnPath('/parent-portal/login?error=frozen', from)));
+  if (profile.parentStatus === 'PENDING') redirect(localizedPath(locale, withReturnPath('/parent-portal/login?error=pending', from)));
+  if (profile.parentStatus === 'REJECTED') redirect(localizedPath(locale, withReturnPath('/parent-portal/login?error=rejected', from)));
   await createPortalSession(profile.id);
   redirect(localizedPath(locale, '/parent-portal'));
 }
