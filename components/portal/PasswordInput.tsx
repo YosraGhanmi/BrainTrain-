@@ -8,10 +8,12 @@ export default function PasswordInput({
   name,
   placeholder = '••••••••',
   autoComplete,
+  inputClassName = '',
 }: {
   name: string;
   placeholder?: string;
   autoComplete?: string;
+  inputClassName?: string;
 }) {
   const t = useTranslations('portalShell');
   const [visible, setVisible] = useState(false);
@@ -24,7 +26,7 @@ export default function PasswordInput({
         required
         minLength={8}
         autoComplete={autoComplete}
-        className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 pr-12 text-base text-ink outline-none transition focus:border-accent"
+        className={`w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 pr-12 text-base text-ink outline-none transition focus:border-accent ${inputClassName}`}
         placeholder={placeholder}
       />
       <button

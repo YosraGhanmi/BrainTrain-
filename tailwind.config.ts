@@ -35,6 +35,11 @@ const config: Config = {
       },
       screens: {
         xs: '420px',
+        // Short windows (laptops, landscape tablets): tighter vertical rhythm
+        // so tall forms like the auth screen still fit without scrolling.
+        // Listed last so they override the width breakpoints above.
+        short: { raw: '(max-height: 880px)' },
+        shorter: { raw: '(max-height: 720px)' },
       },
       animation: {
         marquee: 'marquee 32s linear infinite',

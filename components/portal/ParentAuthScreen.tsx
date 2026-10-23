@@ -23,6 +23,13 @@ type Mode = 'login' | 'signup';
 const BLADE_LEFT: Record<Mode, string> = { login: '41%', signup: '-31%' };
 const BLADE_CLIP = 'polygon(20% 0, 100% 0, 80% 100%, 0% 100%)';
 
+// From that geometry, the white area beside the docked blade is never
+// narrower than 41% of the screen (its narrow end is at the bottom for login,
+// the top for sign-up). Each form column is sized to exactly that strip, with
+// percentage margins, so at any width the form keeps the same clearance from
+// the diagonal instead of sliding under it once half the screen gets narrow.
+// Columns scroll rather than clip when the window is shorter than the form.
+
 export default function ParentAuthScreen({
   locale,
   initialMode,
@@ -109,17 +116,17 @@ export default function ParentAuthScreen({
       {/* Login form — pinned to the left half, never moves */}
       <div
         ref={loginPanelRef}
-        className="absolute inset-y-0 left-0 z-20 flex w-full items-center px-5 py-20 xs:px-8 sm:px-16 sm:py-16 lg:w-1/2 lg:pl-24"
+        className="absolute inset-y-0 left-0 z-20 flex w-full flex-col overflow-y-auto px-6 py-20 sm:px-16 sm:py-10 lg:w-[41%] lg:pl-[5%] lg:pr-[4%] short:py-6 shorter:py-4"
         style={{ opacity: loginActive ? 1 : 0, pointerEvents: loginActive ? 'auto' : 'none' }}
       >
-        <div className="w-full max-w-md">
+        <div className="my-auto w-full max-w-md">
           <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">{t('brand')}</span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">{t('signIn')}</h1>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl short:mt-2 short:text-5xl shorter:text-4xl">{t('signIn')}</h1>
 
-          <form action={loginParent} className="mt-12 space-y-7">
+          <form action={loginParent} className="mt-12 space-y-7 short:mt-8 short:space-y-5 shorter:mt-6 shorter:space-y-4">
             <input type="hidden" name="locale" value={locale} />
 
-            <div data-field className="space-y-2">
+            <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label htmlFor="parent-login-email" className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">
                 {t('email')}
               </label>
@@ -133,7 +140,7 @@ export default function ParentAuthScreen({
               />
             </div>
 
-            <div data-field className="space-y-2">
+            <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('password')}</label>
               <PasswordInput name="password" autoComplete="current-password" />
             </div>
@@ -187,57 +194,57 @@ export default function ParentAuthScreen({
       {/* Sign-up form — pinned to the right half, never moves */}
       <div
         ref={signupPanelRef}
-        className="absolute inset-y-0 right-0 z-20 flex w-full items-center px-5 py-20 xs:px-8 sm:px-16 sm:py-16 lg:w-1/2 lg:pr-24"
+        className="absolute inset-y-0 right-0 z-20 flex w-full flex-col overflow-y-auto px-6 py-20 sm:px-16 sm:py-10 lg:w-[41%] lg:pl-[4%] lg:pr-[5%] short:py-6 shorter:py-4"
         style={{ opacity: loginActive ? 0 : 1, pointerEvents: loginActive ? 'none' : 'auto' }}
       >
-        <div className="ml-auto w-full max-w-md">
+        <div className="my-auto ml-auto w-full max-w-md">
           <span className="block text-sm font-bold uppercase tracking-[0.3em] text-stone">{t('brand')}</span>
-          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl">{t('signUp')}</h1>
+          <h1 className="mt-4 inline-block border-b-4 border-[#ff8c42] pb-3 font-display text-4xl font-bold text-ink sm:text-5xl lg:text-6xl short:mt-2 short:text-5xl shorter:text-4xl">{t('signUp')}</h1>
 
-          <form action={registerParent} className="mt-10 space-y-5">
+          <form action={registerParent} className="mt-10 space-y-5 short:mt-6 short:space-y-3 shorter:mt-5 shorter:space-y-2.5">
             <input type="hidden" name="locale" value={locale} />
 
-            <div data-field className="space-y-2">
+            <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('fullName')}</label>
               <input
                 name="fullName"
                 required
-                className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 text-base text-ink outline-none transition focus:border-accent"
+                className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 text-base text-ink outline-none transition focus:border-accent shorter:py-2.5"
               />
             </div>
 
-            <div data-field className="space-y-2">
+            <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('email')}</label>
               <input
                 name="email"
                 type="email"
                 required
-                className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 text-base text-ink outline-none transition focus:border-accent"
+                className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 text-base text-ink outline-none transition focus:border-accent shorter:py-2.5"
                 placeholder="you@example.com"
               />
             </div>
 
             {/* Not in the original field list, but required — phone is a
                 unique account identifier used for SMS password resets. */}
-            <div data-field className="space-y-2">
+            <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('phoneNumber')}</label>
               <input
                 name="phone"
                 type="tel"
                 required
-                className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 text-base text-ink outline-none transition focus:border-accent"
+                className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 text-base text-ink outline-none transition focus:border-accent shorter:py-2.5"
                 placeholder="+216 ..."
               />
             </div>
 
-            <div data-field className="space-y-2">
+            <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('password')}</label>
-              <PasswordInput name="password" autoComplete="new-password" />
+              <PasswordInput name="password" autoComplete="new-password" inputClassName="shorter:py-2.5" />
             </div>
 
-            <div data-field className="space-y-2">
+            <div data-field className="space-y-2 short:space-y-1.5 shorter:space-y-1">
               <label className="text-sm font-semibold uppercase tracking-[0.2em] text-stone">{t('confirmPassword')}</label>
-              <PasswordInput name="confirmPassword" autoComplete="new-password" />
+              <PasswordInput name="confirmPassword" autoComplete="new-password" inputClassName="shorter:py-2.5" />
             </div>
 
             {registerError === 'exists' ? (
@@ -252,13 +259,13 @@ export default function ParentAuthScreen({
 
             <PendingSubmitButton
               data-field
-              className="w-full rounded-full bg-[#0b1a3a] px-6 py-3.5 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent"
+              className="w-full rounded-full bg-[#0b1a3a] px-6 py-3.5 text-base font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accent short:py-3 shorter:py-2.5"
             >
               {t('createAccountButton')}
             </PendingSubmitButton>
           </form>
 
-          <p data-field className="mt-6 text-center text-sm text-stone">
+          <p data-field className="mt-6 text-center text-sm text-stone short:mt-4">
             {t('alreadyHaveAccount')}{' '}
             <button type="button" onClick={() => animateTo('login')} className="font-semibold text-accent hover:underline">
               {t('signIn')}
