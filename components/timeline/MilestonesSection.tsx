@@ -129,7 +129,7 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
           onPointerDown={onPointerDown}
           className="relative left-1/2 w-screen -translate-x-1/2 cursor-grab overflow-x-auto scroll-smooth px-6 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] active:cursor-grabbing md:px-10 lg:px-16 [&::-webkit-scrollbar]:hidden"
         >
-          <div className="relative w-max pl-[calc(50vw-300px)]">
+          <div className="relative w-max">
             <div className="milestone-line absolute left-0 top-[58px] hidden h-px w-full origin-left bg-ink/10 sm:block" />
 
             <div className="flex gap-6">

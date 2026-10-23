@@ -81,13 +81,15 @@ export default function ValuesSection() {
 
       <div className="relative">
         <div className="values-intro flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-16">
-          <div className="flex flex-col items-start gap-5">
+          {/* Fixed width so the paragraph beside it can't squeeze the title
+              down to one word per line on narrower desktops. */}
+          <div className="flex flex-col items-start gap-5 lg:w-[25rem] lg:shrink-0">
             <h2 className="font-display text-4xl font-semibold leading-[0.95] text-white sm:text-5xl">
               {t('heading')}
             </h2>
             <Link
               href="/parent-portal/login"
-              className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent2"
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent2"
             >
               {t('cta')}
               <ArrowRight className="h-4 w-4" />
@@ -102,7 +104,9 @@ export default function ValuesSection() {
           </p>
         </div>
 
-        <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        {/* Six across only once each card is wide enough for a two-word value
+            ("Résolution de problèmes") on one or two lines. */}
+        <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
           {values.map(({ key, label, Icon }) => (
             <div
               key={key}

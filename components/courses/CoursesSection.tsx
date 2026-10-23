@@ -131,12 +131,13 @@ export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
         ))}
       </div>
 
-      <div className="relative mx-auto max-w-6xl">
-        <div className="max-w-4xl space-y-6">
-          <h2 className="courses-heading text-display font-semibold leading-[0.9] text-white sm:whitespace-nowrap sm:text-[clamp(2.5rem,5vw,5.5rem)]">
-            {t('heading')}
-          </h2>
-        </div>
+      <div className="relative">
+        {/* Anchored to the section's left padding, not the centred column
+            below: the one-line heading is wider than that column, so inside it
+            it started a third of the way in and ran off the right edge. */}
+        <h2 className="courses-heading text-display font-semibold leading-[0.9] text-white md:whitespace-nowrap sm:text-[clamp(2.5rem,5vw,5.5rem)]">
+          {t('heading')}
+        </h2>
 
         <div className="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
           {courses.map(({ slug, title, icon, color }) => {
