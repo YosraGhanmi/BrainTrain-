@@ -8,12 +8,19 @@ export type DbPreinscription = {
   institution: string;
   parentFullName: string;
   parentPhone: string;
+  courseSlug: string | null;
+  courseTitle: string | null;
   createdAt: Date;
 };
 
 const PREINSCRIPTION_SETTING = 'preinscription';
 
-export async function createDbPreinscription(data: Omit<DbPreinscription, 'id' | 'createdAt'>): Promise<void> {
+export async function createDbPreinscription(
+  data: Omit<DbPreinscription, 'id' | 'createdAt' | 'courseSlug' | 'courseTitle'> & {
+    courseSlug?: string | null;
+    courseTitle?: string | null;
+  }
+): Promise<void> {
   await prisma.preinscription.create({ data });
 }
 
@@ -35,11 +42,15 @@ export async function setDbPreinscriptionSetting(routeRegisterToForm: boolean): 
   });
 }
 
-export async function createDbPreinscriptionNotification(childFullName: string, parentFullName: string): Promise<void> {
+export async function createDbPreinscriptionNotification(
+  childFullName: string,
+  parentFullName: string,
+  courseTitle?: string | null
+): Promise<void> {
   await createDbNotification({
     type: 'PREINSCRIPTION_SUBMITTED',
     title: 'New preinscription received',
-    body: `${childFullName} - ${parentFullName}`,
+    body: [childFullName, parentFullName, courseTitle].filter(Boolean).join(' - '),
     link: '/admin/preinscriptions',
   });
 }

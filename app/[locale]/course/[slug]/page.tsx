@@ -8,6 +8,8 @@ import CourseRobotShowcase from '@/components/course/CourseRobotShowcase';
 import CourseTagline from '@/components/course/CourseTagline';
 import CoursePaymentRow from '@/components/pricing/CoursePaymentRow';
 import { Link } from '@/i18n/navigation';
+import { courseRegisterHref } from '@/lib/preinscription/course-link';
+import { getDbPreinscriptionSetting } from '@/lib/db/preinscriptions';
 import { readContent } from '@/lib/content/store';
 import { getAgeGroup, getCourse } from '@/lib/coursesData';
 import { getIcon } from '@/lib/content/icons';
@@ -77,6 +79,11 @@ export default async function CourseDetailPage(
   // Arrived from a specific age group's course list — send "All courses" back
   // there instead of the top-level age-group picker.
   const backHref = searchParams.age ? `/courses/${searchParams.age}` : '/courses';
+  const enrollHref = courseRegisterHref(
+    await getDbPreinscriptionSetting(),
+    course.slug,
+    `/course/${params.slug}${searchParams.age ? `?age=${searchParams.age}` : ''}`
+  );
   const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'coursePage' });
   const { classFormat, familyDiscountPercent: schoolYearDiscount, summerSchool } = (await readContent());
@@ -223,7 +230,7 @@ export default async function CourseDetailPage(
                 familyDiscountPercent={familyDiscountPercent}
                 action={
                   <Link
-                    href="/parent-portal/register"
+                    href={enrollHref}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cta px-6 py-3 text-xs font-bold uppercase tracking-wide text-navy shadow-[0_10px_30px_rgba(255,140,66,0.35)] transition hover:bg-[#f97b2b] sm:w-auto lg:py-2.5 xl:py-3"
                   >
                     {t('enrollInCourse')}

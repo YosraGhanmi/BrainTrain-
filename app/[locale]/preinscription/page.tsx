@@ -17,6 +17,7 @@ import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import PreinscriptionForm from '@/components/preinscription/PreinscriptionForm';
 import { submitPreinscription } from '@/lib/preinscription/actions';
+import { getAgeGroup, getCourse } from '@/lib/coursesData';
 import type { AppLocale } from '@/i18n/routing';
 import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
@@ -41,12 +42,18 @@ export async function generateMetadata(props: { params: Promise<{ locale: AppLoc
 export default async function PreinscriptionPage(
   props: {
     params: Promise<{ locale: AppLocale }>;
-    searchParams: Promise<{ sent?: string; error?: string }>;
+    searchParams: Promise<{ sent?: string; error?: string; course?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
   const params = await props.params;
   const isFr = params.locale === 'fr';
+  // Opened from a course's "S'inscrire" button: that course is preselected.
+  const course = searchParams.course ? await getCourse(searchParams.course, params.locale) : undefined;
+  const courseAgeGroup = course ? await getAgeGroup(course.ageGroupSlug, params.locale) : undefined;
+  const chosenCourse = course
+    ? { slug: course.slug, label: courseAgeGroup ? `${course.title} (${courseAgeGroup.label})` : course.title }
+    : null;
   const backgroundIcons = [
     { Icon: Atom, className: 'left-[5%] top-[18%] rotate-[-18deg]' },
     { Icon: Bot, className: 'left-[18%] top-[42%] rotate-[12deg]' },
@@ -116,7 +123,7 @@ export default async function PreinscriptionPage(
                 </p>
               ) : null}
 
-              <PreinscriptionForm locale={params.locale} isFr={isFr} submitAction={submitPreinscription} />
+              <PreinscriptionForm locale={params.locale} isFr={isFr} submitAction={submitPreinscription} course={chosenCourse} />
             </>
           )}
         </div>

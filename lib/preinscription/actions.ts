@@ -9,6 +9,7 @@ import {
   getDbPreinscriptionSetting,
   setDbPreinscriptionSetting,
 } from '@/lib/db/preinscriptions';
+import { getAgeGroup, getCourse } from '@/lib/coursesData';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -41,13 +42,26 @@ export async function submitPreinscription(formData: FormData): Promise<void> {
   const institution = field(formData, 'institution');
   const parentFullName = field(formData, 'parentFullName');
   const parentPhone = field(formData, 'parentPhone');
+  // Only a course that actually exists is recorded, never a free-form value.
+  const course = await getCourse(field(formData, 'courseSlug'), locale);
+  const courseQuery = course ? `&course=${encodeURIComponent(course.slug)}` : '';
 
   if (!childFullName || !Number.isFinite(childAge) || childAge < 1 || childAge > 25 || !institution || !parentFullName || !parentPhone) {
-    redirect(`/${locale}/preinscription?error=1`);
+    redirect(`/${locale}/preinscription?error=1${courseQuery}`);
   }
 
-  await createDbPreinscription({ childFullName, childAge, institution, parentFullName, parentPhone });
-  await createDbPreinscriptionNotification(childFullName, parentFullName);
+  const ageGroup = course ? await getAgeGroup(course.ageGroupSlug, locale) : undefined;
+  const courseTitle = course ? (ageGroup ? `${course.title} (${ageGroup.label})` : course.title) : null;
+  await createDbPreinscription({
+    childFullName,
+    childAge,
+    institution,
+    parentFullName,
+    parentPhone,
+    courseSlug: course?.slug ?? null,
+    courseTitle,
+  });
+  await createDbPreinscriptionNotification(childFullName, parentFullName, courseTitle);
 
   revalidatePath('/admin/preinscriptions');
   revalidatePath('/admin');

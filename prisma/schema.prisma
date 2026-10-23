@@ -407,6 +407,11 @@ model Preinscription {
   institution    String
   parentFullName String
   parentPhone    String
+  // Set when the form was opened from a course's "S'inscrire" button. The
+  // title is a snapshot ("Robotique (6-9 ans)") so the entry stays readable
+  // if the course is later renamed or removed.
+  courseSlug     String?
+  courseTitle    String?
   createdAt      DateTime @default(now())
 
   @@map("preinscriptions")

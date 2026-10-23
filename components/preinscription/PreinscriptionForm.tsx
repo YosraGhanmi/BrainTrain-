@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { ArrowLeft, ArrowRight, Check, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Check, Send } from 'lucide-react';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 type SubmitAction = (formData: FormData) => void | Promise<void>;
@@ -18,6 +18,8 @@ type Props = {
   locale: string;
   isFr: boolean;
   submitAction: SubmitAction;
+  // Preselected when the form is opened from a course's "S'inscrire" button
+  course?: { slug: string; label: string } | null;
 };
 
 const initialValues: FormValues = {
@@ -28,7 +30,7 @@ const initialValues: FormValues = {
   parentPhone: '',
 };
 
-export default function PreinscriptionForm({ locale, isFr, submitAction }: Props) {
+export default function PreinscriptionForm({ locale, isFr, submitAction, course = null }: Props) {
   const [step, setStep] = useState(1);
   const [values, setValues] = useState<FormValues>(initialValues);
   const formRef = useRef<HTMLFormElement>(null);
@@ -101,6 +103,7 @@ export default function PreinscriptionForm({ locale, isFr, submitAction }: Props
   return (
     <form ref={formRef} action={submitAction} onSubmit={handleSubmit} className="mt-8 rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft sm:p-8">
       <input type="hidden" name="locale" value={locale} />
+      {course ? <input type="hidden" name="courseSlug" value={course.slug} /> : null}
 
       <nav aria-label={isFr ? 'Etapes du formulaire' : 'Form steps'}>
         <ol className="grid grid-cols-3 gap-2 sm:gap-4">
@@ -139,6 +142,17 @@ export default function PreinscriptionForm({ locale, isFr, submitAction }: Props
           <p className="text-sm leading-relaxed text-stone">
             {isFr ? 'Quelques informations pour mieux vous accompagner.' : 'A few details will help us guide your family.'}
           </p>
+          {course ? (
+            <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3.5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                <BookOpen className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-bold uppercase tracking-wide text-stone">{isFr ? 'Cours choisi' : 'Selected course'}</span>
+                <span className="block font-semibold text-ink">{course.label}</span>
+              </span>
+            </div>
+          ) : null}
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-ink">{isFr ? "Nom et prenom d'enfant" : "Child's full name"}</span>
             <input
@@ -217,6 +231,7 @@ export default function PreinscriptionForm({ locale, isFr, submitAction }: Props
           </p>
           <div className="divide-y divide-ink/10 rounded-2xl border border-ink/10 bg-slate-50">
             {[
+              ...(course ? [[isFr ? 'Cours' : 'Course', course.label]] : []),
               [isFr ? "Nom de l'enfant" : "Child's name", values.childFullName],
               [isFr ? 'Age' : 'Age', values.childAge],
               [isFr ? 'Etablissement' : 'Institution', values.institution],

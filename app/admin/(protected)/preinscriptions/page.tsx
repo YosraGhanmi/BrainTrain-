@@ -58,6 +58,7 @@ export default async function AdminPreinscriptionsPage(props: { searchParams: Pr
           <thead className="border-b border-ink/10 text-xs font-bold uppercase tracking-wide text-stone">
             <tr>
               <th className="px-5 py-3">Child</th>
+              <th className="px-5 py-3">Course</th>
               <th className="px-5 py-3">Age</th>
               <th className="px-5 py-3">Institution</th>
               <th className="px-5 py-3">Parent</th>
@@ -68,7 +69,7 @@ export default async function AdminPreinscriptionsPage(props: { searchParams: Pr
           <tbody>
             {submissions.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-6 text-center text-stone">
+                <td colSpan={7} className="px-5 py-6 text-center text-stone">
                   No preinscription submissions yet.
                 </td>
               </tr>
@@ -76,6 +77,7 @@ export default async function AdminPreinscriptionsPage(props: { searchParams: Pr
               submissions.map((entry) => (
                 <tr key={entry.id} className="border-b border-ink/5 last:border-0">
                   <td className="px-5 py-4 font-semibold text-ink">{entry.childFullName}</td>
+                  <td className="px-5 py-4 text-stone">{entry.courseTitle ?? 'Not specified'}</td>
                   <td className="px-5 py-4 text-stone">{entry.childAge}</td>
                   <td className="px-5 py-4 text-stone">{entry.institution}</td>
                   <td className="px-5 py-4 text-stone">{entry.parentFullName}</td>

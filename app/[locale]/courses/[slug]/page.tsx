@@ -30,6 +30,8 @@ import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import { Link } from '@/i18n/navigation';
+import { courseRegisterHref } from '@/lib/preinscription/course-link';
+import { getDbPreinscriptionSetting } from '@/lib/db/preinscriptions';
 import { getAgeGroup, getCoursesForAgeGroup } from '@/lib/coursesData';
 import type { AppLocale } from '@/i18n/routing';
 import { absoluteUrl, localeAlternates } from '@/lib/seo';
@@ -92,7 +94,10 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
   const group = await getAgeGroup(params.slug, params.locale);
   if (!group) notFound();
 
-  const groupCourses = await getCoursesForAgeGroup(group, params.locale);
+  const [groupCourses, routeToForm] = await Promise.all([
+    getCoursesForAgeGroup(group, params.locale),
+    getDbPreinscriptionSetting(),
+  ]);
   const t = await getTranslations({ locale: params.locale, namespace: 'courses' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'coursePage' });
 
@@ -163,7 +168,7 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
                     {t('viewDetails')}
                   </Link>
                   <Link
-                    href="/parent-portal/register"
+                    href={courseRegisterHref(routeToForm, slug, `/courses/${group.slug}`)}
                     className="w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-[#0f1f4d] transition hover:opacity-90"
                   >
                     {t('enroll')}
