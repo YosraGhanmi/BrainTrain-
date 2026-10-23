@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
+import useActiveWhileVisible from '@/lib/hooks/useActiveWhileVisible';
 
 type Movement = 'continuous' | 'step';
 
@@ -35,9 +37,8 @@ const GLOW_LAYERS = [
 const MAX_GLOW_BLUR = Math.max(...GLOW_LAYERS.map((l) => l.blur));
 const MAX_GLOW_REACH = 36;
 
-function withAlpha(input: string, alpha: number) {
-  const a = Math.max(0, Math.min(1, alpha));
-  if (typeof input !== 'string') return `rgba(0,0,0,${a})`;
+function parseRgb(input: string): string {
+  if (typeof input !== 'string') return '0,0,0';
   const s = input.trim();
 
   const hex = s.match(/^#([0-9a-f]{3,8})$/i);
@@ -50,18 +51,32 @@ function withAlpha(input: string, alpha: number) {
         .join('');
     }
     const n = parseInt(h.slice(0, 6), 16);
-    if (!Number.isFinite(n)) return `rgba(0,0,0,${a})`;
-    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    if (!Number.isFinite(n)) return '0,0,0';
+    return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
   }
 
   const rgb = s.match(/^rgba?\(([^)]+)\)/i);
   if (rgb) {
     const parts = rgb[1].split(',').map((v) => parseFloat(v));
     if (parts.length >= 3 && parts.slice(0, 3).every(Number.isFinite)) {
-      return `rgba(${parts[0]},${parts[1]},${parts[2]},${a})`;
+      return `${parts[0]},${parts[1]},${parts[2]}`;
     }
   }
-  return `rgba(0,0,0,${a})`;
+  return '0,0,0';
+}
+
+// buildArcs runs on every animation update and needs ~50 colour stops each
+// time; parse each colour string once rather than re-running the regexes.
+const rgbCache = new Map<string, string>();
+
+function withAlpha(input: string, alpha: number) {
+  const a = Math.max(0, Math.min(1, alpha));
+  let rgb = rgbCache.get(input);
+  if (rgb === undefined) {
+    rgb = parseRgb(input);
+    rgbCache.set(input, rgb);
+  }
+  return `rgba(${rgb},${a})`;
 }
 
 function perimeterPoint(u: number, w: number, h: number): [number, number] {
@@ -86,7 +101,10 @@ function perimeterAngle(u: number, w: number, h: number) {
 const ARC_SAMPLES = 24;
 const MIN_ARC = 0.015;
 
-function buildArc(lap: number, lengthPct: number, w: number, h: number, color: string) {
+type Stop = [alpha: number, deg: number];
+
+// One arc's alpha stops, in degrees clockwise from where it starts (`base`).
+function arcStops(lap: number, lengthPct: number, w: number, h: number) {
   const fw = w > 0 ? w : 100;
   const fh = h > 0 ? h : 100;
 
@@ -94,7 +112,7 @@ function buildArc(lap: number, lengthPct: number, w: number, h: number, color: s
   const span = Math.max(MIN_ARC, (len / 100) * 0.5);
   const solidT = len / 100;
 
-  const stops: string[] = [];
+  const stops: Stop[] = [];
   let base = 0;
   let prev = 0;
   let acc = 0;
@@ -114,14 +132,33 @@ function buildArc(lap: number, lengthPct: number, w: number, h: number, color: s
 
     const t = Math.abs(f - 0.5) * 2;
     const k = solidT >= 1 ? 1 : t <= solidT ? 1 : 1 - (t - solidT) / (1 - solidT);
-    stops.push(`${withAlpha(color, k * k * (3 - 2 * k))} ${acc.toFixed(2)}deg`);
+    stops.push([k * k * (3 - 2 * k), acc]);
   }
 
-  const end = acc.toFixed(2);
-  stops.push(`${withAlpha(color, 0)} ${end}deg`);
-  stops.push(`${withAlpha(color, 0)} 360deg`);
+  return { base, end: acc, stops };
+}
 
-  return `conic-gradient(from ${base.toFixed(2)}deg at 50% 50%, ${stops.join(', ')})`;
+// Both arcs (the one at `lap` and its twin half a lap behind) in a single
+// gradient. They sit on opposite sides of the border and never overlap (and
+// the layers blend additively), so one stack of blurred, blended layers draws
+// both exactly as two separate stacks did, with half the elements.
+function buildArcs(lap: number, lengthPct: number, w: number, h: number, color: string) {
+  const a = arcStops(lap, lengthPct, w, h);
+  const b = arcStops(lap + 0.5, lengthPct, w, h);
+  // Where the twin starts, in degrees clockwise from the first arc's start
+  const offset = (((b.base - a.base) % 360) + 360) % 360;
+  const at = (alpha: number, deg: number) => `${withAlpha(color, alpha)} ${deg.toFixed(2)}deg`;
+
+  const stops = [
+    ...a.stops.map(([alpha, deg]) => at(alpha, deg)),
+    at(0, a.end),
+    at(0, offset),
+    ...b.stops.map(([alpha, deg]) => at(alpha, offset + deg)),
+    at(0, offset + b.end),
+    at(0, 360),
+  ];
+
+  return `conic-gradient(from ${a.base.toFixed(2)}deg at 50% 50%, ${stops.join(', ')})`;
 }
 
 const SLOWEST_CYCLE = 30;
@@ -153,6 +190,12 @@ function makeEaseFn(pts: number[]) {
   };
 }
 
+// Each update repaints several large blurred, masked, additively blended
+// layers (measured at roughly a full CPU core in the GPU process at 60fps for
+// two visible borders). The arcs glide along long soft fades, so 30 updates a
+// second reads as the same smooth drift at about half the cost.
+const UPDATE_INTERVAL = 1 / 30;
+
 const stepEase = makeEaseFn(STEP_EASE);
 const glideEase = makeEaseFn(GLIDE_EASE);
 
@@ -177,8 +220,7 @@ export default function NeonBorder(props: Props) {
     style,
   } = props;
 
-  const groupARef = useRef<HTMLDivElement>(null);
-  const groupBRef = useRef<HTMLDivElement>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
 
   const live = useRef({ speed, movement, borderSize, color });
   live.current = { speed, movement, borderSize, color };
@@ -186,6 +228,13 @@ export default function NeonBorder(props: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const sizeRef = useRef({ w: 0, h: 0 });
   const [size, setSize] = useState({ w: 0, h: 0 });
+  // Where the arcs are along the border, kept across pauses so the glow
+  // resumes where it stopped instead of jumping back to the start.
+  const progress = useRef({ corner: 0, stepT: 0 });
+  const reducedMotion = useReducedMotion();
+  // Every update repaints several blurred, masked, blended layers, so the
+  // loop only runs while the border is actually on screen.
+  const active = useActiveWhileVisible(rootRef);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -201,15 +250,23 @@ export default function NeonBorder(props: Props) {
   }, []);
 
   useEffect(() => {
+    if (!active || reducedMotion) return;
     let raf = 0;
     let last = performance.now();
     let lap = 0;
-    let corner = 0;
-    let stepT = 0;
+    let { corner, stepT } = progress.current;
+    let pending = 0;
 
     const frame = (now: number) => {
-      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+      pending += Math.max(0, (now - last) / 1000);
       last = now;
+      // Small tolerance so a 60Hz display reliably lands on every other frame
+      if (pending < UPDATE_INTERVAL - 0.004) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+      const dt = Math.min(0.05, pending);
+      pending = 0;
       const p = live.current;
       const s = Math.max(0, Math.min(20, p.speed));
 
@@ -224,6 +281,8 @@ export default function NeonBorder(props: Props) {
           stepT -= 1;
           corner += 1;
         }
+        progress.current.corner = corner;
+        progress.current.stepT = stepT;
         const eased = step ? stepEase(Math.min(1, stepT * 2)) : glideEase(stepT);
 
         const { w, h } = sizeRef.current;
@@ -233,13 +292,9 @@ export default function NeonBorder(props: Props) {
         const to = cornerLap(corner + 1, fw, fh);
         lap = from + (to - from) * eased;
 
-        const a = groupARef.current;
-        if (a) {
-          a.style.setProperty('--arc', buildArc(lap, p.borderSize, w, h, p.color));
-        }
-        const b = groupBRef.current;
-        if (b) {
-          b.style.setProperty('--arc', buildArc(lap + 0.5, p.borderSize, w, h, p.color));
+        const group = groupRef.current;
+        if (group) {
+          group.style.setProperty('--arc', buildArcs(lap, p.borderSize, w, h, p.color));
         }
       }
 
@@ -248,7 +303,7 @@ export default function NeonBorder(props: Props) {
     raf = requestAnimationFrame(frame);
 
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [active, reducedMotion]);
 
   const thick = Math.max(1, Math.min(10, thickness));
 
@@ -293,16 +348,16 @@ export default function NeonBorder(props: Props) {
     </div>
   );
 
-  const glowGroup = (start: number, ref: React.Ref<HTMLDivElement>) => (
+  const glowGroup = (
     <div
-      ref={ref}
+      ref={groupRef}
       style={
         {
           position: 'absolute',
           inset: 0,
           overflow: 'visible',
           pointerEvents: 'none',
-          '--arc': buildArc(start, borderSize, size.w, size.h, color),
+          '--arc': buildArcs(0, borderSize, size.w, size.h, color),
         } as React.CSSProperties
       }
     >
@@ -334,8 +389,7 @@ export default function NeonBorder(props: Props) {
         ...style,
       }}
     >
-      {glowGroup(0, groupARef)}
-      {glowGroup(0.5, groupBRef)}
+      {glowGroup}
     </div>
   );
 }

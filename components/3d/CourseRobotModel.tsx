@@ -3,7 +3,10 @@
 import { Suspense, useLayoutEffect, useRef } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { useGLTF, Environment, Lightformer } from '@react-three/drei';
+import { useReducedMotion } from 'framer-motion';
 import * as THREE from 'three';
+import useActiveWhileVisible from '@/lib/hooks/useActiveWhileVisible';
+import WebGLBoundary from '@/components/3d/WebGLBoundary';
 
 // Static variant of components/3d/HeroScene.tsx's robot: same model and
 // lighting, but no mouse-follow rotation and no walk/idle animation clip —
@@ -56,7 +59,8 @@ function StaticRobotModel() {
   // Slow vertical bob so the robot reads as hovering in place.
   useFrame((_, delta) => {
     if (!group.current) return;
-    elapsedTime.current += delta;
+    // A resumed loop reports the whole paused span as one delta.
+    elapsedTime.current += Math.min(delta, 0.1);
     group.current.position.y = baseY.current + Math.sin(elapsedTime.current * 1.2) * 0.12;
   });
 
@@ -70,22 +74,31 @@ function StaticRobotModel() {
 useGLTF.preload(MODEL_URL);
 
 export default function CourseRobotModel() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const visible = useActiveWhileVisible(containerRef);
+  const reducedMotion = useReducedMotion();
+  // The bob is the only motion: render continuously only while it's on
+  // screen, and just the one still frame under reduced motion.
+  const frameloop = !visible ? 'never' : reducedMotion ? 'demand' : 'always';
+
   return (
-    <div className="h-full w-full">
-      <Canvas dpr={[1, 2]} camera={{ position: [3.2, 2.1, 5], fov: 32 }} gl={{ alpha: true, antialias: true }}>
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[5, 8, 5]} intensity={1.6} />
-        <directionalLight position={[-4, 3, -4]} intensity={0.4} />
-        <Suspense fallback={null}>
-          <StaticRobotModel />
-          {/* Procedural env map — no network fetch, same as HeroScene. */}
-          <Environment resolution={64} background={false}>
-            <Lightformer intensity={2} color="white" position={[0, 5, 0]} scale={[10, 10, 1]} />
-            <Lightformer intensity={1} color="#b7c8ff" position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} scale={[10, 5, 1]} />
-            <Lightformer intensity={1} color="#ffe6b7" position={[5, 2, 0]} rotation={[0, -Math.PI / 2, 0]} scale={[10, 5, 1]} />
-          </Environment>
-        </Suspense>
-      </Canvas>
+    <div ref={containerRef} className="h-full w-full">
+      <WebGLBoundary>
+        <Canvas frameloop={frameloop} dpr={[1, 1.5]} camera={{ position: [3.2, 2.1, 5], fov: 32 }} gl={{ alpha: true, antialias: true }}>
+          <ambientLight intensity={0.7} />
+          <directionalLight position={[5, 8, 5]} intensity={1.6} />
+          <directionalLight position={[-4, 3, -4]} intensity={0.4} />
+          <Suspense fallback={null}>
+            <StaticRobotModel />
+            {/* Procedural env map — no network fetch, same as HeroScene. */}
+            <Environment resolution={64} background={false}>
+              <Lightformer intensity={2} color="white" position={[0, 5, 0]} scale={[10, 10, 1]} />
+              <Lightformer intensity={1} color="#b7c8ff" position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} scale={[10, 5, 1]} />
+              <Lightformer intensity={1} color="#ffe6b7" position={[5, 2, 0]} rotation={[0, -Math.PI / 2, 0]} scale={[10, 5, 1]} />
+            </Environment>
+          </Suspense>
+        </Canvas>
+      </WebGLBoundary>
     </div>
   );
 }

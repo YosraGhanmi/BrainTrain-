@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
+import useActiveWhileVisible from '@/lib/hooks/useActiveWhileVisible';
 
 interface TypewriterProps {
   texts: string[];
@@ -33,6 +34,10 @@ export default function Typewriter({
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [started, setStarted] = useState(startDelay === 0);
+  // Each keystroke re-renders and repaints the text; hold the loop wherever
+  // it is while it's off screen or the tab is hidden.
+  const rootRef = useRef<HTMLSpanElement>(null);
+  const active = useActiveWhileVisible(rootRef, '0px', true);
 
   useEffect(() => {
     if (startDelay === 0) return;
@@ -41,7 +46,7 @@ export default function Typewriter({
   }, [startDelay]);
 
   useEffect(() => {
-    if (!started || texts.length === 0) return;
+    if (!started || !active || texts.length === 0) return;
 
     const currentText = texts[currentTextIndex] ?? '';
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -66,7 +71,7 @@ export default function Typewriter({
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [started, currentIndex, displayText, isDeleting, currentTextIndex, texts, typeSpeed, deleteSpeed, holdTime]);
+  }, [started, active, currentIndex, displayText, isDeleting, currentTextIndex, texts, typeSpeed, deleteSpeed, holdTime]);
 
   const cursorVariants: Variants = {
     initial: { opacity: 0 },
@@ -77,7 +82,7 @@ export default function Typewriter({
   };
 
   return (
-    <span className={className} style={{ color }}>
+    <span ref={rootRef} className={className} style={{ color }}>
       {displayText}
       {showCursor && (
         <motion.span

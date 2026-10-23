@@ -1,6 +1,7 @@
 'use client';
 
-import { useId, useMemo } from 'react';
+import { useId, useMemo, useRef } from 'react';
+import useActiveWhileVisible from '@/lib/hooks/useActiveWhileVisible';
 
 // Map Framer Transition `ease` value to a CSS animation-timing-function.
 function mapEaseToCSS(ease: any): string {
@@ -43,6 +44,10 @@ export default function TextMorph(props: any) {
   const easeCSS = mapEaseToCSS(easeCurve);
 
   const Tag = (tag ?? 'div') as any;
+  // The morph re-runs an SVG filter over the whole word on every frame it
+  // animates; hold it still whenever the heading is off screen.
+  const rootRef = useRef<HTMLElement>(null);
+  const playing = useActiveWhileVisible(rootRef, '0px', true);
 
   const wordList = useMemo<string[]>(
     () =>
@@ -109,6 +114,7 @@ export default function TextMorph(props: any) {
 
   return (
     <Tag
+      ref={rootRef}
       style={{
         position: 'relative',
         width: '100%',
@@ -192,6 +198,7 @@ export default function TextMorph(props: any) {
                 color,
                 whiteSpace: 'nowrap',
                 animation: `${animName} ${cycle}s ${(slot * i).toFixed(3)}s infinite ${easeCSS}`,
+                animationPlayState: playing ? 'running' : 'paused',
                 willChange: 'opacity, filter, transform',
               }}
             >

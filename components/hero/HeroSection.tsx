@@ -10,6 +10,7 @@ import TextMorph from '@/components/text/TextMorph';
 import Typewriter from '@/components/text/Typewriter';
 import InteractiveMesh from '@/components/hero/InteractiveMesh';
 import OrbitBorderButton from '@/components/buttons/OrbitBorderButton';
+import useActiveWhileVisible from '@/lib/hooks/useActiveWhileVisible';
 
 // Three.js/react-three-fiber is a heavy bundle — load it only in the browser,
 // off the critical rendering path, instead of shipping it in the main chunk.
@@ -20,9 +21,56 @@ const HeroScene = dynamic(() => import('@/components/3d/HeroScene'), {
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Each aurora glow used to be a solid disc under a huge CSS blur, which the
+// GPU had to re-blur on every frame of its drift. These are the same
+// Gaussian-blurred-disc falloffs, precomputed as gradient stops (alpha
+// fraction at a fraction of the blurred extent), so the glows look the same
+// but are painted once and only moved by the compositor afterwards.
+type AuroraGlow = { rgb: string; alpha: number; extentPx: number; falloff: [number, number][] };
+
+const AURORA_GLOWS: Record<'accent' | 'accent2' | 'gold', AuroraGlow> = {
+  // 32rem disc, blur(120px)
+  accent: {
+    rgb: '61,127,255',
+    alpha: 0.15,
+    extentPx: 516,
+    falloff: [[0, 0.897], [15, 0.848], [30, 0.699], [45, 0.476], [60, 0.252], [75, 0.099], [90, 0.028], [100, 0]],
+  },
+  // 28rem disc, blur(120px)
+  accent2: {
+    rgb: '108,92,231',
+    alpha: 0.15,
+    extentPx: 482,
+    falloff: [[0, 0.825], [15, 0.77], [30, 0.617], [45, 0.409], [60, 0.215], [75, 0.087], [90, 0.026], [100, 0]],
+  },
+  // 24rem disc, blur(130px)
+  gold: {
+    rgb: '184,134,11',
+    alpha: 0.1,
+    extentPx: 467,
+    falloff: [[0, 0.664], [15, 0.613], [30, 0.478], [45, 0.31], [60, 0.164], [75, 0.07], [90, 0.023], [100, 0]],
+  },
+};
+
+function AuroraGlowFill({ glow }: { glow: AuroraGlow }) {
+  const stops = glow.falloff.map(([at, a]) => `rgba(${glow.rgb},${+(glow.alpha * a).toFixed(4)}) ${at}%`).join(', ');
+  const size = glow.extentPx * 2;
+  return (
+    <div
+      className="absolute left-1/2 top-1/2"
+      style={{ width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, background: `radial-gradient(circle closest-side, ${stops})` }}
+    />
+  );
+}
+
 export default function HeroSection({ registerHref = '/courses' }: { registerHref?: string }) {
   const textRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const t = useTranslations('hero');
+  // The ambient drift and the scroll hint hold still once the hero is
+  // scrolled away. Assumed on screen until observed, matching the SSR markup.
+  const onScreen = useActiveWhileVisible(sectionRef, '0px', true);
+  const ambientMotion = { animationPlayState: onScreen ? 'running' : 'paused' } as const;
 
   const robotBubbles = [
     {
@@ -73,15 +121,21 @@ export default function HeroSection({ registerHref = '/courses' }: { registerHre
   }, []);
 
   return (
-    <section id="top" className="relative overflow-hidden px-6 pb-24 pt-32 md:px-10 lg:px-16">
+    <section ref={sectionRef} id="top" className="relative overflow-hidden px-6 pb-24 pt-32 md:px-10 lg:px-16">
       {/* Static dot-grid texture */}
       <div className="dot-grid pointer-events-none absolute inset-0 z-0" />
 
       {/* Aurora background */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/4 h-[32rem] w-[32rem] rounded-full bg-accent/15 blur-[120px] animate-aurora" />
-        <div className="absolute top-1/3 -right-32 h-[28rem] w-[28rem] rounded-full bg-accent2/15 blur-[120px] animate-aurora [animation-delay:-6s]" />
-        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-gold/10 blur-[130px] animate-aurora [animation-delay:-11s]" />
+        <div className="absolute -top-40 left-1/4 h-[32rem] w-[32rem] animate-aurora" style={ambientMotion}>
+          <AuroraGlowFill glow={AURORA_GLOWS.accent} />
+        </div>
+        <div className="absolute top-1/3 -right-32 h-[28rem] w-[28rem] animate-aurora [animation-delay:-6s]" style={ambientMotion}>
+          <AuroraGlowFill glow={AURORA_GLOWS.accent2} />
+        </div>
+        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] animate-aurora [animation-delay:-11s]" style={ambientMotion}>
+          <AuroraGlowFill glow={AURORA_GLOWS.gold} />
+        </div>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_transparent_0%,_rgba(255,255,255,0.4)_60%,_#ffffff_100%)]" />
       </div>
 
@@ -167,7 +221,7 @@ export default function HeroSection({ registerHref = '/courses' }: { registerHre
         aria-label={t('scroll')}
       >
         <span className="text-[0.65rem] uppercase tracking-[0.35em]">{t('scroll')}</span>
-        <ArrowDown className="h-4 w-4 animate-bounce" />
+        <ArrowDown className="h-4 w-4 animate-bounce" style={ambientMotion} />
       </a>
     </section>
   );

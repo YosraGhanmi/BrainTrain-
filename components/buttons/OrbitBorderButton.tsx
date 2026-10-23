@@ -7,6 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Link } from '@/i18n/navigation';
 import { useAnimate, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import useActiveWhileVisible from '@/lib/hooks/useActiveWhileVisible';
 
 type Props = {
   label: string;
@@ -56,6 +57,8 @@ export default function OrbitBorderButton({
   const arcDegRef = useRef(IDLE_ARC_DEG);
   const arcAnimRef = useRef<{ stop: () => void } | null>(null);
   const reducedMotion = useReducedMotion();
+  const visible = useActiveWhileVisible(btnRef);
+  const spinRef = useRef<Animation | null>(null);
   const [side, setSide] = useState(0);
   const [radius, setRadius] = useState(999);
 
@@ -80,23 +83,31 @@ export default function OrbitBorderButton({
     return () => ro.disconnect();
   }, []);
 
-  // Continuous rotation, driven by rAF so it never depends on React state.
+  // Continuous rotation as a Web Animation rather than a rAF loop: a pure
+  // transform animation runs on the compositor, so the main thread does no
+  // per-frame work for it and it never depends on React state.
   useEffect(() => {
-    if (reducedMotion) return;
-    let raf = 0;
-    let last = 0;
-    let angle = 0;
-    const tick = (t: number) => {
-      if (!last) last = t;
-      angle = (angle + (DEG_PER_SEC * (t - last)) / 1000) % 360;
-      last = t;
-      const el = cometRef.current;
-      if (el) el.style.transform = `rotate(${angle}deg)`;
-      raf = requestAnimationFrame(tick);
+    const el = cometRef.current;
+    if (!el || reducedMotion || typeof el.animate !== 'function') return;
+    const spin = el.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], {
+      duration: (360 / DEG_PER_SEC) * 1000,
+      iterations: Infinity,
+      easing: 'linear',
+    });
+    spinRef.current = spin;
+    return () => {
+      spin.cancel();
+      spinRef.current = null;
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
   }, [reducedMotion]);
+
+  // Hold the spin wherever it is while the button is off screen.
+  useEffect(() => {
+    const spin = spinRef.current;
+    if (!spin) return;
+    if (visible) spin.play();
+    else spin.pause();
+  }, [visible, reducedMotion]);
 
   useEffect(() => {
     const el = cometRef.current;

@@ -4,7 +4,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import localFont from 'next/font/local';
 import SmoothScroll from '@/components/providers/SmoothScroll';
-import StringTuneProvider from '@/components/providers/StringTuneProvider';
 import SocialSidebar from '@/components/social/SocialSidebar';
 import AdminShortcut from '@/components/admin/AdminShortcut';
 import { readContent } from '@/lib/content/store';
@@ -136,7 +135,6 @@ export default async function LocaleLayout(
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
         <NextIntlClientProvider messages={messages}>
-          <StringTuneProvider />
           <AdminShortcut />
           <SocialSidebar socials={socials} />
           <SmoothScroll>{children}</SmoothScroll>

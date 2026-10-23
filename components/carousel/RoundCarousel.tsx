@@ -1,7 +1,8 @@
 // Round Carousel — Originkit
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
+import useActiveWhileVisible from "@/lib/hooks/useActiveWhileVisible";
 
 // Combined next/image default deviceSizes + imageSizes (next.config.js sets no override).
 const NEXT_IMAGE_WIDTHS = [16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
@@ -78,7 +79,6 @@ export default function RoundCarousel({
   const velRef = useRef(0);
   const lastRef = useRef(0);
   const dragRef = useRef({ active: false, x: 0 });
-  const visibleRef = useRef(true);
 
   const angle = 360 / count;
   const factor = 1 + spacing * 0.15;
@@ -86,20 +86,17 @@ export default function RoundCarousel({
   const radiusPx = cornerRadius;
   const degPerSec = speed * 6 * (direction === "left" ? -1 : 1);
 
-  // Pause the rAF loop entirely while the carousel is scrolled out of view —
-  // it otherwise keeps spinning (and burning CPU/GPU) for the whole page lifetime.
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        visibleRef.current = entry.isIntersecting;
-      },
-      { threshold: 0.01 }
-    );
-    observer.observe(root);
-    return () => observer.disconnect();
-  }, []);
+  // Stop the rAF loop entirely (not just skip frames) while the carousel is
+  // scrolled out of view or the tab is hidden. Otherwise it keeps spinning,
+  // and burning CPU/GPU, for the whole page lifetime.
+  const visible = useActiveWhileVisible(rootRef);
+
+  // The photos sit far down the page: fetch them only as the carousel nears
+  // the viewport instead of competing with the hero on first load. Once
+  // loaded they stay loaded.
+  const near = useActiveWhileVisible(rootRef, "800px");
+  const [imagesWanted, setImagesWanted] = useState(false);
+  if (near && !imagesWanted) setImagesWanted(true);
 
   useEffect(() => {
     const ring = ringRef.current;
@@ -107,14 +104,12 @@ export default function RoundCarousel({
     const apply = () =>
       (ring.style.transform = `translateZ(${-radius}px) rotateY(${rotYRef.current}deg)`);
     apply();
+    if (!visible) return;
+    lastRef.current = 0;
 
     const draw = (now: number) => {
       const dt = lastRef.current ? (now - lastRef.current) / 1000 : 0;
       lastRef.current = now;
-      if (!visibleRef.current) {
-        rafRef.current = requestAnimationFrame(draw);
-        return;
-      }
       const f = Math.min(dt, 0.1);
       const d = dragRef.current;
       if (!d.active) {
@@ -130,7 +125,7 @@ export default function RoundCarousel({
     };
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [radius, degPerSec, count]);
+  }, [radius, degPerSec, count, visible]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!drag) return;
@@ -163,8 +158,8 @@ export default function RoundCarousel({
   };
 
   const resolvedSrcs = useMemo(
-    () => items.map((img) => (img?.src ? optimizedSrc(img.src, imageWidth) : undefined)),
-    [items, imageWidth]
+    () => items.map((img) => (img?.src && imagesWanted ? optimizedSrc(img.src, imageWidth) : undefined)),
+    [items, imageWidth, imagesWanted]
   );
 
   return (

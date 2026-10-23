@@ -8,7 +8,6 @@ export default function TeamPhoto() {
           src="/ALL.png"
           alt="BrainTrain students and mentors celebrating with their competition trophies"
           fill
-          priority
           sizes="100vw"
           className="object-cover"
         />

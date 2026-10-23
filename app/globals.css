@@ -134,25 +134,56 @@ section {
     animation-play-state: paused;
   }
 
+  /* Blue/red pulsing ring. Animating box-shadow itself repaints the card on
+     every frame for as long as it's selected; instead the two end-state rings
+     are painted once on pseudo-elements and cross-faded with opacity, which
+     the compositor animates without any main-thread work. */
   .glow-border {
-    animation: glow-pulse 2.4s ease-in-out infinite;
+    position: relative;
+    /* Own stacking context, so the rings (z-index -1) sit beneath the card's
+       content, e.g. the logo badge on its top edge, like a real box-shadow. */
+    isolation: isolate;
   }
-}
 
+  .glow-border::before,
+  .glow-border::after {
+    content: '';
+    position: absolute;
+    /* Match the card's border box, where its own box-shadow was drawn */
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    animation: glow-fade 2.4s ease-in-out infinite;
+  }
 
-@keyframes glow-pulse {
-  0%,
-  100% {
+  .glow-border::before {
     box-shadow:
       0 0 0 2px rgba(59, 130, 246, 0.55),
       0 0 18px 2px rgba(59, 130, 246, 0.35),
       0 0 30px 6px rgba(239, 68, 68, 0.18);
   }
-  50% {
+
+  .glow-border::after {
     box-shadow:
       0 0 0 2px rgba(239, 68, 68, 0.55),
       0 0 18px 2px rgba(239, 68, 68, 0.35),
       0 0 30px 6px rgba(59, 130, 246, 0.18);
+    /* Half a cycle out of phase: red peaks while blue is gone. At rest
+       (reduced motion) only the blue ring shows. */
+    animation-delay: -1.2s;
+    opacity: 0;
+  }
+}
+
+
+@keyframes glow-fade {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }
 
