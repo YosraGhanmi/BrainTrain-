@@ -1,22 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { AtSign, BriefcaseBusiness, Camera, MessageCircle, Music2, Link2, Plus, Share2, Trash2, Video } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import SocialIcon from '@/components/social/SocialIcon';
 
 type Row = { key: number; label: string; href: string };
-
-function iconFor(label: string): LucideIcon {
-  const l = label.toLowerCase();
-  if (l.includes('facebook')) return Share2;
-  if (l.includes('instagram')) return Camera;
-  if (l.includes('linkedin')) return BriefcaseBusiness;
-  if (l.includes('twitter') || l === 'x') return AtSign;
-  if (l.includes('youtube')) return Video;
-  if (l.includes('tiktok')) return Music2;
-  if (l.includes('whatsapp')) return MessageCircle;
-  return Link2;
-}
 
 export default function SocialLinksEditor({ initial }: { initial: { label: string; href: string }[] }) {
   const nextKey = useRef(initial.length);
@@ -29,7 +17,6 @@ export default function SocialLinksEditor({ initial }: { initial: { label: strin
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {rows.map((row) => {
-        const Icon = iconFor(row.label);
         return (
           <div
             key={row.key}
@@ -39,7 +26,7 @@ export default function SocialLinksEditor({ initial }: { initial: { label: strin
 
             <div className="flex items-center justify-between">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white shadow-sm shadow-accent/30">
-                <Icon className="h-5 w-5" />
+                <SocialIcon label={row.label} className="h-5 w-5" />
               </span>
               <button
                 type="button"
