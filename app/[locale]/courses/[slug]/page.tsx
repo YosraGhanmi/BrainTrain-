@@ -114,7 +114,7 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
 
         <div className="relative mx-auto max-w-6xl">
           <Link
-            href="/courses"
+            href={`/courses?age=${group.slug}`}
             className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-stone transition hover:text-ink"
           >
             <ArrowLeft className="h-4 w-4" />

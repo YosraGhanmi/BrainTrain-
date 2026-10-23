@@ -4,7 +4,7 @@
 // stepping is always a single-slat move driven by one rAF loop.
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import {
   motion,
@@ -29,6 +29,25 @@ type Sizing = {
 
 const GAP = 24;
 const RADIUS = 28;
+// Last age group opened in this tab: the fallback when /courses is reached
+// without ?age= (e.g. from the navbar), so the visitor still lands on it.
+const LAST_GROUP_KEY = 'braintrain:last-age-group';
+
+// The age group to open on: ?age= from the URL, else the last one opened in
+// this tab. Read straight from window.location rather than useSearchParams,
+// which would need a Suspense boundary around this statically rendered page.
+function rememberedIndex(groups: AgeGroupCard[]): number {
+  let stored: string | null = null;
+  try {
+    stored = window.sessionStorage.getItem(LAST_GROUP_KEY);
+  } catch {
+    // storage blocked (private mode, disabled site data): URL only
+  }
+  const slug = new URLSearchParams(window.location.search).get('age') ?? stored;
+  return Math.max(0, groups.findIndex((g) => g.slug === slug));
+}
+
+const subscribeToNothing = () => () => {};
 
 // Card `index`'s signed distance from centre at position `pos`, wrapped into
 // (-count/2, count/2] so stepping is always a single-slat move either way.
@@ -75,6 +94,7 @@ function Card({
   count,
   sizing,
   onSelect,
+  onOpen,
 }: {
   group: AgeGroupCard;
   index: number;
@@ -82,6 +102,7 @@ function Card({
   count: number;
   sizing: Sizing;
   onSelect: (index: number) => void;
+  onOpen: (index: number) => void;
 }) {
   const Icon = getIcon(group.icon);
   const t = useTranslations('courses');
@@ -106,6 +127,11 @@ function Card({
     const ar = Math.abs(relOf(index, p, count));
     return Math.max(0, 1 - ar * 1.4);
   });
+  // Only the centred card's text and button take clicks. On a side card
+  // they're invisible, and a click there should centre the card, not open it.
+  const overlayPointerEvents = useTransform(pos, (p: number) =>
+    Math.abs(relOf(index, p, count)) < 0.5 ? 'auto' : 'none'
+  );
   const boxShadow = useTransform(pos, (p: number) =>
     Math.abs(relOf(index, p, count)) < 0.5
       ? '0 24px 60px rgba(11,26,58,0.35)'
@@ -115,7 +141,11 @@ function Card({
   return (
     <motion.div
       onClick={() => onSelect(index)}
-      style={{ position: 'absolute', left: '50%', top: '50%', x, zIndex, opacity }}
+      // Zero-size anchor at the stage centre: the card itself is offset by
+      // the inner div's -50% translate. Left at its natural size, this box
+      // sat down-right of the card and (with the higher z-index) swallowed
+      // clicks meant for the next card along.
+      style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0, x, zIndex, opacity }}
       className="cursor-pointer"
     >
       <motion.div
@@ -132,7 +162,7 @@ function Card({
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b1a3a]/90 via-[#0b1a3a]/10 to-transparent" />
 
-        <motion.div style={{ opacity: overlayOpacity }} className="absolute inset-x-0 bottom-0 p-6">
+        <motion.div style={{ opacity: overlayOpacity, pointerEvents: overlayPointerEvents }} className="absolute inset-x-0 bottom-0 p-6">
           <Icon className="h-7 w-7 text-[#ff8c42]" strokeWidth={1.75} />
           {group.stage ? (
             <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff8c42]">{group.stage}</p>
@@ -142,7 +172,10 @@ function Card({
           <ArrowRevealButton
             label={t('seeCourses')}
             href={`/courses/${group.slug}`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen(index);
+            }}
             className="mt-4"
           />
         </motion.div>
@@ -158,12 +191,21 @@ export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCa
 
   const sizing = useResponsiveSizing();
 
-  const pos = useMotionValue(0);
-  const targetRef = useRef(0);
+  // True only while hydrating server-rendered HTML (React renders with the
+  // server snapshot then). Any other mount (coming back with the arrow, the
+  // browser's back button, the navbar) can start on the remembered card
+  // straight away, so it's right from the first frame with nothing to fix up.
+  const hydrating = useSyncExternalStore(subscribeToNothing, () => false, () => true);
+  const [startIndex] = useState(() => (hydrating ? 0 : rememberedIndex(groups)));
+  const pos = useMotionValue(startIndex);
+  const targetRef = useRef(startIndex);
   const rafRef = useRef<number | null>(null);
   const lastTRef = useRef<number | null>(null);
   const reducedRef = useRef(prefersReducedMotion);
   reducedRef.current = prefersReducedMotion;
+  // Bumped once the position is restored from the URL, to re-render the cards
+  // (they recompute their layout from `pos` on every render).
+  const [, setRestoredIndex] = useState(0);
 
   const tick = useCallback(
     (t: number) => {
@@ -190,6 +232,46 @@ export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCa
     [pos]
   );
 
+  // After a full page load the first render has to match the server HTML
+  // (first card), so the remembered card is applied right after hydration,
+  // in a layout effect so it's still before the first paint.
+  useLayoutEffect(() => {
+    const index = rememberedIndex(groups);
+    if (index === targetRef.current) return;
+    let cancelled = false;
+    // Applied in a microtask (still before the first paint) and followed by
+    // a re-render: set synchronously here, the cards' change subscription can
+    // miss it (React's dev-mode double effect run, or hydration timing).
+    queueMicrotask(() => {
+      if (cancelled) return;
+      targetRef.current = index;
+      pos.set(index);
+      setRestoredIndex(index);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [groups, pos]);
+
+  // Keep the centred (or just opened) age group in the URL and in this tab's
+  // session, so coming back to this page by any route (the arrow on an age
+  // group's page, the browser's back button, the navbar) lands on it.
+  const rememberCard = useCallback(
+    (target: number) => {
+      const slug = groups[((Math.round(target) % count) + count) % count]?.slug;
+      if (!slug) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('age', slug);
+      window.history.replaceState(null, '', url);
+      try {
+        window.sessionStorage.setItem(LAST_GROUP_KEY, slug);
+      } catch {
+        // storage blocked: the URL still carries it
+      }
+    },
+    [groups, count]
+  );
+
   const ensureRunning = useCallback(() => {
     if (rafRef.current == null) {
       lastTRef.current = null;
@@ -199,12 +281,14 @@ export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCa
 
   const goNext = useCallback(() => {
     targetRef.current += 1;
+    rememberCard(targetRef.current);
     ensureRunning();
-  }, [ensureRunning]);
+  }, [ensureRunning, rememberCard]);
   const goPrev = useCallback(() => {
     targetRef.current -= 1;
+    rememberCard(targetRef.current);
     ensureRunning();
-  }, [ensureRunning]);
+  }, [ensureRunning, rememberCard]);
   const goTo = useCallback(
     (index: number) => {
       const cur = targetRef.current;
@@ -212,9 +296,10 @@ export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCa
       d = ((d % count) + count) % count;
       if (d > count / 2) d -= count;
       targetRef.current = cur + d;
+      rememberCard(targetRef.current);
       ensureRunning();
     },
-    [ensureRunning, count]
+    [ensureRunning, rememberCard, count]
   );
 
   useEffect(() => {
@@ -228,7 +313,7 @@ export default function AgeGroupCoverflow({ ageGroups }: { ageGroups: AgeGroupCa
     <div className="relative h-[320px] w-full select-none overflow-hidden xs:h-[360px] sm:h-[480px]">
       <div className="absolute inset-0" style={{ isolation: 'isolate' }}>
         {groups.map((group, i) => (
-          <Card key={group.slug} group={group} index={i} pos={pos} count={count} sizing={sizing} onSelect={goTo} />
+          <Card key={group.slug} group={group} index={i} pos={pos} count={count} sizing={sizing} onSelect={goTo} onOpen={rememberCard} />
         ))}
       </div>
 
