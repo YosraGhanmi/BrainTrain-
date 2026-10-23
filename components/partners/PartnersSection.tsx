@@ -36,7 +36,9 @@ export default function PartnersSection({ logos }: { logos: string[] }) {
       </div>
 
       <div className="mt-14 w-full">
-        <PartnersGrid logos={logos} perPage={perPage} />
+        {/* Remounted when the number of visible logos changes (resize), so the
+            row restarts from the first logo instead of a stale offset. */}
+        <PartnersGrid key={perPage} logos={logos} perPage={perPage} />
       </div>
     </section>
   );
