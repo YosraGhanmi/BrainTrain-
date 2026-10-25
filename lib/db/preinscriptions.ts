@@ -6,8 +6,11 @@ export type DbPreinscription = {
   childFullName: string;
   childAge: number;
   institution: string;
+  schoolSystem: string | null;
   parentFullName: string;
   parentPhone: string;
+  parentEmail: string | null;
+  parentPhone2: string | null;
   courseSlug: string | null;
   courseTitle: string | null;
   createdAt: Date;

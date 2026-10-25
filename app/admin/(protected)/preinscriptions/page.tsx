@@ -2,6 +2,7 @@ import { ClipboardCheck } from 'lucide-react';
 import { requirePreinscriptionAccess, updatePreinscriptionRouting } from '@/lib/preinscription/actions';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import { getDbPreinscriptionSetting, listDbPreinscriptions } from '@/lib/db/preinscriptions';
+import { schoolSystemLabel } from '@/lib/preinscription/school-systems';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,22 +55,23 @@ export default async function AdminPreinscriptionsPage(props: { searchParams: Pr
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white shadow-soft">
-        <table className="w-full min-w-[900px] text-left text-sm">
+        <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="border-b border-ink/10 text-xs font-bold uppercase tracking-wide text-stone">
             <tr>
               <th className="px-5 py-3">Child</th>
               <th className="px-5 py-3">Course</th>
               <th className="px-5 py-3">Age</th>
               <th className="px-5 py-3">Institution</th>
+              <th className="px-5 py-3">School system</th>
               <th className="px-5 py-3">Parent</th>
-              <th className="px-5 py-3">Phone</th>
+              <th className="px-5 py-3">Contact</th>
               <th className="px-5 py-3">Submitted</th>
             </tr>
           </thead>
           <tbody>
             {submissions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-6 text-center text-stone">
+                <td colSpan={8} className="px-5 py-6 text-center text-stone">
                   No preinscription submissions yet.
                 </td>
               </tr>
@@ -80,8 +82,23 @@ export default async function AdminPreinscriptionsPage(props: { searchParams: Pr
                   <td className="px-5 py-4 text-stone">{entry.courseTitle ?? 'Not specified'}</td>
                   <td className="px-5 py-4 text-stone">{entry.childAge}</td>
                   <td className="px-5 py-4 text-stone">{entry.institution}</td>
+                  <td className="px-5 py-4 text-stone">{schoolSystemLabel(entry.schoolSystem, 'en') ?? 'Not specified'}</td>
                   <td className="px-5 py-4 text-stone">{entry.parentFullName}</td>
-                  <td className="px-5 py-4 text-stone">{entry.parentPhone}</td>
+                  <td className="px-5 py-4 text-stone">
+                    <a href={`tel:${entry.parentPhone}`} className="block hover:text-ink">
+                      {entry.parentPhone}
+                    </a>
+                    {entry.parentPhone2 ? (
+                      <a href={`tel:${entry.parentPhone2}`} className="block hover:text-ink">
+                        {entry.parentPhone2}
+                      </a>
+                    ) : null}
+                    {entry.parentEmail ? (
+                      <a href={`mailto:${entry.parentEmail}`} className="block break-all text-accent hover:underline">
+                        {entry.parentEmail}
+                      </a>
+                    ) : null}
+                  </td>
                   <td className="px-5 py-4 text-stone">{entry.createdAt.toLocaleDateString('fr-FR')}</td>
                 </tr>
               ))

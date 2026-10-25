@@ -33,6 +33,8 @@ const config: Config = {
         navy: '#0f1f4d',
         cta: '#ff8c42',
         gold: '#b8860b',
+        // The logo's own colours
+        brand: { blue: '#283880', red: '#c83030' },
       },
       boxShadow: {
         soft: '0 20px 60px rgba(15, 23, 42, 0.08)',

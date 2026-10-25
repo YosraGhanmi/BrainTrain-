@@ -405,8 +405,14 @@ model Preinscription {
   childFullName  String
   childAge       Int
   institution    String
+  // public | private | french_mission | international | other (see
+  // lib/preinscription/school-systems.ts). Optional on the form.
+  schoolSystem   String?
   parentFullName String
   parentPhone    String
+  // Required on the form; null only on entries from before it was asked
+  parentEmail    String?
+  parentPhone2   String?
   // Set when the form was opened from a course's "S'inscrire" button. The
   // title is a snapshot ("Robotique (6-9 ans)") so the entry stays readable
   // if the course is later renamed or removed.

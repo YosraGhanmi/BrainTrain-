@@ -17,7 +17,8 @@ import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import PreinscriptionForm from '@/components/preinscription/PreinscriptionForm';
 import { submitPreinscription } from '@/lib/preinscription/actions';
-import { getAgeGroup, getCourse } from '@/lib/coursesData';
+import { getCourses } from '@/lib/coursesData';
+import { readContent } from '@/lib/content/store';
 import type { AppLocale } from '@/i18n/routing';
 import { absoluteUrl, localeAlternates } from '@/lib/seo';
 
@@ -48,12 +49,20 @@ export default async function PreinscriptionPage(
   const searchParams = await props.searchParams;
   const params = await props.params;
   const isFr = params.locale === 'fr';
-  // Opened from a course's "S'inscrire" button: that course is preselected.
-  const course = searchParams.course ? await getCourse(searchParams.course, params.locale) : undefined;
-  const courseAgeGroup = course ? await getAgeGroup(course.ageGroupSlug, params.locale) : undefined;
-  const chosenCourse = course
-    ? { slug: course.slug, label: courseAgeGroup ? `${course.title} (${courseAgeGroup.label})` : course.title }
-    : null;
+  // The course choice on the form, by age group (the age range decides which
+  // group's courses are offered once the child's age is typed)
+  const [courses, content] = await Promise.all([getCourses(params.locale), readContent()]);
+  const courseGroups = content.ageGroups
+    .map((group) => ({
+      slug: group.slug,
+      label: group.label[params.locale] || group.label.en,
+      minAge: group.minAge,
+      maxAge: group.maxAge,
+      courses: courses.filter((c) => c.ageGroupSlug === group.slug).map((c) => ({ slug: c.slug, title: c.title })),
+    }))
+    .filter((group) => group.courses.length > 0);
+  // Opened from a course's "S'inscrire" button: that course is preselected
+  const preselectedCourse = courses.find((c) => c.slug === searchParams.course)?.slug ?? '';
   const backgroundIcons = [
     { Icon: Atom, className: 'left-[5%] top-[18%] rotate-[-18deg]' },
     { Icon: Bot, className: 'left-[18%] top-[42%] rotate-[12deg]' },
@@ -123,7 +132,13 @@ export default async function PreinscriptionPage(
                 </p>
               ) : null}
 
-              <PreinscriptionForm locale={params.locale} isFr={isFr} submitAction={submitPreinscription} course={chosenCourse} />
+              <PreinscriptionForm
+                locale={params.locale}
+                isFr={isFr}
+                submitAction={submitPreinscription}
+                courseGroups={courseGroups}
+                preselectedCourse={preselectedCourse}
+              />
             </>
           )}
         </div>
