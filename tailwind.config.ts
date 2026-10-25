@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import defaultTheme from 'tailwindcss/defaultTheme';
 
 const config: Config = {
   content: [
@@ -7,6 +8,18 @@ const config: Config = {
   ],
   darkMode: 'class',
   theme: {
+    // The full list, not `extend`: once any screen is `raw`, Tailwind stops
+    // sorting them by width and emits them in this order, and `extend` would
+    // append xs after lg (so xs:h-* beat lg:h-* on desktop).
+    screens: {
+      xs: '420px',
+      ...defaultTheme.screens,
+      // Short windows (laptops, landscape tablets): tighter vertical rhythm
+      // so tall forms like the auth screen still fit without scrolling.
+      // Listed last so they override the width breakpoints above.
+      short: { raw: '(max-height: 880px)' },
+      shorter: { raw: '(max-height: 720px)' },
+    },
     extend: {
       colors: {
         bg: '#ffffff',
@@ -32,14 +45,6 @@ const config: Config = {
       },
       letterSpacing: {
         tightest: '-0.08em',
-      },
-      screens: {
-        xs: '420px',
-        // Short windows (laptops, landscape tablets): tighter vertical rhythm
-        // so tall forms like the auth screen still fit without scrolling.
-        // Listed last so they override the width breakpoints above.
-        short: { raw: '(max-height: 880px)' },
-        shorter: { raw: '(max-height: 720px)' },
       },
       animation: {
         marquee: 'marquee 32s linear infinite',
