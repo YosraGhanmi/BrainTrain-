@@ -48,7 +48,6 @@ const config: Config = {
       },
       animation: {
         marquee: 'marquee 32s linear infinite',
-        aurora: 'aurora 18s ease-in-out infinite',
         float: 'float 8s ease-in-out infinite',
         bob: 'bob 6s ease-in-out infinite',
       },
@@ -56,11 +55,6 @@ const config: Config = {
         marquee: {
           '0%': { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
-        },
-        aurora: {
-          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
-          '33%': { transform: 'translate(4%, -6%) scale(1.08)' },
-          '66%': { transform: 'translate(-3%, 4%) scale(0.96)' },
         },
         float: {
           '0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' },

@@ -8,10 +8,13 @@ import RadialReveal from '@/components/effects/RadialReveal';
 import LanguageSwitcher from '@/components/navbar/LanguageSwitcher';
 import { Link } from '@/i18n/navigation';
 
-export default function Navbar({ solid = false }: { solid?: boolean }) {
+// `overHero`: the page opens on a full-screen video, so at the top the bar is
+// fully transparent with light text instead of cutting a white band across it.
+export default function Navbar({ solid = false, overHero = false }: { solid?: boolean; overHero?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const shrink = solid || scrolled;
+  const onVideo = overHero && !shrink;
   const t = useTranslations('nav');
 
   const navItems = [
@@ -35,7 +38,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
   // animations change what's underneath (measured ~20% of a CPU core in the
   // GPU process).
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${shrink ? 'bg-white/80 border-white/30 shadow-soft backdrop-blur-xl' : 'bg-white/10 border-white/10'}`}>
+    <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${shrink ? 'bg-white/80 border-white/30 shadow-soft backdrop-blur-xl' : onVideo ? 'border-transparent bg-transparent' : 'bg-white/10 border-white/10'}`}>
       <div className="relative flex items-center px-6 py-2.5 xl:px-8">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-0">
           <Link className="flex shrink-0 items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
@@ -49,12 +52,12 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
               <Link
                 key={item.label}
                 href={item.href}
-                className="group relative whitespace-nowrap text-sm uppercase tracking-[0.2em] text-stone transition hover:text-ink"
+                className={`group relative whitespace-nowrap text-sm uppercase tracking-[0.2em] transition ${onVideo ? 'text-white/85 hover:text-white' : 'text-stone hover:text-ink'}`}
               >
                 {item.label}
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute left-1/2 top-full mt-2 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-[5px] border-t-[6px] border-x-transparent border-t-ink opacity-0 transition-all duration-150 ease-out group-hover:translate-y-0 group-hover:opacity-100"
+                  className={`pointer-events-none absolute left-1/2 top-full mt-2 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-[5px] border-t-[6px] border-x-transparent ${onVideo ? 'border-t-white' : 'border-t-ink'} opacity-0 transition-all duration-150 ease-out group-hover:translate-y-0 group-hover:opacity-100`}
                 />
               </Link>
             ))}
@@ -63,7 +66,7 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
 
         <div className="flex shrink-0 items-center gap-4">
           <div className="hidden lg:block">
-            <LanguageSwitcher />
+            <LanguageSwitcher light={onVideo} />
           </div>
           <div className="hidden lg:inline-flex">
             <RadialReveal

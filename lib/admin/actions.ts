@@ -189,6 +189,46 @@ export async function updateSocials(formData: FormData): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Hero video
+// ---------------------------------------------------------------------------
+
+const HERO_VIDEO_TYPES: Record<string, string> = { 'video/mp4': '.mp4', 'video/webm': '.webm' };
+
+export async function updateHeroText(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').replace(/\r\n/g, '\n').trim();
+  const content = (await readContent());
+  content.heroText = {
+    headline: { en: field('headlineEn'), fr: field('headlineFr') },
+    lead: { en: field('leadEn'), fr: field('leadFr') },
+  };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/hero?saved=1');
+}
+
+// Either file may be left empty to keep the current one
+export async function updateHeroVideo(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const video = formData.get('video') as File | null;
+  const poster = formData.get('poster') as File | null;
+  const hasVideo = Boolean(video && video.size > 0);
+  const hasPoster = Boolean(poster && poster.size > 0);
+  if (!hasVideo && !hasPoster) redirect('/admin/hero?error=empty');
+  if (hasVideo && !HERO_VIDEO_TYPES[video!.type]) redirect('/admin/hero?error=type');
+
+  const content = (await readContent());
+  if (hasVideo) {
+    const filename = `${Date.now()}-hero${HERO_VIDEO_TYPES[video!.type]}`;
+    content.heroVideo.src = saveUpload('hero', filename, Buffer.from(await video!.arrayBuffer()));
+  }
+  if (hasPoster) content.heroVideo.poster = await saveUploadedImage(poster!, 'hero');
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/hero?saved=1');
+}
+
+// ---------------------------------------------------------------------------
 // Achievements gallery
 // ---------------------------------------------------------------------------
 

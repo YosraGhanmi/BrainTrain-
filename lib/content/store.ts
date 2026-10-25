@@ -1,12 +1,23 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
-import type { SiteContent, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
+import type { SiteContent, HeroVideo, HeroText, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
 
 const DEFAULT_CONTENT: SiteContent = {
+  heroVideo: { src: '/hero/hero.mp4', poster: '/hero/hero-poster.jpg' },
+  heroText: {
+    headline: {
+      en: "Bring to life\n*your children's*\n*potential*",
+      fr: 'Donnez vie au\n*potentiel*\nde *vos enfants*',
+    },
+    lead: {
+      en: 'We are a future-skills academy where students turn technology, AI, and entrepreneurship into real-world innovation.',
+      fr: "Nous sommes une académie des compétences du futur où les élèves transforment la technologie, l'IA et l'entrepreneuriat en innovation concrète.",
+    },
+  },
   sponsors: [
     '/partners/American corner.png',
     '/partners/Ecole Internationale Francaise.jpg',
@@ -1032,7 +1043,19 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     closingNote: toLocalized(rawSummer.closingNote, defaultSummer.closingNote),
   };
 
-  return { ...merged, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  const rawHero: Partial<HeroVideo> = raw.heroVideo ?? {};
+  const heroVideo: HeroVideo = {
+    src: typeof rawHero.src === 'string' && rawHero.src ? rawHero.src : DEFAULT_CONTENT.heroVideo.src,
+    poster: typeof rawHero.poster === 'string' ? rawHero.poster : DEFAULT_CONTENT.heroVideo.poster,
+  };
+
+  const rawHeroText: Partial<HeroText> = raw.heroText ?? {};
+  const heroText: HeroText = {
+    headline: toLocalized(rawHeroText.headline, DEFAULT_CONTENT.heroText.headline),
+    lead: toLocalized(rawHeroText.lead, DEFAULT_CONTENT.heroText.lead),
+  };
+
+  return { ...merged, heroVideo, heroText, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

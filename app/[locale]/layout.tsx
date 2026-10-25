@@ -127,7 +127,7 @@ export default async function LocaleLayout(
   };
 
   return (
-    <html lang={locale} className={`${display.variable} ${body.variable} ${comfortaa.variable}`}>
+    <html lang={locale} className={`no-scrollbar ${display.variable} ${body.variable} ${comfortaa.variable}`}>
       <body className="bg-bg text-ink antialiased">
         <script
           type="application/ld+json"

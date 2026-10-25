@@ -8,12 +8,10 @@
     "login": "Log in"
   },
   "hero": {
-    "lead": "We are a future-skills academy where students turn technology, AI, and entrepreneurship into real-world innovation.",
     "register": "Register your child",
-    "scroll": "Scroll",
-    "bubbleGreeting": "Hello! you're finally here!",
-    "bubblePrefix": "We transform kids into ",
-    "bubbleWords": ["entrepreneurs", "innovators", "problem solvers", "winners"]
+    "watchVideo": "Watch the video",
+    "closeVideo": "Close the video",
+    "scroll": "Scroll"
   },
   "philosophy": {
     "heading": "WHO",

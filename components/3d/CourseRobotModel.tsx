@@ -8,10 +8,9 @@ import * as THREE from 'three';
 import useActiveWhileVisible from '@/lib/hooks/useActiveWhileVisible';
 import WebGLBoundary from '@/components/3d/WebGLBoundary';
 
-// Static variant of components/3d/HeroScene.tsx's robot: same model and
-// lighting, but no mouse-follow rotation and no walk/idle animation clip —
-// just a gentle up/down float, no ground plane or shadow under it since it's
-// meant to read as hovering, not standing on a pedestal.
+// The site's robot model, static: no mouse-follow rotation and no walk/idle
+// animation clip — just a gentle up/down float, no ground plane or shadow
+// under it since it's meant to read as hovering, not standing on a pedestal.
 const MODEL_URL = '/robot.glb';
 
 function StaticRobotModel() {
@@ -90,7 +89,7 @@ export default function CourseRobotModel() {
           <directionalLight position={[-4, 3, -4]} intensity={0.4} />
           <Suspense fallback={null}>
             <StaticRobotModel />
-            {/* Procedural env map — no network fetch, same as HeroScene. */}
+            {/* Procedural env map — no network fetch. */}
             <Environment resolution={64} background={false}>
               <Lightformer intensity={2} color="white" position={[0, 5, 0]} scale={[10, 10, 1]} />
               <Lightformer intensity={1} color="#b7c8ff" position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} scale={[10, 5, 1]} />

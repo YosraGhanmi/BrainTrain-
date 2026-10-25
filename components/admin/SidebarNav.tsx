@@ -32,9 +32,11 @@ import {
   Landmark,
   CalendarRange,
   Sun,
+  Clapperboard,
 } from 'lucide-react';
 
 const customizationItems = [
+  { label: 'Hero', href: '/admin/hero', icon: Clapperboard },
   { label: 'Partners', href: '/admin/sponsors', icon: Handshake },
   { label: 'Statistics', href: '/admin/stats', icon: BarChart3 },
   { label: 'Courses', href: '/admin/courses', icon: BookOpen },

@@ -17,6 +17,9 @@ type Props = {
   borderColor?: string;
   cometColor?: string;
   showArrow?: boolean;
+  // Corner radius in px; a full pill when left out
+  cornerRadius?: number;
+  size?: 'md' | 'lg';
   className?: string;
 };
 
@@ -48,6 +51,8 @@ export default function OrbitBorderButton({
   borderColor = 'rgba(11,26,58,0.2)',
   cometColor = '#ff8c42',
   showArrow = true,
+  cornerRadius,
+  size = 'md',
   className,
 }: Props) {
   const [scope, animate] = useAnimate();
@@ -62,8 +67,9 @@ export default function OrbitBorderButton({
   const [side, setSide] = useState(0);
   const [radius, setRadius] = useState(999);
 
-  // Radius = a true pill at any size (half the shorter side), matched on the
-  // button and its ring so the comet's mask hugs the face exactly.
+  // Radius = a true pill at any size (half the shorter side) unless a corner
+  // radius is given, matched on the button and its ring so the comet's mask
+  // hugs the face exactly.
   useLayoutEffect(() => {
     const el = btnRef.current;
     if (!el) return;
@@ -71,7 +77,7 @@ export default function OrbitBorderButton({
       const w = el.offsetWidth;
       const h = el.offsetHeight;
       if (!w || !h) return;
-      const r = Math.min(w, h) / 2;
+      const r = Math.min(cornerRadius ?? Infinity, Math.min(w, h) / 2);
       el.style.borderRadius = `${r}px`;
       if (bandRef.current) bandRef.current.style.borderRadius = `${r}px`;
       setRadius(r - BAND_WIDTH);
@@ -81,7 +87,7 @@ export default function OrbitBorderButton({
     const ro = new ResizeObserver(applyRadius);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [cornerRadius]);
 
   // Continuous rotation as a Web Animation rather than a rAF loop: a pure
   // transform animation runs on the compositor, so the main thread does no
@@ -182,7 +188,7 @@ export default function OrbitBorderButton({
       <Link
         ref={btnRef}
         href={href}
-        className="relative box-border inline-flex items-center text-sm font-bold uppercase tracking-[0.2em]"
+        className={`relative box-border inline-flex items-center font-bold uppercase tracking-[0.2em] ${size === 'lg' ? 'text-sm sm:text-base' : 'text-sm'}`}
         style={{ background: borderColor, padding: BAND_WIDTH }}
       >
         {/* ring — masked to the padding band so the comet is confined to a
@@ -205,11 +211,11 @@ export default function OrbitBorderButton({
 
         {/* face */}
         <span
-          className="relative z-[1] flex w-full items-center justify-center gap-2 px-6 py-2.5"
+          className={`relative z-[1] flex w-full items-center justify-center ${size === 'lg' ? 'gap-3 px-6 py-4 sm:px-9' : 'gap-2 px-6 py-2.5'}`}
           style={{ background: fill, color: textColor, borderRadius: radius }}
         >
           {label}
-          {showArrow && <ArrowRight className="h-4 w-4" />}
+          {showArrow && <ArrowRight className={size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'} />}
         </span>
       </Link>
     </span>

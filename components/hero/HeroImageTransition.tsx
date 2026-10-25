@@ -5,10 +5,19 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import HeroSection from './HeroSection';
 import TeamPhoto from '@/components/gallery/TeamPhoto';
+import type { HeroText, HeroVideo } from '@/lib/content/types';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function HeroImageTransition({ registerHref = '/courses' }: { registerHref?: string }) {
+export default function HeroImageTransition({
+  registerHref = '/courses',
+  video,
+  text,
+}: {
+  registerHref?: string;
+  video: HeroVideo;
+  text: HeroText;
+}) {
   const heroRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +54,7 @@ export default function HeroImageTransition({ registerHref = '/courses' }: { reg
   return (
     <div className="relative">
       <div ref={heroRef} className="relative z-10 bg-surface will-change-transform">
-        <HeroSection registerHref={registerHref} />
+        <HeroSection registerHref={registerHref} video={video} text={text} />
       </div>
       <div ref={imageRef} className="relative z-0 -mt-[30px] will-change-transform">
         <TeamPhoto />

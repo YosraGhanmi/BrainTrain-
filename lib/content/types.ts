@@ -130,7 +130,18 @@ export type CalendarEvent = {
   targetCourses: string[];
 };
 
+// Full-screen video at the top of the home page. `poster` is the still shown
+// until the video plays (and instead of it for reduced-motion visitors). The
+// same file plays with sound in the "Watch the video" popup.
+export type HeroVideo = { src: string; poster: string };
+
+// Text over the hero video. In `headline`, each line break starts a new line
+// and words wrapped in *stars* take the logo's colours, alternating blue/red.
+export type HeroText = { headline: LocalizedString; lead: LocalizedString };
+
 export type SiteContent = {
+  heroVideo: HeroVideo;
+  heroText: HeroText;
   sponsors: string[];
   stats: StatEntry[];
   achievementsImages: string[];

@@ -10,7 +10,8 @@ const LOCALES = [
   { code: 'fr', label: 'Français' },
 ] as const;
 
-export default function LanguageSwitcher() {
+// `light`: white text, for when it sits over the home page's hero video
+export default function LanguageSwitcher({ light = false }: { light?: boolean }) {
   const locale = useLocale();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -35,7 +36,7 @@ export default function LanguageSwitcher() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-1.5 px-1 py-1.5 text-sm uppercase tracking-[0.2em] text-stone transition hover:text-ink"
+        className={`flex items-center gap-1.5 px-1 py-1.5 text-sm uppercase tracking-[0.2em] transition ${light ? 'text-white/85 hover:text-white' : 'text-stone hover:text-ink'}`}
       >
         {current.code}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />

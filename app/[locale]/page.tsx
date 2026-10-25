@@ -23,9 +23,9 @@ export default async function Home(props: { params: Promise<{ locale: AppLocale 
 
   return (
     <div className="min-h-screen bg-surface text-ink">
-      <Navbar />
+      <Navbar overHero />
       <main>
-        <HeroImageTransition registerHref={registerHref} />
+        <HeroImageTransition registerHref={registerHref} video={content.heroVideo} text={content.heroText} />
         <PartnersSection logos={content.sponsors} />
         <PhilosophySection />
         <QuickStats quickStats={content.stats} />
