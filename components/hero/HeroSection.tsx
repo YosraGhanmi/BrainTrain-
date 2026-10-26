@@ -18,7 +18,7 @@ const ACCENTS = ['#7b91f4', '#ef4b4b'];
 function Headline({ text }: { text: string }) {
   let accent = 0;
   return (
-    <h1 className="font-display text-[clamp(2.6rem,8.5vw,6.25rem)] font-extrabold uppercase leading-[0.92] tracking-tight text-white [text-shadow:0_2px_30px_rgba(0,0,0,0.35)]">
+    <h1 className="font-display text-[clamp(1.8rem,6vw,4.4rem)] font-extrabold uppercase leading-[0.92] tracking-tight text-white [text-shadow:0_2px_30px_rgba(0,0,0,0.35)]">
       {text.split('\n').map((line, i) => (
         <span key={i} className="block">
           {line.split(/\*(.+?)\*/).map((part, j) =>

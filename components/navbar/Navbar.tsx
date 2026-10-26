@@ -8,8 +8,8 @@ import RadialReveal from '@/components/effects/RadialReveal';
 import LanguageSwitcher from '@/components/navbar/LanguageSwitcher';
 import { Link } from '@/i18n/navigation';
 
-// `overHero`: the page opens on a full-screen video, so at the top the bar is
-// fully transparent with light text instead of cutting a white band across it.
+// `overHero`: the page opens on a full-screen video, so at the top the pill is
+// a clear frosted glass with light text instead of cutting a white band across it.
 export default function Navbar({ solid = false, overHero = false }: { solid?: boolean; overHero?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -32,39 +32,37 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Frosted only once there's scrolled content behind it. At the top of the
-  // page it sits over the hero's flat background, where a backdrop blur shows
-  // nothing but still has to be recomputed every frame the hero's ambient
-  // animations change what's underneath (measured ~20% of a CPU core in the
-  // GPU process).
+  // A floating pill holding logo, links and actions as one centred block. Over
+  // the video it's untinted glass (blur only) so the footage shows through;
+  // a light blur keeps the per-frame recompute cheap.
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-500 ${shrink ? 'bg-white/80 border-white/30 shadow-soft backdrop-blur-xl' : onVideo ? 'border-transparent bg-transparent' : 'bg-white/10 border-white/10'}`}>
-      <div className="relative flex items-center px-6 py-2.5 xl:px-8">
-        <div className="mx-auto flex w-full max-w-7xl items-center gap-0">
-          <Link className="flex shrink-0 items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
-            <span className="relative h-12 w-32 overflow-hidden">
-              <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill sizes="128px" className="object-contain object-left opacity-90" />
-            </span>
-          </Link>
+    <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 xl:px-8">
+      <div
+        className={`mx-auto flex max-w-6xl items-center gap-4 rounded-full border py-2 pl-6 pr-2 transition-all duration-500 ${shrink ? 'border-white/40 bg-white/80 shadow-soft backdrop-blur-xl' : onVideo ? 'border-white/25 bg-white/[0.06] backdrop-blur-md' : 'border-white/10 bg-white/10'}`}
+      >
+        <Link className="flex shrink-0 items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
+          <span className="relative h-10 w-28 overflow-hidden">
+            <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill sizes="112px" className="object-contain object-left opacity-90" />
+          </span>
+        </Link>
 
-          <nav className="hidden items-center gap-6 lg:flex lg:flex-1 lg:justify-center xl:gap-10">
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`group relative whitespace-nowrap text-sm uppercase tracking-[0.2em] transition ${onVideo ? 'text-white/85 hover:text-white' : 'text-stone hover:text-ink'}`}
-              >
-                {item.label}
-                <span
-                  aria-hidden
-                  className={`pointer-events-none absolute left-1/2 top-full mt-2 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-[5px] border-t-[6px] border-x-transparent ${onVideo ? 'border-t-white' : 'border-t-ink'} opacity-0 transition-all duration-150 ease-out group-hover:translate-y-0 group-hover:opacity-100`}
-                />
-              </Link>
-            ))}
-          </nav>
-        </div>
+        <nav className="hidden items-center gap-6 lg:flex lg:flex-1 lg:justify-center xl:gap-9">
+          {navItems.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`group relative whitespace-nowrap text-sm uppercase tracking-[0.2em] transition ${onVideo ? 'text-white/85 hover:text-white' : 'text-stone hover:text-ink'}`}
+            >
+              {item.label}
+              <span
+                aria-hidden
+                className={`pointer-events-none absolute left-1/2 top-full mt-2 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-[5px] border-t-[6px] border-x-transparent ${onVideo ? 'border-t-white' : 'border-t-ink'} opacity-0 transition-all duration-150 ease-out group-hover:translate-y-0 group-hover:opacity-100`}
+              />
+            </Link>
+          ))}
+        </nav>
 
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="ml-auto flex shrink-0 items-center gap-4 lg:ml-0">
           <div className="hidden lg:block">
             <LanguageSwitcher light={onVideo} />
           </div>
@@ -72,7 +70,7 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
             <RadialReveal
               href="/parent-portal/login"
               boxClassName="rounded-full border border-ink/15 bg-white/90 shadow-sm"
-              faceClassName="inline-flex items-center gap-2 whitespace-nowrap px-5 py-3 text-sm font-semibold uppercase tracking-[0.2em]"
+              faceClassName="inline-flex items-center gap-2 whitespace-nowrap px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.2em]"
               restColorClassName="text-ink"
               hoverColorClassName="bg-ink text-white"
             >
@@ -91,7 +89,7 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
       </div>
 
       {open ? (
-        <div className="mx-auto mt-4 max-w-7xl px-6 xl:px-8 lg:hidden">
+        <div className="mx-auto mt-3 max-w-6xl lg:hidden">
           <div className="rounded-3xl border border-stone/10 bg-white/90 p-5 shadow-soft">
             <div className="grid gap-4">
               {navItems.map((item) => (

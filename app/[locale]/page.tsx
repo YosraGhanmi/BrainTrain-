@@ -1,5 +1,5 @@
 import Navbar from '@/components/navbar/Navbar';
-import HeroImageTransition from '@/components/hero/HeroImageTransition';
+import HeroSection from '@/components/hero/HeroSection';
 import PartnersSection from '@/components/partners/PartnersSection';
 import PhilosophySection from '@/components/philosophy/PhilosophySection';
 import QuickStats from '@/components/stats/QuickStats';
@@ -25,8 +25,7 @@ export default async function Home(props: { params: Promise<{ locale: AppLocale 
     <div className="min-h-screen bg-surface text-ink">
       <Navbar overHero />
       <main>
-        <HeroImageTransition registerHref={registerHref} video={content.heroVideo} text={content.heroText} />
-        <PartnersSection logos={content.sponsors} />
+        <HeroSection registerHref={registerHref} video={content.heroVideo} text={content.heroText} />
         <PhilosophySection />
         <QuickStats quickStats={content.stats} />
         <CoursesSection
@@ -34,6 +33,7 @@ export default async function Home(props: { params: Promise<{ locale: AppLocale 
         />
         <StatsSection achievementsImages={content.achievementsImages} />
         <MilestonesSection milestones={content.timeline} />
+        <PartnersSection logos={content.sponsors} />
         <ValuesSection />
         <ContactSection contact={content.contact} />
       </main>
