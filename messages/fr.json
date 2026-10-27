@@ -2,7 +2,6 @@
   "nav": {
     "home": "Accueil",
     "about": "À propos",
-    "achievements": "Réalisations",
     "courses": "Cours",
     "contact": "Contact",
     "login": "Connexion"
@@ -83,8 +82,8 @@
     "viewPost": "Voir la publication"
   },
   "achievements": {
-    "heading": "Réalisations",
-    "body": "Les élèves de BrainTrain ne se contentent pas de terminer des cours, ils représentent la Tunisie lors de compétitions internationales et reviennent avec des trophées pour le prouver."
+    "heading": "Et si c'était <hl>votre enfant</hl> ?",
+    "body": "BrainTrain, ce n'est pas qu'une école. Ici, votre enfant apprend à <b>penser en entrepreneur</b> : il ose partager ses idées, s'ouvre au monde et défend les couleurs de la Tunisie dans des <b>compétitions internationales</b>. Nos élèves en reviennent avec des trophées, et avec l'assurance des <hl>leaders de demain</hl>."
   },
   "contact": {
     "label": "Contact",

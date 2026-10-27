@@ -34,12 +34,18 @@ export default function StatsSection({ achievementsImages }: { achievementsImage
       </div>
 
       <div className="relative mx-auto max-w-6xl">
-        <div className="max-w-2xl space-y-6">
-          <h2 className="text-display font-display font-semibold leading-[0.9] text-[#0b1a3a] sm:text-[clamp(3.5rem,6vw,6rem)]">
-            {t('heading')}
+        <div className="space-y-10">
+          <h2 className="text-display font-display font-semibold leading-[0.95] text-[#0b1a3a] sm:text-[clamp(3.5rem,6vw,6rem)]">
+            {t.rich('heading', {
+              hl: (chunks) => <span className="text-[#ef4b4b]">{chunks}</span>,
+            })}
           </h2>
-          <p className="text-lg leading-relaxed text-stone sm:text-xl">
-            {t('body')}
+          {/* Same blue and red accents as the hero heading */}
+          <p className="max-w-4xl text-lg leading-relaxed text-stone sm:text-xl md:text-2xl md:leading-relaxed">
+            {t.rich('body', {
+              b: (chunks) => <span className="font-semibold text-[#7b91f4]">{chunks}</span>,
+              hl: (chunks) => <span className="font-semibold text-[#ef4b4b]">{chunks}</span>,
+            })}
           </p>
         </div>
       </div>

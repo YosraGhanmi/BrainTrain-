@@ -2,7 +2,6 @@
   "nav": {
     "home": "Home",
     "about": "About",
-    "achievements": "Achievements",
     "courses": "Courses",
     "contact": "Contact",
     "login": "Log in"
@@ -83,8 +82,8 @@
     "viewPost": "View the post"
   },
   "achievements": {
-    "heading": "Achievements",
-    "body": "BrainTrain students don't just finish courses, they represent Tunisia at international competitions and come home with trophies to prove it."
+    "heading": "Could this be <hl>your child</hl>?",
+    "body": "BrainTrain is more than a school. Here your child learns to <b>think like an entrepreneur</b>: sharing bold ideas, opening up to the world and representing Tunisia at <b>international competitions</b>. Our students come home with trophies, and with the confidence of <hl>tomorrow's leaders</hl>."
   },
   "contact": {
     "label": "Contact",
