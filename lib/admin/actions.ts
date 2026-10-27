@@ -19,7 +19,7 @@ import {
 import { listDbCourseSessionsByCourse, updateDbCourseSession } from '@/lib/db/sessions';
 import { SCHOOL_YEAR_PLAN_TYPES, SUMMER_PLAN_TYPES, summerTerm } from '@/lib/content/summer';
 import { DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
-import type { TimelineEntry, LocalizedString } from '@/lib/content/types';
+import { PROGRAM_KEYS, type TimelineEntry, type LocalizedString } from '@/lib/content/types';
 
 function localizedField(formData: FormData, name: string): LocalizedString {
   return {
@@ -205,6 +205,21 @@ export async function updateHeroText(formData: FormData): Promise<void> {
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/hero?saved=1');
+}
+
+export async function updatePrograms(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const content = (await readContent());
+  for (const key of PROGRAM_KEYS) {
+    content.programs[key] = {
+      title: { en: field(`${key}TitleEn`), fr: field(`${key}TitleFr`) },
+      body: { en: field(`${key}BodyEn`), fr: field(`${key}BodyFr`) },
+    };
+  }
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/programs?saved=1');
 }
 
 // Either file may be left empty to keep the current one

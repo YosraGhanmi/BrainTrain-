@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useTranslations } from 'next-intl';
+import { useEffect, useRef, type CSSProperties } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
@@ -26,12 +26,8 @@ import {
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
-import { getIcon } from '@/lib/content/icons';
-
-// Only the plain, serializable fields this client component needs — a
-// CourseKind's `variants` carry resolved LucideIcon component references,
-// which can't cross the server/client boundary as props.
-type CourseCard = { slug: string; title: string; icon: string; color: string };
+import { PROGRAM_KEYS, type ProgramCard, type ProgramKey } from '@/lib/content/types';
+import type { AppLocale } from '@/i18n/routing';
 
 const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: number; rotate: number }[] = [
   { icon: X, top: '6%', left: '8%', size: 28, rotate: -8 },
@@ -60,18 +56,26 @@ const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: numb
   { icon: Leaf, top: '84%', left: '96%', size: 24, rotate: 10 },
 ];
 
+// One accent per card: the hero's blue and red, plus the site's orange for summer
+const CARD_STYLE: Record<ProgramKey, { accent: string; href: string }> = {
+  yearRound: { accent: '#7b91f4', href: '/courses' },
+  summer: { accent: '#ff8c42', href: '/preinscription?program=summer' },
+  competitions: { accent: '#ef4b4b', href: '/#stats' },
+};
+
 gsap.registerPlugin(ScrollTrigger);
 
-export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
+export default function ProgramsSection({ programs }: { programs: Record<ProgramKey, ProgramCard> }) {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const t = useTranslations('courses');
+  const t = useTranslations('programs');
+  const locale = useLocale() as AppLocale;
 
   useEffect(() => {
     if (!sectionRef.current) return;
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
-        '.courses-heading',
+        '.programs-heading',
         { opacity: 0, y: 40 },
         {
           opacity: 1,
@@ -87,15 +91,16 @@ export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
       );
 
       gsap.fromTo(
-        '.course-card',
-        { opacity: 0, y: 40, scale: 0.94 },
+        '.program-card',
+        { opacity: 0, y: 40 },
         {
           opacity: 1,
           y: 0,
-          scale: 1,
           duration: 0.7,
           ease: 'power3.out',
-          stagger: 0.08,
+          stagger: 0.12,
+          // Hand the transform back to CSS so the hover lift still works
+          clearProps: 'transform',
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top 65%',
@@ -110,9 +115,9 @@ export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
 
   return (
     <section
-      id="courses"
+      id="programs"
       ref={sectionRef}
-      className="relative overflow-hidden bg-[#0b1a3a] px-6 py-16 md:px-10 lg:px-16"
+      className="relative overflow-hidden bg-[#0b1a3a] px-6 py-20 md:px-10 lg:px-16"
     >
       <div className="pointer-events-none absolute inset-0">
         {decorativeIcons.map(({ icon: Icon, top, left, size, rotate }, i) => (
@@ -135,33 +140,42 @@ export default function CoursesSection({ courses }: { courses: CourseCard[] }) {
         {/* Anchored to the section's left padding, not the centred column
             below: the one-line heading is wider than that column, so inside it
             it started a third of the way in and ran off the right edge. */}
-        <h2 className="courses-heading text-display font-semibold leading-[0.9] text-white md:whitespace-nowrap sm:text-[clamp(2.5rem,5vw,5.5rem)]">
+        <h2 className="programs-heading text-display font-semibold leading-[0.9] text-white md:whitespace-nowrap sm:text-[clamp(2.5rem,5vw,5.5rem)]">
           {t('heading')}
         </h2>
 
-        <div className="mx-auto mt-16 grid max-w-5xl grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-          {courses.map(({ slug, title, icon, color }) => {
-            const Icon = getIcon(icon);
+        <div className="mx-auto mt-16 grid max-w-6xl gap-6 lg:grid-cols-3">
+          {PROGRAM_KEYS.map((key) => {
+            const { accent, href } = CARD_STYLE[key];
             return (
-              <div
-                key={slug}
-                className="course-card flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl bg-white/10 p-6 text-center"
-              >
-                <Icon className="h-12 w-12" style={{ color }} strokeWidth={1.75} />
-                <h3 className="text-lg font-extrabold text-white">{title}</h3>
+              <div key={key} className="program-card group relative transition duration-300 hover:-translate-y-1">
+                <article className="relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.06] p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_30px_60px_rgba(0,0,0,0.25)] backdrop-blur-2xl transition duration-300 group-hover:border-white/25 group-hover:bg-white/[0.09] md:p-10 lg:min-h-[27rem]">
+                  <h3
+                    className="mt-2 font-display text-4xl font-extrabold leading-[1.02] tracking-tight md:text-5xl lg:text-4xl"
+                    style={{ color: accent, textShadow: `0 0 40px ${accent}59` }}
+                  >
+                    {programs[key].title[locale] || programs[key].title.en}
+                  </h3>
+                  <p className="relative mb-8 mt-5 text-base leading-relaxed text-white/75 md:text-lg">
+                    {programs[key].body[locale] || programs[key].body.en}
+                  </p>
+
+                  {/* White at rest, the card's accent on hover, where the arrow
+                      swaps to a white disc so it still stands out */}
+                  <Link
+                    href={href}
+                    style={{ '--accent': accent } as CSSProperties}
+                    className="group/btn relative mt-auto inline-flex items-center gap-3 self-start rounded-full bg-white py-3 pl-6 pr-3 text-sm font-bold uppercase tracking-wide text-[#0b1a3a] transition-all duration-200 hover:gap-4 hover:bg-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    {t(key)}
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white transition-colors duration-200 group-hover/btn:bg-white group-hover/btn:text-[var(--accent)]">
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                  </Link>
+                </article>
               </div>
             );
           })}
-        </div>
-
-        <div className="mt-10 flex justify-center">
-          <Link
-            href="/courses"
-            className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-8 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-white/20"
-          >
-            {t('seeMore')}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </div>
     </section>

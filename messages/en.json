@@ -36,8 +36,13 @@
     "excellence": "Excellence",
     "impact": "Impact"
   },
+  "programs": {
+    "heading": "Programmes built for curious minds.",
+    "yearRound": "See the courses",
+    "summer": "Pre-register",
+    "competitions": "Our achievements"
+  },
   "courses": {
-    "heading": "Courses built for curious minds.",
     "seeMore": "See more",
     "pickAgeGroup": "Pick an age group to see its courses.",
     "allAgeGroups": "All age groups",

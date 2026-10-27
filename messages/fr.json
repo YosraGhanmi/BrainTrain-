@@ -36,8 +36,13 @@
     "excellence": "Excellence",
     "impact": "Impact"
   },
+  "programs": {
+    "heading": "Des programmes pour les esprits curieux.",
+    "yearRound": "Voir les cours",
+    "summer": "Préinscription",
+    "competitions": "Nos réalisations"
+  },
   "courses": {
-    "heading": "Des cours conçus pour les esprits curieux.",
     "seeMore": "Voir plus",
     "pickAgeGroup": "Choisissez une tranche d'âge pour voir ses cours.",
     "allAgeGroups": "Toutes les tranches d'âge",

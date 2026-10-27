@@ -43,7 +43,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: AppLoc
 export default async function PreinscriptionPage(
   props: {
     params: Promise<{ locale: AppLocale }>;
-    searchParams: Promise<{ sent?: string; error?: string; course?: string }>;
+    searchParams: Promise<{ sent?: string; error?: string; course?: string; program?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -51,7 +51,11 @@ export default async function PreinscriptionPage(
   const isFr = params.locale === 'fr';
   // The course choice on the form, by age group (the age range decides which
   // group's courses are offered once the child's age is typed)
-  const [courses, content] = await Promise.all([getCourses(params.locale), readContent()]);
+  const [allCourses, content] = await Promise.all([getCourses(params.locale), readContent()]);
+  // Opened from the home page's Summer Academy card: only summer courses are
+  // offered, as long as the summer school is open and has some
+  const summerOnly = searchParams.program === 'summer' && allCourses.some((c) => c.summer);
+  const courses = summerOnly ? allCourses.filter((c) => c.summer) : allCourses;
   const courseGroups = content.ageGroups
     .map((group) => ({
       slug: group.slug,
@@ -118,7 +122,13 @@ export default async function PreinscriptionPage(
           ) : (
             <>
               <h1 className="mt-3 font-display text-3xl font-semibold leading-tight text-ink md:text-5xl">
-                {isFr ? 'Inscrire votre enfant' : 'Register your child'}
+                {summerOnly
+                  ? isFr
+                    ? 'Inscrire votre enfant à la Summer Academy'
+                    : 'Register your child for the Summer Academy'
+                  : isFr
+                    ? 'Inscrire votre enfant'
+                    : 'Register your child'}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-stone md:text-lg">
                 {isFr

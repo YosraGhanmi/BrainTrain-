@@ -1,7 +1,8 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
-import type { SiteContent, HeroVideo, HeroText, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
+import { PROGRAM_KEYS } from './types';
+import type { SiteContent, HeroVideo, HeroText, ProgramCard, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
@@ -16,6 +17,29 @@ const DEFAULT_CONTENT: SiteContent = {
     lead: {
       en: 'We are a future-skills academy where students turn technology, AI, and entrepreneurship into real-world innovation.',
       fr: "Nous sommes une académie des compétences du futur où les élèves transforment la technologie, l'IA et l'entrepreneuriat en innovation concrète.",
+    },
+  },
+  programs: {
+    yearRound: {
+      title: { en: 'Year-round programme', fr: 'Programme annuel' },
+      body: {
+        en: 'Weekly sessions all through the school year, so your child grows step by step.',
+        fr: "Des séances chaque semaine, tout au long de l'année scolaire, pour que votre enfant progresse pas à pas.",
+      },
+    },
+    summer: {
+      title: { en: 'Summer Academy', fr: 'Summer Academy' },
+      body: {
+        en: 'Summer is for learning too: hands-on camps to build, code and create during the holidays.',
+        fr: "L'été aussi, on apprend en s'amusant : des stages pour construire, coder et créer pendant les vacances.",
+      },
+    },
+    competitions: {
+      title: { en: 'International competitions', fr: 'Compétitions internationales' },
+      body: {
+        en: "More than a school: our students carry Tunisia's colours onto the world stage and grow into tomorrow's leaders.",
+        fr: "Plus qu'une école : nos élèves portent les couleurs de la Tunisie sur la scène internationale et deviennent les leaders de demain.",
+      },
     },
   },
   sponsors: [
@@ -1055,7 +1079,18 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     lead: toLocalized(rawHeroText.lead, DEFAULT_CONTENT.heroText.lead),
   };
 
-  return { ...merged, heroVideo, heroText, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  const rawPrograms: Partial<Record<ProgramKey, Partial<ProgramCard>>> = raw.programs ?? {};
+  const programs = Object.fromEntries(
+    PROGRAM_KEYS.map((key) => [
+      key,
+      {
+        title: toLocalized(rawPrograms[key]?.title, DEFAULT_CONTENT.programs[key].title),
+        body: toLocalized(rawPrograms[key]?.body, DEFAULT_CONTENT.programs[key].body),
+      },
+    ])
+  ) as Record<ProgramKey, ProgramCard>;
+
+  return { ...merged, heroVideo, heroText, programs, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

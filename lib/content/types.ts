@@ -139,9 +139,16 @@ export type HeroVideo = { src: string; poster: string };
 // and words wrapped in *stars* take the logo's colours, alternating blue/red.
 export type HeroText = { headline: LocalizedString; lead: LocalizedString };
 
+// The three cards in the home page's programmes section. Only the text is
+// editable: each card's button always leads to the same place.
+export const PROGRAM_KEYS = ['yearRound', 'summer', 'competitions'] as const;
+export type ProgramKey = (typeof PROGRAM_KEYS)[number];
+export type ProgramCard = { title: LocalizedString; body: LocalizedString };
+
 export type SiteContent = {
   heroVideo: HeroVideo;
   heroText: HeroText;
+  programs: Record<ProgramKey, ProgramCard>;
   sponsors: string[];
   stats: StatEntry[];
   achievementsImages: string[];

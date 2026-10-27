@@ -7,6 +7,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'braintrain-admin';
 const ADMIN_ROUTES = [
   '/admin',
   '/admin/messages',
+  '/admin/programs',
   '/admin/sponsors',
   '/admin/stats',
   '/admin/courses',
