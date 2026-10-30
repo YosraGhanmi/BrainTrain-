@@ -1,27 +1,33 @@
 import { readContent } from '@/lib/content/store';
 import { updateContact } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
-import { Mail, Phone, MapPin, Map } from 'lucide-react';
+import { Mail, Phone, MapPin, Map, Type, PanelBottom } from 'lucide-react';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { LucideIcon } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-function Field({ label, name, defaultValue }: { label: string; name: string; defaultValue: string }) {
+function Field({ label, name, defaultValue, rows }: { label: string; name: string; defaultValue: string; rows?: number }) {
+  const className =
+    'w-full rounded-xl border border-accent/15 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-accent/40';
   return (
     <div className="space-y-1.5">
       <label htmlFor={name} className="text-xs font-semibold uppercase tracking-wide text-stone">
         {label}
       </label>
-      <input
-        id={name}
-        name={name}
-        defaultValue={defaultValue}
-        className="w-full rounded-xl border border-accent/15 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-accent/40"
-      />
+      {rows ? (
+        <textarea id={name} name={name} defaultValue={defaultValue} rows={rows} className={className} />
+      ) : (
+        <input id={name} name={name} defaultValue={defaultValue} className={className} />
+      )}
     </div>
   );
 }
+
+const LANGS = [
+  { suffix: 'En', locale: 'en', language: 'English' },
+  { suffix: 'Fr', locale: 'fr', language: 'French' },
+] as const;
 
 function Card({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: React.ReactNode }) {
   return (
@@ -40,7 +46,7 @@ function Card({ icon: Icon, title, children }: { icon: LucideIcon; title: string
 
 export default async function AdminContactPage() {
   await requireAdminOnly();
-  const { contact } = (await readContent());
+  const { contact, footer } = (await readContent());
 
   return (
     <div>
@@ -56,6 +62,7 @@ export default async function AdminContactPage() {
           <Card icon={Phone} title="Phone">
             <Field label="Phone" name="phone_value" defaultValue={contact.phone.value} />
             <Field label="Link (tel:)" name="phone_href" defaultValue={contact.phone.href} />
+            <Field label="WhatsApp number" name="whatsapp" defaultValue={contact.whatsapp} />
           </Card>
 
           <Card icon={MapPin} title="Address">
@@ -66,6 +73,54 @@ export default async function AdminContactPage() {
 
         <Card icon={Map} title="Map embed">
           <Field label="Maps embed URL" name="mapsEmbedSrc" defaultValue={contact.mapsEmbedSrc} />
+        </Card>
+
+        <Card icon={Type} title="Section text">
+          <p className="text-sm text-stone">
+            The contact section on the home page. The heading&apos;s second line shows in colour. Leave a checklist
+            line empty to hide it.
+          </p>
+          <div className="grid gap-6 md:grid-cols-2">
+            {LANGS.map(({ suffix, locale, language }) => (
+              <div key={suffix} className="space-y-4">
+                <Field label={`Heading (${language})`} name={`heading${suffix}`} defaultValue={contact.heading[locale]} />
+                <Field
+                  label={`Heading, coloured line (${language})`}
+                  name={`headingAccent${suffix}`}
+                  defaultValue={contact.headingAccent[locale]}
+                />
+                <Field label={`Intro (${language})`} name={`intro${suffix}`} defaultValue={contact.intro[locale]} rows={3} />
+                {contact.highlights.map((highlight, i) => (
+                  <Field
+                    key={i}
+                    label={`Checklist line ${i + 1} (${language})`}
+                    name={`highlight${i}${suffix}`}
+                    defaultValue={highlight[locale]}
+                  />
+                ))}
+                <Field label={`Card title (${language})`} name={`cardTitle${suffix}`} defaultValue={contact.cardTitle[locale]} />
+                <Field label={`Card text (${language})`} name={`cardText${suffix}`} defaultValue={contact.cardText[locale]} rows={3} />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card icon={PanelBottom} title="Footer">
+          <p className="text-sm text-stone">
+            The line under the logo at the bottom of every page. The footer&apos;s phone, email, address, WhatsApp
+            and social links come from the fields above and from Social media links.
+          </p>
+          <div className="grid gap-6 md:grid-cols-2">
+            {LANGS.map(({ suffix, locale, language }) => (
+              <Field
+                key={suffix}
+                label={`Tagline (${language})`}
+                name={`footerTagline${suffix}`}
+                defaultValue={footer.tagline[locale]}
+                rows={3}
+              />
+            ))}
+          </div>
         </Card>
 
         <div className="flex justify-end">

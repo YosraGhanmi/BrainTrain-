@@ -7,7 +7,7 @@ import path from 'path';
 // instead. In Docker this folder is a volume, so uploads survive rebuilds.
 export const UPLOADS_DIR = path.resolve(/*turbopackIgnore: true*/ process.env.UPLOADS_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), 'uploads'));
 
-export const UPLOAD_FOLDERS = ['partners', 'ach', 'courses', 'age', 'children', 'hero'] as const;
+export const UPLOAD_FOLDERS = ['partners', 'ach', 'courses', 'age', 'children', 'hero', 'programs'] as const;
 export type UploadFolder = (typeof UPLOAD_FOLDERS)[number];
 
 // Saves the file and returns the URL it is served at

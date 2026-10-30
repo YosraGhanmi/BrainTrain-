@@ -6,8 +6,7 @@ import QuickStats from '@/components/stats/QuickStats';
 import ProgramsSection from '@/components/programs/ProgramsSection';
 import StatsSection from '@/components/stats/StatsSection';
 import MilestonesSection from '@/components/timeline/MilestonesSection';
-import ValuesSection from '@/components/values/ValuesSection';
-import ContactSection from '@/components/contact/ContactSection';
+import MethodSection from '@/components/method/MethodSection';
 import Footer from '@/components/footer/Footer';
 import { readContent } from '@/lib/content/store';
 import { getRegisterHref } from '@/lib/preinscription/actions';
@@ -28,9 +27,8 @@ export default async function Home() {
         <ProgramsSection programs={content.programs} />
         <StatsSection achievementsImages={content.achievementsImages} />
         <MilestonesSection milestones={content.timeline} />
+        <MethodSection method={content.method} />
         <PartnersSection logos={content.sponsors} />
-        <ValuesSection />
-        <ContactSection contact={content.contact} />
       </main>
       <Footer />
     </div>

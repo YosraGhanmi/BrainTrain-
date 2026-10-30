@@ -26,7 +26,8 @@ import {
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
-import { PROGRAM_KEYS, type ProgramCard, type ProgramKey } from '@/lib/content/types';
+import Image from 'next/image';
+import { PROGRAM_KEYS, type LocalizedString, type ProgramCard, type ProgramKey } from '@/lib/content/types';
 import type { AppLocale } from '@/i18n/routing';
 
 const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: number; rotate: number }[] = [
@@ -56,11 +57,14 @@ const decorativeIcons: { icon: LucideIcon; top: string; left: string; size: numb
   { icon: Leaf, top: '84%', left: '96%', size: 24, rotate: 10 },
 ];
 
-// One accent per card: the hero's blue and red, plus the site's orange for summer
-const CARD_STYLE: Record<ProgramKey, { accent: string; href: string }> = {
-  yearRound: { accent: '#7b91f4', href: '/courses' },
-  summer: { accent: '#ff8c42', href: '/preinscription?program=summer' },
-  competitions: { accent: '#ef4b4b', href: '/#stats' },
+// One accent per card: the hero's blue and red, plus the site's orange for
+// summer. The light shade fills the badge and the button's arrow; titles on
+// the white card take the deep one (the logo's own blue and red), since the
+// light shades are too pale to read as text on white.
+const CARD_STYLE: Record<ProgramKey, { accent: string; deep: string; href: string }> = {
+  yearRound: { accent: '#7b91f4', deep: '#283880', href: '/courses' },
+  summer: { accent: '#ff8c42', deep: '#d9560f', href: '/preinscription?program=summer' },
+  competitions: { accent: '#ef4b4b', deep: '#c83030', href: '/#stats' },
 };
 
 gsap.registerPlugin(ScrollTrigger);
@@ -146,32 +150,66 @@ export default function ProgramsSection({ programs }: { programs: Record<Program
 
         <div className="mx-auto mt-16 grid max-w-6xl gap-6 lg:grid-cols-3">
           {PROGRAM_KEYS.map((key) => {
-            const { accent, href } = CARD_STYLE[key];
+            const { accent, deep, href } = CARD_STYLE[key];
+            const card = programs[key];
+            const text = (value: LocalizedString) => value[locale] || value.en;
             return (
               <div key={key} className="program-card group relative transition duration-300 hover:-translate-y-1">
-                <article className="relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.06] p-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_30px_60px_rgba(0,0,0,0.25)] backdrop-blur-2xl transition duration-300 group-hover:border-white/25 group-hover:bg-white/[0.09] md:p-10 lg:min-h-[27rem]">
-                  <h3
-                    className="mt-2 font-display text-4xl font-extrabold leading-[1.02] tracking-tight md:text-5xl lg:text-4xl"
-                    style={{ color: accent, textShadow: `0 0 40px ${accent}59` }}
-                  >
-                    {programs[key].title[locale] || programs[key].title.en}
-                  </h3>
-                  <p className="relative mb-8 mt-5 text-base leading-relaxed text-white/75 md:text-lg">
-                    {programs[key].body[locale] || programs[key].body.en}
-                  </p>
+                <article
+                  style={{ '--accent': accent } as CSSProperties}
+                  className="relative flex h-full flex-col overflow-hidden rounded-[2rem] bg-white text-[#0b1a3a] shadow-[0_30px_60px_rgba(0,0,0,0.3)] transition-shadow duration-300 group-hover:shadow-[0_36px_70px_rgba(0,0,0,0.4)]"
+                >
+                  <div className="p-3 pb-0">
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-[1.5rem] bg-[#0b1a3a]/5">
+                      <Image
+                        src={card.image}
+                        alt=""
+                        fill
+                        sizes="(min-width: 1024px) 360px, 90vw"
+                        className="object-cover transition duration-500 group-hover:scale-[1.04]"
+                      />
+                      {text(card.badge) ? (
+                        <span className="absolute left-3 top-3 rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.15em] text-[#0b1a3a] shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
+                          {text(card.badge)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
 
-                  {/* White at rest, the card's accent on hover, where the arrow
-                      swaps to a white disc so it still stands out */}
-                  <Link
-                    href={href}
-                    style={{ '--accent': accent } as CSSProperties}
-                    className="group/btn relative mt-auto inline-flex items-center gap-3 self-start rounded-full bg-white py-3 pl-6 pr-3 text-sm font-bold uppercase tracking-wide text-[#0b1a3a] transition-all duration-200 hover:gap-4 hover:bg-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                  >
-                    {t(key)}
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white transition-colors duration-200 group-hover/btn:bg-white group-hover/btn:text-[var(--accent)]">
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                  </Link>
+                  <div className="flex flex-1 flex-col px-7 pb-7 pt-6">
+                    <h3 className="font-display text-3xl font-extrabold leading-[1.05] tracking-tight" style={{ color: deep }}>
+                      {text(card.title)}
+                    </h3>
+                    {text(card.subtitle) ? (
+                      <p className="mt-1 text-base font-semibold text-[#0b1a3a]/55">{text(card.subtitle)}</p>
+                    ) : null}
+                    <p className="mt-4 text-base leading-relaxed text-[#0b1a3a]/75">{text(card.body)}</p>
+
+                    <div className="mt-auto pt-6">
+                      {text(card.details) ? (
+                        <div className="mb-6 border-t border-[#0b1a3a]/10 pt-5">
+                          {text(card.detailsLabel) ? (
+                            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[#0b1a3a]/50">
+                              {text(card.detailsLabel)}
+                            </p>
+                          ) : null}
+                          <p className="mt-1.5 text-sm font-semibold leading-snug text-[#0b1a3a]/80">{text(card.details)}</p>
+                        </div>
+                      ) : null}
+
+                      {/* Navy on the white card, the card's accent on hover, where
+                          the arrow swaps to a white disc so it still stands out */}
+                      <Link
+                        href={href}
+                        className="group/btn relative inline-flex items-center gap-3 self-start rounded-full bg-[#0b1a3a] py-3 pl-6 pr-3 text-sm font-bold uppercase tracking-wide text-white transition-all duration-200 hover:gap-4 hover:bg-[var(--accent)] hover:text-[#0b1a3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0b1a3a]"
+                      >
+                        {t(key)}
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-white transition-colors duration-200 group-hover/btn:bg-white group-hover/btn:text-[var(--accent)]">
+                          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                      </Link>
+                    </div>
+                  </div>
                 </article>
               </div>
             );

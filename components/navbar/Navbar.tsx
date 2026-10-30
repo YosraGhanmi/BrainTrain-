@@ -21,7 +21,7 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
     { label: t('home'), href: '/' },
     { label: t('about'), href: '/#philosophy' },
     { label: t('courses'), href: '/courses' },
-    { label: t('contact'), href: '/#contact' },
+    { label: t('contact'), href: '/contact' },
   ];
 
   useEffect(() => {

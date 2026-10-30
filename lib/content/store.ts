@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
 import { PROGRAM_KEYS } from './types';
-import type { SiteContent, HeroVideo, HeroText, ProgramCard, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
+import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, ContactContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
@@ -11,36 +11,90 @@ const DEFAULT_CONTENT: SiteContent = {
   heroVideo: { src: '/hero/hero.mp4', poster: '/hero/hero-poster.jpg' },
   heroText: {
     headline: {
-      en: "Bring to life\n*your children's*\n*potential*",
-      fr: 'Donnez vie au\n*potentiel*\nde *vos enfants*',
+      en: 'Spark their *curiosity*.\nHelp their ideas\n*come to life*.',
+      fr: 'Éveillez sa *curiosité*.\nAidez ses idées\nà *prendre vie*.',
     },
     lead: {
-      en: 'We are a future-skills academy where students turn technology, AI, and entrepreneurship into real-world innovation.',
-      fr: "Nous sommes une académie des compétences du futur où les élèves transforment la technologie, l'IA et l'entrepreneuriat en innovation concrète.",
+      en: 'At Braintrain Academy, young people aged 4 to 18 discover technology and entrepreneurship through hands-on projects, to better understand, create and grow in confidence.',
+      fr: "À Braintrain Academy, les jeunes de 4 à 18 ans découvrent la technologie et l'entrepreneuriat à travers des projets concrets, pour mieux comprendre, créer et avoir confiance en eux.",
     },
   },
   programs: {
     yearRound: {
       title: { en: 'Year-round programme', fr: 'Programme annuel' },
+      subtitle: { en: 'Every week, all year long', fr: "Chaque semaine, toute l'année" },
       body: {
         en: 'Weekly sessions all through the school year, so your child grows step by step.',
         fr: "Des séances chaque semaine, tout au long de l'année scolaire, pour que votre enfant progresse pas à pas.",
       },
+      badge: { en: 'Ages 4 to 18', fr: 'De 4 à 18 ans' },
+      detailsLabel: { en: 'On the programme', fr: 'Au programme' },
+      details: { en: 'Robotics · Coding · AI · Entrepreneurship', fr: 'Robotique · Code · IA · Entrepreneuriat' },
+      image: '/age/6-9.jpg',
     },
     summer: {
       title: { en: 'Summer Academy', fr: 'Summer Academy' },
+      subtitle: { en: 'Learning through play', fr: "Apprendre en s'amusant" },
       body: {
         en: 'Summer is for learning too: hands-on camps to build, code and create during the holidays.',
         fr: "L'été aussi, on apprend en s'amusant : des stages pour construire, coder et créer pendant les vacances.",
       },
+      badge: { en: 'Summer holidays', fr: "Vacances d'été" },
+      detailsLabel: { en: 'On the programme', fr: 'Au programme' },
+      details: { en: 'Camps · Workshops · Team projects', fr: 'Stages · Ateliers · Projets en équipe' },
+      image: '/age/4-5.jpg',
     },
     competitions: {
       title: { en: 'International competitions', fr: 'Compétitions internationales' },
+      subtitle: { en: 'Tunisia on the world stage', fr: 'La Tunisie sur la scène mondiale' },
       body: {
         en: "More than a school: our students carry Tunisia's colours onto the world stage and grow into tomorrow's leaders.",
         fr: "Plus qu'une école : nos élèves portent les couleurs de la Tunisie sur la scène internationale et deviennent les leaders de demain.",
       },
+      badge: { en: 'Competition teams', fr: 'Équipes de compétition' },
+      detailsLabel: { en: 'Competitions', fr: 'Compétitions' },
+      details: { en: 'FIRST LEGO League · International contests', fr: 'FIRST LEGO League · Concours internationaux' },
+      image: '/courses/robotique.png',
     },
+  },
+  footer: {
+    tagline: {
+      en: 'A Tunisian multidisciplinary academy for young minds aged 4 to 18, where curiosity becomes skill.',
+      fr: 'Une académie tunisienne pluridisciplinaire pour les jeunes esprits de 4 à 18 ans, où la curiosité devient compétence.',
+    },
+  },
+  method: {
+    heading: { en: 'Our method', fr: 'Notre méthode' },
+    steps: [
+      {
+        title: { en: 'Guided inquiry', fr: 'Investigation guidée' },
+        body: {
+          en: 'Asking questions, observing and experimenting to understand how things work and put ideas to the test.',
+          fr: 'Questionner, observer et expérimenter pour comprendre comment les choses fonctionnent et vérifier ses idées.',
+        },
+      },
+      {
+        title: { en: 'Interdisciplinary projects', fr: 'Projets interdisciplinaires' },
+        body: {
+          en: 'Bringing technology and entrepreneurship together to create, test and present useful solutions, as a team.',
+          fr: 'Relier technologie et entrepreneuriat pour créer, tester et présenter des solutions utiles, en équipe.',
+        },
+      },
+      {
+        title: { en: 'Structured progression', fr: 'Progression structurée' },
+        body: {
+          en: 'Age-based pathways and step-by-step modules to build skills and grow more independent.',
+          fr: 'Des parcours par âge et des modules progressifs pour développer ses compétences et gagner en autonomie.',
+        },
+      },
+      {
+        title: { en: 'Regular assessment', fr: 'Évaluation régulière' },
+        body: {
+          en: 'After several sessions in each module, the coach reviews what has been learned and points out what to strengthen.',
+          fr: 'Après plusieurs séances dans chaque module, le coach évalue les acquis et identifie les points à renforcer.',
+        },
+      },
+    ],
   },
   sponsors: [
     '/partners/American corner.png',
@@ -182,6 +236,23 @@ const DEFAULT_CONTENT: SiteContent = {
       href: 'https://www.google.com/maps/place/Braintrain+Academy/@35.8441536,10.6122719,17z/data=!3m1!4b1!4m6!3m5!1s0x12fd8b0074c0577b:0x4e986dd851ffe308!8m2!3d35.8441493!4d10.6148468!16s%2Fg%2F11vzg1d9bv?entry=tts&g_ep=EgoyMDI0MDkxOC4xKgBIAVAD',
     },
     mapsEmbedSrc: 'https://www.google.com/maps?q=35.8441493,10.6148468&z=17&output=embed',
+    whatsapp: '+216 58 996 112',
+    heading: { en: "We're with you", fr: 'On vous accompagne' },
+    headingAccent: { en: 'every step of the way', fr: 'à chaque étape' },
+    intro: {
+      en: 'Choosing a programme for your child is an important decision. Our team advises you and helps you find the one that suits them best.',
+      fr: 'Choisir une formation pour votre enfant est une décision importante. Notre équipe vous conseille et vous aide à trouver le programme le plus adapté.',
+    },
+    highlights: [
+      { en: 'A quick reply, within 24 hours', fr: 'Réponse rapide sous 24h' },
+      { en: "Advice tailored to your child's age and profile", fr: "Conseils personnalisés selon l'âge et le profil" },
+      { en: 'Support all the way to enrolment', fr: "Accompagnement jusqu'à l'inscription" },
+    ],
+    cardTitle: { en: 'Contact us', fr: 'Contactez-nous' },
+    cardText: {
+      en: 'A question about a programme or enrolment? Message us on WhatsApp, give us a call or send us a message.',
+      fr: 'Une question sur un programme ou une inscription ? Écrivez-nous sur WhatsApp, appelez-nous ou envoyez-nous un message.',
+    },
   },
   socials: [
     { label: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61556624844766' },
@@ -1085,12 +1156,49 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
       key,
       {
         title: toLocalized(rawPrograms[key]?.title, DEFAULT_CONTENT.programs[key].title),
+        subtitle: toLocalized(rawPrograms[key]?.subtitle, DEFAULT_CONTENT.programs[key].subtitle),
         body: toLocalized(rawPrograms[key]?.body, DEFAULT_CONTENT.programs[key].body),
+        badge: toLocalized(rawPrograms[key]?.badge, DEFAULT_CONTENT.programs[key].badge),
+        detailsLabel: toLocalized(rawPrograms[key]?.detailsLabel, DEFAULT_CONTENT.programs[key].detailsLabel),
+        details: toLocalized(rawPrograms[key]?.details, DEFAULT_CONTENT.programs[key].details),
+        image:
+          typeof rawPrograms[key]?.image === 'string' && rawPrograms[key]?.image
+            ? rawPrograms[key]!.image!
+            : DEFAULT_CONTENT.programs[key].image,
       },
     ])
   ) as Record<ProgramKey, ProgramCard>;
 
-  return { ...merged, heroVideo, heroText, programs, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  // Saved before the section's text and WhatsApp number were editable, so
+  // those fall back to the defaults one by one
+  const rawContact: Partial<ContactContent> = raw.contact ?? {};
+  const defaultContact = DEFAULT_CONTENT.contact;
+  const contact: ContactContent = {
+    ...defaultContact,
+    ...rawContact,
+    whatsapp: typeof rawContact.whatsapp === 'string' ? rawContact.whatsapp : defaultContact.whatsapp,
+    heading: toLocalized(rawContact.heading, defaultContact.heading),
+    headingAccent: toLocalized(rawContact.headingAccent, defaultContact.headingAccent),
+    intro: toLocalized(rawContact.intro, defaultContact.intro),
+    highlights: defaultContact.highlights.map((fallback, i) =>
+      toLocalized(Array.isArray(rawContact.highlights) ? rawContact.highlights[i] : undefined, fallback),
+    ),
+    cardTitle: toLocalized(rawContact.cardTitle, defaultContact.cardTitle),
+    cardText: toLocalized(rawContact.cardText, defaultContact.cardText),
+  };
+
+  const rawMethod: Partial<MethodContent> = raw.method ?? {};
+  const method: MethodContent = {
+    heading: toLocalized(rawMethod.heading, DEFAULT_CONTENT.method.heading),
+    steps: DEFAULT_CONTENT.method.steps.map((fallback, i) => ({
+      title: toLocalized(rawMethod.steps?.[i]?.title, fallback.title),
+      body: toLocalized(rawMethod.steps?.[i]?.body, fallback.body),
+    })),
+  };
+
+  const footer = { tagline: toLocalized(raw.footer?.tagline, DEFAULT_CONTENT.footer.tagline) };
+
+  return { ...merged, heroVideo, heroText, programs, method, contact, footer, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

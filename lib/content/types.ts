@@ -9,6 +9,17 @@ export type ContactContent = {
   phone: ContactDetail;
   location: ContactDetail;
   mapsEmbedSrc: string;
+  // The number the "Écrire sur WhatsApp" button opens, as typed (spaces and
+  // a leading + are fine)
+  whatsapp: string;
+  // The home page's contact section: a two-line heading (the second line in
+  // colour), an intro, a short checklist, then the card beside it
+  heading: LocalizedString;
+  headingAccent: LocalizedString;
+  intro: LocalizedString;
+  highlights: LocalizedString[];
+  cardTitle: LocalizedString;
+  cardText: LocalizedString;
 };
 
 export type TimelineEntry = {
@@ -143,12 +154,31 @@ export type HeroText = { headline: LocalizedString; lead: LocalizedString };
 // editable: each card's button always leads to the same place.
 export const PROGRAM_KEYS = ['yearRound', 'summer', 'competitions'] as const;
 export type ProgramKey = (typeof PROGRAM_KEYS)[number];
-export type ProgramCard = { title: LocalizedString; body: LocalizedString };
+export type ProgramCard = {
+  title: LocalizedString;
+  subtitle: LocalizedString;
+  body: LocalizedString;
+  // The pill over the photo, e.g. "De 4 à 18 ans"
+  badge: LocalizedString;
+  // The small caps line under the divider and what follows it
+  detailsLabel: LocalizedString;
+  details: LocalizedString;
+  image: string;
+};
+
+// The home page's "Notre méthode" section: a heading and four numbered
+// cards. Fixed at four: the grid is laid out for four across.
+export const METHOD_STEP_COUNT = 4;
+export type MethodStep = { title: LocalizedString; body: LocalizedString };
+export type MethodContent = { heading: LocalizedString; steps: MethodStep[] };
 
 export type SiteContent = {
   heroVideo: HeroVideo;
   heroText: HeroText;
   programs: Record<ProgramKey, ProgramCard>;
+  method: MethodContent;
+  // The line under the logo in the footer
+  footer: { tagline: LocalizedString };
   sponsors: string[];
   stats: StatEntry[];
   achievementsImages: string[];

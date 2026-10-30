@@ -158,13 +158,23 @@ export async function updateContact(formData: FormData): Promise<void> {
   await requireAdminOnly();
   const field = (name: string) => String(formData.get(name) ?? '').trim();
 
+  const localized = (name: string) => ({ en: field(`${name}En`), fr: field(`${name}Fr`) });
+
   const content = (await readContent());
   content.contact = {
     email: { value: field('email_value'), href: field('email_href') },
     phone: { value: field('phone_value'), href: field('phone_href') },
     location: { value: field('location_value'), href: field('location_href') },
     mapsEmbedSrc: field('mapsEmbedSrc'),
+    whatsapp: field('whatsapp'),
+    heading: localized('heading'),
+    headingAccent: localized('headingAccent'),
+    intro: localized('intro'),
+    highlights: content.contact.highlights.map((_, i) => localized(`highlight${i}`)),
+    cardTitle: localized('cardTitle'),
+    cardText: localized('cardText'),
   };
+  content.footer = { tagline: localized('footerTagline') };
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/contact?saved=1');
@@ -210,16 +220,42 @@ export async function updateHeroText(formData: FormData): Promise<void> {
 export async function updatePrograms(formData: FormData): Promise<void> {
   await requireAdminOnly();
   const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const localized = (name: string) => ({ en: field(`${name}En`), fr: field(`${name}Fr`) });
   const content = (await readContent());
   for (const key of PROGRAM_KEYS) {
+    // The photo is kept unless a new one was picked
+    const photo = formData.get(`${key}Image`) as File | null;
+    const image = photo && photo.size > 0 ? await saveUploadedImage(photo, 'programs') : content.programs[key].image;
     content.programs[key] = {
-      title: { en: field(`${key}TitleEn`), fr: field(`${key}TitleFr`) },
-      body: { en: field(`${key}BodyEn`), fr: field(`${key}BodyFr`) },
+      title: localized(`${key}Title`),
+      subtitle: localized(`${key}Subtitle`),
+      body: localized(`${key}Body`),
+      badge: localized(`${key}Badge`),
+      detailsLabel: localized(`${key}DetailsLabel`),
+      details: localized(`${key}Details`),
+      image,
     };
   }
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/programs?saved=1');
+}
+
+export async function updateMethod(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const localized = (name: string) => ({ en: field(`${name}En`), fr: field(`${name}Fr`) });
+  const content = (await readContent());
+  content.method = {
+    heading: localized('heading'),
+    steps: content.method.steps.map((_, i) => ({
+      title: localized(`step${i}Title`),
+      body: localized(`step${i}Body`),
+    })),
+  };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/method?saved=1');
 }
 
 // Either file may be left empty to keep the current one

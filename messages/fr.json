@@ -25,16 +25,8 @@
     "row3Body": "Du développement de projets concrets à la participation à des défis nationaux et internationaux, nos élèves ont représenté la Tunisie sur des scènes à travers le monde, notamment en Grèce et en Jordanie.",
     "row3Alt": "Des élèves de BrainTrain célébrant avec leurs trophées de compétition"
   },
-  "values": {
-    "heading": "Nos valeurs et notre mission",
-    "cta": "Rejoindre BrainTrain Academy",
-    "intro": "Chez <b>BrainTrain</b>, nous croyons que les jeunes esprits apprennent mieux lorsqu'ils <b2>explorent, créent et relèvent de vrais défis</b2>. Nous donnons aux enfants les outils, la confiance et la liberté de transformer la curiosité en compétences, les idées en projets et les défis en opportunités.",
-    "curiosity": "Curiosité",
-    "innovation": "Innovation",
-    "problemSolving": "Résolution de problèmes",
-    "collaboration": "Collaboration",
-    "excellence": "Excellence",
-    "impact": "Impact"
+  "method": {
+    "cta": "Rejoindre BrainTrain Academy"
   },
   "programs": {
     "heading": "Des programmes pour les esprits curieux.",
@@ -91,12 +83,11 @@
     "body": "BrainTrain, ce n'est pas qu'une école. Ici, votre enfant apprend à <b>penser en entrepreneur</b> : il ose partager ses idées, s'ouvre au monde et défend les couleurs de la Tunisie dans des <b>compétitions internationales</b>. Nos élèves en reviennent avec des trophées, et avec l'assurance des <hl>leaders de demain</hl>."
   },
   "contact": {
-    "label": "Contact",
-    "heading": "Contactez-nous",
-    "intro": "Contactez-nous pour les détails d'inscription, des conseils sur les programmes, ou pour planifier une consultation gratuite avec notre équipe.",
+    "whatsapp": "Écrire sur WhatsApp",
+    "call": "Appeler le {phone}",
+    "mapTitle": "Plan d'accès à BrainTrain Academy",
+    "openMap": "Ouvrir dans Google Maps",
     "email": "E-mail",
-    "phone": "Téléphone",
-    "location": "Adresse",
     "formTitle": "Envoyez-nous un message",
     "fullName": "Nom complet",
     "fullNamePlaceholder": "Votre nom complet",
@@ -111,6 +102,14 @@
     "heading": "Nos partenaires"
   },
   "footer": {
+    "quickLinks": "Liens rapides",
+    "ourCourses": "Nos cours",
+    "allCourses": "Tous les cours",
+    "contactTitle": "Contactez-nous",
+    "preinscription": "Préinscription",
+    "parentPortal": "Espace parent",
+    "whatsapp": "Écrire sur WhatsApp",
+    "followUs": "Suivez-nous",
     "rights": "Tous droits réservés."
   },
   "languageSwitcher": {

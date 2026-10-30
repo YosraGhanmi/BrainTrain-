@@ -25,16 +25,8 @@
     "row3Body": "From developing real projects to taking on national and international challenges, our students have represented Tunisia on stages across the world, including Greece and Jordan.",
     "row3Alt": "BrainTrain students celebrating with their competition trophies"
   },
-  "values": {
-    "heading": "Our Values & Mission",
-    "cta": "Join BrainTrain Academy",
-    "intro": "At <b>BrainTrain</b>, we believe young minds learn best when they <b2>explore, create, and take on real challenges</b2>. We give children the tools, confidence, and freedom to turn curiosity into skills, ideas into projects, and challenges into opportunities.",
-    "curiosity": "Curiosity",
-    "innovation": "Innovation",
-    "problemSolving": "Problem Solving",
-    "collaboration": "Collaboration",
-    "excellence": "Excellence",
-    "impact": "Impact"
+  "method": {
+    "cta": "Join BrainTrain Academy"
   },
   "programs": {
     "heading": "Programmes built for curious minds.",
@@ -91,12 +83,11 @@
     "body": "BrainTrain is more than a school. Here your child learns to <b>think like an entrepreneur</b>: sharing bold ideas, opening up to the world and representing Tunisia at <b>international competitions</b>. Our students come home with trophies, and with the confidence of <hl>tomorrow's leaders</hl>."
   },
   "contact": {
-    "label": "Contact",
-    "heading": "Contact Us",
-    "intro": "Reach out for enrollment details, program guidance, or to schedule a free consultation with our team.",
+    "whatsapp": "Message us on WhatsApp",
+    "call": "Call {phone}",
+    "mapTitle": "Map to BrainTrain Academy",
+    "openMap": "Open in Google Maps",
     "email": "Email",
-    "phone": "Phone",
-    "location": "Location",
     "formTitle": "Send us a message",
     "fullName": "Full name",
     "fullNamePlaceholder": "Your full name",
@@ -111,6 +102,14 @@
     "heading": "Our Partners"
   },
   "footer": {
+    "quickLinks": "Quick links",
+    "ourCourses": "Our courses",
+    "allCourses": "All courses",
+    "contactTitle": "Contact us",
+    "preinscription": "Pre-registration",
+    "parentPortal": "Parent portal",
+    "whatsapp": "Message us on WhatsApp",
+    "followUs": "Follow us",
     "rights": "All Rights Reserved."
   },
   "languageSwitcher": {
