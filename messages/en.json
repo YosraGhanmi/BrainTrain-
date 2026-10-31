@@ -12,27 +12,18 @@
     "closeVideo": "Close the video",
     "scroll": "Scroll"
   },
-  "philosophy": {
-    "heading": "WHO",
-    "headingAccent": "ARE WE",
-    "row1Lead": "BrainTrain is a Tunisian multidisciplinary academy for young minds aged 4–18, where curiosity becomes capability.",
-    "row1Body": "Through hands-on programs in robotics, programming, artificial intelligence, 3D design, entrepreneurship, and technology, we help young people develop the skills to create, innovate, and solve real-world problems.",
-    "row1Alt": "BrainTrain students working together in a hands-on session",
-    "row2Lead": "BrainTrain is not a traditional school.",
-    "row2Body": "We believe the best way to learn is by doing. Our mission is to transform curious kids into creators, innovators, and problem-solvers by giving them the freedom to experiment, build ideas, work together, and turn challenges into opportunities.",
-    "row2Alt": "BrainTrain students collaborating around a whiteboard",
-    "row3Lead": "Our students don't simply sit in classrooms they build, compete, and WIN.",
-    "row3Body": "From developing real projects to taking on national and international challenges, our students have represented Tunisia on stages across the world, including Greece and Jordan.",
-    "row3Alt": "BrainTrain students celebrating with their competition trophies"
-  },
   "method": {
     "cta": "Join BrainTrain Academy"
+  },
+  "about": {
+    "gallery": "BrainTrain photos. Click the photo or use the arrow keys to change it."
   },
   "programs": {
     "heading": "Programmes built for curious minds.",
     "yearRound": "See the courses",
     "summer": "Pre-register",
-    "competitions": "Our achievements"
+    "competitions": "Our achievements",
+    "events": "Our journey"
   },
   "courses": {
     "seeMore": "See more",

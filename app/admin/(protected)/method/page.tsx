@@ -22,8 +22,7 @@ export default async function AdminMethodPage(props: { searchParams: Promise<{ s
     <div>
       <h1 className="text-center font-display text-4xl font-semibold text-ink">Our method</h1>
       <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-stone">
-        The section with four numbered cards near the bottom of the home page.
-      </p>
+        The section with four cards near the bottom of the home page.      </p>
 
       {searchParams.saved ? <p className="mt-6 text-center text-sm font-semibold text-emerald-600">Saved.</p> : null}
 
@@ -38,6 +37,14 @@ export default async function AdminMethodPage(props: { searchParams: Promise<{ s
                   Heading ({language})
                 </label>
                 <input id={`heading${suffix}`} name={`heading${suffix}`} defaultValue={method.heading[locale]} required className={inputClass} />
+              </div>
+            ))}
+            {LANGS.map(({ suffix, locale, language }) => (
+              <div key={`intro${suffix}`} className="space-y-2">
+                <label htmlFor={`intro${suffix}`} className={labelClass}>
+                  Line under the heading ({language}, *stars* highlight words, optional)
+                </label>
+                <textarea id={`intro${suffix}`} name={`intro${suffix}`} defaultValue={method.intro[locale]} rows={2} className={inputClass} />
               </div>
             ))}
           </div>

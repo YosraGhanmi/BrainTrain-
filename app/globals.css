@@ -217,6 +217,40 @@ section {
   }
 }
 
+/* À propos: the border around the photo gallery pulses, a ring swelling
+   out and fading, its colour going from the logo's blue to its red and back */
+@keyframes about-pulse {
+  0% {
+    border-color: #3d7fff;
+    box-shadow: 0 0 0 0 rgba(61, 127, 255, 0.45);
+  }
+  45% {
+    box-shadow: 0 0 0 16px rgba(61, 127, 255, 0);
+  }
+  50% {
+    border-color: #ef4b4b;
+    box-shadow: 0 0 0 0 rgba(239, 75, 75, 0.45);
+  }
+  95% {
+    box-shadow: 0 0 0 16px rgba(239, 75, 75, 0);
+  }
+  100% {
+    border-color: #3d7fff;
+    box-shadow: 0 0 0 0 rgba(61, 127, 255, 0);
+  }
+}
+
+.about-pulse {
+  border-color: #3d7fff;
+  animation: about-pulse 4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-pulse {
+    animation: none;
+  }
+}
+
 /* Admin FormSteps: each step panel slides in when shown */
 @keyframes step-in {
   from {

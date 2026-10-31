@@ -12,27 +12,18 @@
     "closeVideo": "Fermer la vidéo",
     "scroll": "Défiler"
   },
-  "philosophy": {
-    "heading": "QUI",
-    "headingAccent": "SOMMES-NOUS",
-    "row1Lead": "BrainTrain est une académie tunisienne pluridisciplinaire pour les jeunes esprits de 4 à 18 ans, où la curiosité devient compétence.",
-    "row1Body": "Grâce à des programmes pratiques en robotique, programmation, intelligence artificielle, design 3D, entrepreneuriat et technologie, nous aidons les jeunes à développer les compétences nécessaires pour créer, innover et résoudre des problèmes réels.",
-    "row1Alt": "Des élèves de BrainTrain travaillant ensemble lors d'une session pratique",
-    "row2Lead": "BrainTrain n'est pas une école traditionnelle.",
-    "row2Body": "Nous croyons que la meilleure façon d'apprendre est de faire. Notre mission est de transformer des enfants curieux en créateurs, innovateurs et résolveurs de problèmes en leur donnant la liberté d'expérimenter, de construire des idées, de collaborer et de transformer les défis en opportunités.",
-    "row2Alt": "Des élèves de BrainTrain collaborant autour d'un tableau blanc",
-    "row3Lead": "Nos élèves ne se contentent pas de s'asseoir en classe, ils construisent, compètent et GAGNENT.",
-    "row3Body": "Du développement de projets concrets à la participation à des défis nationaux et internationaux, nos élèves ont représenté la Tunisie sur des scènes à travers le monde, notamment en Grèce et en Jordanie.",
-    "row3Alt": "Des élèves de BrainTrain célébrant avec leurs trophées de compétition"
-  },
   "method": {
     "cta": "Rejoindre BrainTrain Academy"
+  },
+  "about": {
+    "gallery": "Photos de BrainTrain. Cliquez sur la photo ou utilisez les flèches du clavier pour en changer."
   },
   "programs": {
     "heading": "Des programmes pour les esprits curieux.",
     "yearRound": "Voir les cours",
     "summer": "Préinscription",
-    "competitions": "Nos réalisations"
+    "competitions": "Nos réalisations",
+    "events": "Notre parcours"
   },
   "courses": {
     "seeMore": "Voir plus",

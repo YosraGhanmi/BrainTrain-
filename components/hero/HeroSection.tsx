@@ -126,7 +126,7 @@ export default function HeroSection({
       </div>
 
       <a
-        href="#philosophy"
+        href="#programs"
         className="absolute bottom-10 right-6 z-10 hidden flex-col items-center gap-2 text-white/70 transition hover:text-white sm:flex xl:right-8"
         aria-label={t('scroll')}
       >

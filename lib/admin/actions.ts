@@ -248,6 +248,7 @@ export async function updateMethod(formData: FormData): Promise<void> {
   const content = (await readContent());
   content.method = {
     heading: localized('heading'),
+    intro: localized('intro'),
     steps: content.method.steps.map((_, i) => ({
       title: localized(`step${i}Title`),
       body: localized(`step${i}Body`),
@@ -256,6 +257,34 @@ export async function updateMethod(formData: FormData): Promise<void> {
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/method?saved=1');
+}
+
+export async function updateAbout(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const localized = (name: string) => ({ en: field(`${name}En`), fr: field(`${name}Fr`) });
+  const content = (await readContent());
+  // The photos left unticked stay in their order, new uploads go at the end;
+  // removing every photo keeps the current ones, as the gallery needs one
+  const removed = new Set(formData.getAll('removeImage').map(String));
+  const images = content.about.images.filter((src) => !removed.has(src));
+  for (const photo of formData.getAll('newImages') as File[]) {
+    if (photo && photo.size > 0) images.push(await saveUploadedImage(photo, 'about'));
+  }
+  content.about = {
+    images: images.length ? images : content.about.images,
+    eyebrow: localized('eyebrow'),
+    heading: localized('heading'),
+    story: localized('story'),
+    closing: localized('closing'),
+    facts: content.about.facts.map((_, i) => ({
+      value: localized(`fact${i}Value`),
+      label: localized(`fact${i}Label`),
+    })),
+  };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/about?saved=1');
 }
 
 // Either file may be left empty to keep the current one

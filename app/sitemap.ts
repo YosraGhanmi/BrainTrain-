@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     { path: '', priority: 1 },
     { path: '/courses', priority: 0.8 },
-    { path: '/contact', priority: 0.7 },
+    { path: '/about', priority: 0.7 },
     ...content.ageGroups.map((g) => ({ path: `/courses/${g.slug}`, priority: 0.6 })),
     ...kindSlugs.map((slug) => ({ path: `/course/kind/${slug}`, priority: 0.6 })),
     ...offeredCourses(content).map((c) => ({ path: `/course/${c.slug}`, priority: 0.5 })),

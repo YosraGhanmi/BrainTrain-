@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import RadialReveal from '@/components/effects/RadialReveal';
 import LanguageSwitcher from '@/components/navbar/LanguageSwitcher';
-import { Link } from '@/i18n/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 
 // `overHero`: the page opens on a full-screen video, so at the top the pill is
 // a clear frosted glass with light text instead of cutting a white band across it.
@@ -16,20 +16,30 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
   const shrink = solid || scrolled;
   const onVideo = overHero && !shrink;
   const t = useTranslations('nav');
+  const pathname = usePathname();
+  // On the home page, true once the contact section reaches the middle of
+  // the screen: "Contact" then takes over from "Accueil" as the current link
+  const [atContact, setAtContact] = useState(false);
+  const onHome = pathname === '/';
 
   const navItems = [
-    { label: t('home'), href: '/' },
-    { label: t('about'), href: '/#philosophy' },
-    { label: t('courses'), href: '/courses' },
-    { label: t('contact'), href: '/contact' },
+    { label: t('home'), href: '/', active: onHome && !atContact },
+    { label: t('about'), href: '/about', active: pathname === '/about' },
+    // Also the age-group and single course pages under it
+    { label: t('courses'), href: '/courses', active: pathname.startsWith('/courses') || pathname.startsWith('/course/') },
+    { label: t('contact'), href: '/#contact', active: onHome && atContact },
   ];
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 40);
+      const contact = onHome ? document.getElementById('contact') : null;
+      setAtContact(!!contact && contact.getBoundingClientRect().top < window.innerHeight / 2);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [onHome]);
 
   // A floating pill holding logo, links and actions as one centred block. Over
   // the video it's untinted glass (blur only) so the footage shows through;
@@ -46,16 +56,27 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex lg:flex-1 lg:justify-center xl:gap-9">
+          {/* The current page's link is full strength and keeps the little
+              arrow under it that the others only show on hover */}
           {navItems.map((item) => (
             <Link
               key={item.label}
               href={item.href}
-              className={`group relative whitespace-nowrap text-sm uppercase tracking-[0.2em] transition ${onVideo ? 'text-white/85 hover:text-white' : 'text-stone hover:text-ink'}`}
+              aria-current={item.active ? 'page' : undefined}
+              className={`group relative whitespace-nowrap text-sm uppercase tracking-[0.2em] transition ${
+                onVideo
+                  ? item.active
+                    ? 'text-white'
+                    : 'text-white/70 hover:text-white'
+                  : item.active
+                    ? 'text-ink'
+                    : 'text-stone hover:text-ink'
+              }`}
             >
               {item.label}
               <span
                 aria-hidden
-                className={`pointer-events-none absolute left-1/2 top-full mt-2 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-[5px] border-t-[6px] border-x-transparent ${onVideo ? 'border-t-white' : 'border-t-ink'} opacity-0 transition-all duration-150 ease-out group-hover:translate-y-0 group-hover:opacity-100`}
+                className={`pointer-events-none absolute left-1/2 top-full mt-2 h-0 w-0 -translate-x-1/2 border-x-[5px] border-t-[6px] border-x-transparent ${onVideo ? 'border-t-white' : 'border-t-ink'} transition-all duration-150 ease-out ${item.active ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'}`}
               />
             </Link>
           ))}
@@ -92,7 +113,14 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
           <div className="rounded-3xl border border-stone/10 bg-white/90 p-5 shadow-soft">
             <div className="grid gap-4">
               {navItems.map((item) => (
-                <Link key={item.label} href={item.href} className="text-sm uppercase tracking-[0.2em] text-ink transition hover:text-accent" onClick={() => setOpen(false)}>
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  aria-current={item.active ? 'page' : undefined}
+                  className={`flex items-center gap-2 text-sm uppercase tracking-[0.2em] transition hover:text-accent ${item.active ? 'font-semibold text-accent' : 'text-ink'}`}
+                  onClick={() => setOpen(false)}
+                >
+                  {item.active ? <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" /> : null}
                   {item.label}
                 </Link>
               ))}

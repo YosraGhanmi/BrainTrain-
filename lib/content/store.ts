@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
 import { PROGRAM_KEYS } from './types';
-import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, ContactContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
+import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
@@ -56,6 +56,18 @@ const DEFAULT_CONTENT: SiteContent = {
       details: { en: 'FIRST LEGO League · International contests', fr: 'FIRST LEGO League · Concours internationaux' },
       image: '/courses/robotique.png',
     },
+    events: {
+      title: { en: 'Our events', fr: 'Nos événements' },
+      subtitle: { en: 'The highlights of every year', fr: "Les temps forts de l'année" },
+      body: {
+        en: 'Robotics challenges, project showcases, the closing ceremony: every year we celebrate together what the children have built.',
+        fr: 'Défis de robotique, expos de projets, cérémonie de clôture : chaque année, on célèbre ensemble ce que les enfants ont construit.',
+      },
+      badge: { en: 'Every year', fr: 'Chaque année' },
+      detailsLabel: { en: 'Highlights', fr: 'Temps forts' },
+      details: { en: 'Robotics challenge · Closing ceremony · Project showcase', fr: 'Défi robotique · Cérémonie de clôture · Expo projets' },
+      image: '/ALL.jpg',
+    },
   },
   footer: {
     tagline: {
@@ -65,6 +77,10 @@ const DEFAULT_CONTENT: SiteContent = {
   },
   method: {
     heading: { en: 'Our method', fr: 'Notre méthode' },
+    intro: {
+      en: 'A complete, step-by-step approach to *unlock the potential* of your child',
+      fr: 'Une approche complète et progressive pour *révéler le potentiel* de votre enfant',
+    },
     steps: [
       {
         title: { en: 'Guided inquiry', fr: 'Investigation guidée' },
@@ -94,6 +110,34 @@ const DEFAULT_CONTENT: SiteContent = {
           fr: 'Après plusieurs séances dans chaque module, le coach évalue les acquis et identifie les points à renforcer.',
         },
       },
+    ],
+  },
+  about: {
+    images: ['/ALL.png', '/About us 2.jpg', '/About us 1.jpg', '/About us 3.jpg'],
+    eyebrow: { en: 'About BrainTrain', fr: 'À propos de BrainTrain' },
+    heading: {
+      en: 'What if your child could go *further* than they ever imagined?',
+      fr: "Et si votre enfant allait *plus loin* que ce qu'il imagine ?",
+    },
+    story: {
+      en: [
+        'It all began in *October 2023, in Sousse*, with one conviction: every child has a potential just waiting to be discovered.',
+        'Robotics, coding, AI, 3D design, entrepreneurship: at BrainTrain, children become *the drivers of their own discoveries*. They imagine, experiment and build, gaining creativity, logic and self-confidence along the way.',
+        "Our students already carry *Tunisia's colours* at the FIRST LEGO League and the Arab Championship, and on international stages in Greece and Jordan.",
+      ].join('\n\n'),
+      fr: [
+        "Tout a commencé en *octobre 2023, à Sousse*, avec une conviction : chaque enfant a un potentiel qui ne demande qu'à être découvert.",
+        'Robotique, programmation, IA, design 3D, entrepreneuriat : chez BrainTrain, les enfants deviennent *acteurs de leurs découvertes*. Ils imaginent, expérimentent et construisent, et gagnent en créativité, en logique et en confiance en soi.',
+        'Nos élèves portent déjà *les couleurs de la Tunisie* à la FIRST LEGO League, au Championnat arabe et sur des scènes internationales en Grèce et en Jordanie.',
+      ].join('\n\n'),
+    },
+    closing: {
+      en: "Our ambition? That every child helps build tomorrow's world.",
+      fr: 'Notre ambition ? Que chaque enfant contribue à construire le monde de demain.',
+    },
+    facts: [
+      { value: { en: 'Sousse', fr: 'Sousse' }, label: { en: 'Tunisia', fr: 'Tunisie' } },
+      { value: { en: '4 to 18', fr: '4 à 18 ans' }, label: { en: 'Years old', fr: 'Nos élèves' } },
     ],
   },
   sponsors: [
@@ -1190,6 +1234,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
   const rawMethod: Partial<MethodContent> = raw.method ?? {};
   const method: MethodContent = {
     heading: toLocalized(rawMethod.heading, DEFAULT_CONTENT.method.heading),
+    intro: toLocalized(rawMethod.intro, DEFAULT_CONTENT.method.intro),
     steps: DEFAULT_CONTENT.method.steps.map((fallback, i) => ({
       title: toLocalized(rawMethod.steps?.[i]?.title, fallback.title),
       body: toLocalized(rawMethod.steps?.[i]?.body, fallback.body),
@@ -1198,7 +1243,21 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
 
   const footer = { tagline: toLocalized(raw.footer?.tagline, DEFAULT_CONTENT.footer.tagline) };
 
-  return { ...merged, heroVideo, heroText, programs, method, contact, footer, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  const rawAbout: Partial<AboutContent> = raw.about ?? {};
+  const aboutImages = Array.isArray(rawAbout.images) ? rawAbout.images.filter((src) => typeof src === 'string' && src) : [];
+  const about: AboutContent = {
+    images: aboutImages.length ? aboutImages : DEFAULT_CONTENT.about.images,
+    eyebrow: toLocalized(rawAbout.eyebrow, DEFAULT_CONTENT.about.eyebrow),
+    heading: toLocalized(rawAbout.heading, DEFAULT_CONTENT.about.heading),
+    story: toLocalized(rawAbout.story, DEFAULT_CONTENT.about.story),
+    closing: toLocalized(rawAbout.closing, DEFAULT_CONTENT.about.closing),
+    facts: DEFAULT_CONTENT.about.facts.map((fallback, i) => ({
+      value: toLocalized(rawAbout.facts?.[i]?.value, fallback.value),
+      label: toLocalized(rawAbout.facts?.[i]?.label, fallback.label),
+    })),
+  };
+
+  return { ...merged, heroVideo, heroText, programs, method, about, contact, footer, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

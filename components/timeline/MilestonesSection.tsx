@@ -103,7 +103,7 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
   };
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden px-6 pb-40 pt-28 md:px-10 lg:px-16">
+    <section id="timeline" ref={sectionRef} className="relative overflow-hidden px-6 pb-40 pt-28 md:px-10 lg:px-16">
       <div className="pointer-events-none absolute -left-24 top-0 h-80 w-80 rounded-full bg-gold/10 blur-[130px]" />
 
       <div className="relative">

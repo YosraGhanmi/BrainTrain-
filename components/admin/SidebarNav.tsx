@@ -35,12 +35,14 @@ import {
   Clapperboard,
   LayoutGrid,
   Compass,
+  Info,
 } from 'lucide-react';
 
 const customizationItems = [
   { label: 'Hero', href: '/admin/hero', icon: Clapperboard },
   { label: 'Programmes', href: '/admin/programs', icon: LayoutGrid },
   { label: 'Our method', href: '/admin/method', icon: Compass },
+  { label: 'About', href: '/admin/about', icon: Info },
   { label: 'Partners', href: '/admin/sponsors', icon: Handshake },
   { label: 'Statistics', href: '/admin/stats', icon: BarChart3 },
   { label: 'Courses', href: '/admin/courses', icon: BookOpen },

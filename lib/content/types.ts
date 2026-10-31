@@ -150,9 +150,9 @@ export type HeroVideo = { src: string; poster: string };
 // and words wrapped in *stars* take the logo's colours, alternating blue/red.
 export type HeroText = { headline: LocalizedString; lead: LocalizedString };
 
-// The three cards in the home page's programmes section. Only the text is
-// editable: each card's button always leads to the same place.
-export const PROGRAM_KEYS = ['yearRound', 'summer', 'competitions'] as const;
+// The four cards in the home page's programmes section. Only the text and
+// photo are editable: each card's button always leads to the same place.
+export const PROGRAM_KEYS = ['yearRound', 'summer', 'competitions', 'events'] as const;
 export type ProgramKey = (typeof PROGRAM_KEYS)[number];
 export type ProgramCard = {
   title: LocalizedString;
@@ -166,17 +166,36 @@ export type ProgramCard = {
   image: string;
 };
 
-// The home page's "Notre méthode" section: a heading and four numbered
-// cards. Fixed at four: the grid is laid out for four across.
+// The home page's "Notre méthode" section: a heading, a line under it (words
+// wrapped in *stars* are highlighted) and four cards. Fixed at four:
+// the grid is laid out for four across.
 export const METHOD_STEP_COUNT = 4;
 export type MethodStep = { title: LocalizedString; body: LocalizedString };
-export type MethodContent = { heading: LocalizedString; steps: MethodStep[] };
+export type MethodContent = { heading: LocalizedString; intro: LocalizedString; steps: MethodStep[] };
+
+// The "À propos" page: a flip gallery of photos beside the academy's story.
+// In the heading and the story, words wrapped in *stars* are highlighted;
+// the story's paragraphs are separated by a blank line. Two key facts sit
+// under it, beside the "Inscrire votre enfant" button.
+export type AboutFact = { value: LocalizedString; label: LocalizedString };
+export type AboutContent = {
+  // In flip order; never empty
+  images: string[];
+  // The small line above the heading, e.g. "Sousse, octobre 2023"
+  eyebrow: LocalizedString;
+  heading: LocalizedString;
+  story: LocalizedString;
+  // The last line, set larger, e.g. "Et ce n'est que le début."
+  closing: LocalizedString;
+  facts: AboutFact[];
+};
 
 export type SiteContent = {
   heroVideo: HeroVideo;
   heroText: HeroText;
   programs: Record<ProgramKey, ProgramCard>;
   method: MethodContent;
+  about: AboutContent;
   // The line under the logo in the footer
   footer: { tagline: LocalizedString };
   sponsors: string[];

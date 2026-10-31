@@ -49,10 +49,10 @@ export default async function Footer() {
 
   const quickLinks = [
     { label: nav('home'), href: '/' },
-    { label: nav('about'), href: '/#philosophy' },
+    { label: nav('about'), href: '/about' },
     { label: nav('courses'), href: '/courses' },
     { label: t('preinscription'), href: '/preinscription' },
-    { label: nav('contact'), href: '/contact' },
+    { label: nav('contact'), href: '/#contact' },
     { label: t('parentPortal'), href: '/parent-portal/login' },
   ];
 

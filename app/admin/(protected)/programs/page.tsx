@@ -10,6 +10,7 @@ const CARDS: Record<ProgramKey, { name: string; button: string }> = {
   yearRound: { name: 'Year-round programme', button: 'Its link opens the courses page.' },
   summer: { name: 'Summer Academy', button: 'Its link opens the preinscription form with only the summer courses (while the summer school is open).' },
   competitions: { name: 'International competitions', button: 'Its link scrolls down to the achievements gallery.' },
+  events: { name: 'Our events', button: 'Its link scrolls down to the timeline.' },
 };
 
 // In the order they appear on the card. Optional ones are hidden on the site
@@ -32,7 +33,7 @@ export default async function AdminProgramsPage(props: { searchParams: Promise<{
     <div>
       <h1 className="text-center font-display text-4xl font-semibold text-ink">Programmes</h1>
       <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-stone">
-        The three cards under the hero on the home page. Fields marked optional are hidden on the site when left empty.      </p>
+        The four cards under the hero on the home page. Fields marked optional are hidden on the site when left empty.      </p>
 
       {searchParams.saved ? <p className="mt-6 text-center text-sm font-semibold text-emerald-600">Saved.</p> : null}
 
