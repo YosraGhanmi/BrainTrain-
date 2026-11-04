@@ -1,5 +1,5 @@
 import { readContent } from '@/lib/content/store';
-import { upsertTimelineEntry, deleteTimelineEntry, reorderTimeline } from '@/lib/admin/actions';
+import { upsertTimelineEntry, deleteTimelineEntry, reorderTimeline, updateTimelineIntro } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import TimelineDragList from '@/components/admin/TimelineDragList';
@@ -10,6 +10,14 @@ import type { TimelineEntry } from '@/lib/content/types';
 export const dynamic = 'force-dynamic';
 
 const NAVY = '#0b1a3a';
+
+const LANGS = [
+  { suffix: 'En', locale: 'en', language: 'English' },
+  { suffix: 'Fr', locale: 'fr', language: 'French' },
+] as const;
+
+const labelClass = 'text-xs font-semibold uppercase tracking-[0.2em] text-stone';
+const inputClass = 'w-full rounded-xl border border-ink/15 px-4 py-3 text-sm text-ink';
 
 function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: number; isNew: boolean }) {
   return (
@@ -106,9 +114,10 @@ function EntryForm({ entry, index, isNew }: { entry: TimelineEntry; index: numbe
   );
 }
 
-export default async function AdminTimelinePage() {
+export default async function AdminTimelinePage(props: { searchParams: Promise<{ saved?: string }> }) {
+  const searchParams = await props.searchParams;
   await requireAdminOnly();
-  const { timeline } = (await readContent());
+  const { timeline, timelineIntro } = (await readContent());
   const blank: TimelineEntry = {
     date: { en: '', fr: '' },
     title: { en: '', fr: '' },
@@ -119,6 +128,35 @@ export default async function AdminTimelinePage() {
   return (
     <div>
       <h1 className="text-center font-display text-4xl font-semibold text-ink">Timeline</h1>
+
+      {searchParams.saved ? <p className="mt-6 text-center text-sm font-semibold text-emerald-600">Saved.</p> : null}
+
+      <form action={updateTimelineIntro} className="mt-8 space-y-4 rounded-2xl border border-ink/10 bg-white p-6">
+        <h2 className="font-display text-2xl font-semibold text-ink">Heading above the timeline</h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          {LANGS.map(({ suffix, locale, language }) => (
+            <div key={suffix} className="space-y-2">
+              <label htmlFor={`heading${suffix}`} className={labelClass}>
+                Heading ({language}, *stars* colour words red)
+              </label>
+              <input id={`heading${suffix}`} name={`heading${suffix}`} defaultValue={timelineIntro.heading[locale]} required className={inputClass} />
+            </div>
+          ))}
+          {LANGS.map(({ suffix, locale, language }) => (
+            <div key={`intro${suffix}`} className="space-y-2">
+              <label htmlFor={`intro${suffix}`} className={labelClass}>
+                Paragraph under the heading ({language}, *stars* colour words blue, optional)
+              </label>
+              <textarea id={`intro${suffix}`} name={`intro${suffix}`} defaultValue={timelineIntro.intro[locale]} rows={4} className={inputClass} />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <PendingSubmitButton className="rounded-full bg-ink px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone/90">
+            Save heading
+          </PendingSubmitButton>
+        </div>
+      </form>
 
       <div className="relative mt-10 space-y-6">
         <div className="absolute left-[9px] top-2 bottom-2 w-px bg-ink/10" />

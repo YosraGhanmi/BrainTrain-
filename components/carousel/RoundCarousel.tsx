@@ -17,6 +17,11 @@ function optimizedSrc(src: string, displayWidth: number): string {
   return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=75`;
 }
 
+// How fast a fling may spin the ring (deg/s), and how much of the fling's
+// extra speed is kept each frame (at 60fps) as it eases back to the idle spin
+const MAX_FLING = 240;
+const FLING_DECAY = 0.95;
+
 interface RoundCarouselImage {
   src: string;
 }
@@ -61,7 +66,7 @@ export default function RoundCarousel({
   speed = 7,
   direction = "right",
   drag = true,
-  sensitivity = 5,
+  sensitivity = 1,
   tilt = -7,
   perspective = 3000,
   cornerRadius = 22,
@@ -78,7 +83,7 @@ export default function RoundCarousel({
   const rotYRef = useRef(0);
   const velRef = useRef(0);
   const lastRef = useRef(0);
-  const dragRef = useRef({ active: false, x: 0 });
+  const dragRef = useRef({ active: false, x: 0, t: 0 });
 
   const angle = 360 / count;
   const factor = 1 + spacing * 0.15;
@@ -113,12 +118,11 @@ export default function RoundCarousel({
       const f = Math.min(dt, 0.1);
       const d = dragRef.current;
       if (!d.active) {
-        if (Math.abs(velRef.current) > 0.01) {
-          rotYRef.current += velRef.current * f;
-          velRef.current *= 0.94;
-        } else {
-          rotYRef.current += degPerSec * f;
-        }
+        // After a fling the speed eases back to the idle spin (same decay
+        // whatever the screen's refresh rate)
+        const decay = Math.pow(FLING_DECAY, f * 60);
+        velRef.current = degPerSec + (velRef.current - degPerSec) * decay;
+        rotYRef.current += velRef.current * f;
       }
       apply();
       rafRef.current = requestAnimationFrame(draw);
@@ -130,21 +134,30 @@ export default function RoundCarousel({
   const onPointerDown = (e: React.PointerEvent) => {
     if (!drag) return;
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    dragRef.current = { active: true, x: e.clientX };
+    dragRef.current = { active: true, x: e.clientX, t: e.timeStamp };
     velRef.current = 0;
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d.active) return;
     const dx = e.clientX - d.x;
+    const dt = Math.max((e.timeStamp - d.t) / 1000, 1 / 240);
     d.x = e.clientX;
-    const k = 0.3 * sensitivity;
+    d.t = e.timeStamp;
+    // At sensitivity 1 the front photo moves exactly with the pointer
+    const k = (180 / (Math.PI * radius)) * sensitivity;
     rotYRef.current += dx * k;
-    velRef.current = dx * k * 60;
+    // Smoothed and capped, so one jerky mouse event can't fling the ring
+    const v = Math.max(-MAX_FLING, Math.min(MAX_FLING, (dx * k) / dt));
+    velRef.current = velRef.current * 0.6 + v * 0.4;
   };
   const onPointerUp = (e: React.PointerEvent) => {
     e.currentTarget.releasePointerCapture?.(e.pointerId);
-    dragRef.current.active = false;
+    const d = dragRef.current;
+    if (!d.active) return;
+    d.active = false;
+    // Held still before letting go: no fling
+    if (e.timeStamp - d.t > 80) velRef.current = 0;
   };
 
   const faceBase: React.CSSProperties = {

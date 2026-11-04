@@ -6,13 +6,18 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { CalendarDays, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import type { TimelineEntry } from '@/lib/content/types';
+import type { TimelineEntry, TimelineIntro } from '@/lib/content/types';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const NAVY = '#0b1a3a';
 
-export default function MilestonesSection({ milestones }: { milestones: TimelineEntry[] }) {
+// *starred* words get the given wrapper; the rest stays plain text
+function withStars(text: string, star: (part: string, key: number) => React.ReactNode) {
+  return text.split(/\*(.+?)\*/).map((part, i) => (i % 2 === 1 ? star(part, i) : part));
+}
+
+export default function MilestonesSection({ milestones, intro }: { milestones: TimelineEntry[]; intro: TimelineIntro }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
@@ -105,6 +110,26 @@ export default function MilestonesSection({ milestones }: { milestones: Timeline
   return (
     <section id="timeline" ref={sectionRef} className="relative overflow-hidden px-6 pb-40 pt-28 md:px-10 lg:px-16">
       <div className="pointer-events-none absolute -left-24 top-0 h-80 w-80 rounded-full bg-gold/10 blur-[130px]" />
+
+      {/* Same layout and type as the achievements heading above it */}
+      <div className="relative mx-auto mb-16 max-w-6xl space-y-10">
+        <h2 className="text-display font-display font-semibold leading-[0.95] text-[#0b1a3a] sm:text-[clamp(3.5rem,6vw,6rem)]">
+          {withStars(intro.heading[locale] || intro.heading.en, (part, key) => (
+            <span key={key} className="text-[#ef4b4b]">
+              {part}
+            </span>
+          ))}
+        </h2>
+        {intro.intro[locale] || intro.intro.en ? (
+          <p className="max-w-4xl text-lg leading-relaxed text-stone sm:text-xl md:text-2xl md:leading-relaxed">
+            {withStars(intro.intro[locale] || intro.intro.en, (part, key) => (
+              <strong key={key} className="font-semibold text-[#7b91f4]">
+                {part}
+              </strong>
+            ))}
+          </p>
+        ) : null}
+      </div>
 
       <div className="relative">
         <button

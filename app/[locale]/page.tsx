@@ -25,7 +25,7 @@ export default async function Home() {
         <ProgramsSection programs={content.programs} />
         <QuickStats quickStats={content.stats} />
         <StatsSection achievementsImages={content.achievementsImages} />
-        <MilestonesSection milestones={content.timeline} />
+        <MilestonesSection milestones={content.timeline} intro={content.timelineIntro} />
         <MethodSection method={content.method} />
         <PartnersSection logos={content.sponsors} />
         <ContactSection contact={content.contact} />

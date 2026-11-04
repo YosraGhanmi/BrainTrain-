@@ -437,6 +437,17 @@ export async function upsertTimelineEntry(formData: FormData): Promise<void> {
   redirect('/admin/timeline?saved=1');
 }
 
+export async function updateTimelineIntro(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const localized = (name: string) => ({ en: field(`${name}En`), fr: field(`${name}Fr`) });
+  const content = (await readContent());
+  content.timelineIntro = { heading: localized('heading'), intro: localized('intro') };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/timeline?saved=1');
+}
+
 export async function deleteTimelineEntry(index: number): Promise<void> {
   await requireAdminOnly();
   const content = (await readContent());

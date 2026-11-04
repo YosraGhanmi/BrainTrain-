@@ -65,9 +65,9 @@ export async function generateMetadata(props: { params: Promise<{ locale: AppLoc
   const base = METADATA_BY_LOCALE[params.locale] ?? METADATA_BY_LOCALE.en;
   const url = absoluteUrl(params.locale);
   return {
-    // Keep the browser tab / window title short — the full tagline still
-    // shows up in social share previews (openGraph/twitter) below.
-    title: 'BrainTrain',
+    // Browser tab / search result title. The full tagline still shows up in
+    // social share previews (openGraph/twitter) below.
+    title: 'Braintrain Academy | Robotique, IA & Coding',
     description: base.description,
     metadataBase: new URL(SITE_URL),
     alternates: {

@@ -171,6 +171,9 @@ export type ProgramCard = {
 // the grid is laid out for four across.
 export const METHOD_STEP_COUNT = 4;
 export type MethodStep = { title: LocalizedString; body: LocalizedString };
+// The heading and paragraph above the milestones timeline on the home page
+export type TimelineIntro = { heading: LocalizedString; intro: LocalizedString };
+
 export type MethodContent = { heading: LocalizedString; intro: LocalizedString; steps: MethodStep[] };
 
 // The "À propos" page: a flip gallery of photos beside the academy's story.
@@ -202,6 +205,7 @@ export type SiteContent = {
   stats: StatEntry[];
   achievementsImages: string[];
   timeline: TimelineEntry[];
+  timelineIntro: TimelineIntro;
   contact: ContactContent;
   socials: SocialLink[];
   courses: CourseEntry[];

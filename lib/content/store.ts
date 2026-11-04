@@ -75,6 +75,16 @@ const DEFAULT_CONTENT: SiteContent = {
       fr: 'Une académie tunisienne pluridisciplinaire pour les jeunes esprits de 4 à 18 ans, où la curiosité devient compétence.',
     },
   },
+  timelineIntro: {
+    heading: {
+      en: 'Step by step, *celebrate our victories* with us',
+      fr: 'Pas à pas, *célébrez nos victoires* avec nous',
+    },
+    intro: {
+      en: 'These are the milestones BrainTrain has reached, one victory at a time. With you by our side we will go even further and build the future together. *Be part of BrainTrain, be part of the future.*',
+      fr: "Voici les étapes que BrainTrain a franchies, une victoire après l'autre. Avec vous à nos côtés, nous irons encore plus loin et construirons l'avenir ensemble. *Faites partie de BrainTrain, faites partie de l'avenir.*",
+    },
+  },
   method: {
     heading: { en: 'Our method', fr: 'Notre méthode' },
     intro: {
@@ -1107,6 +1117,11 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     facebookUrl: t.facebookUrl || undefined,
   }));
 
+  const timelineIntro = {
+    heading: toLocalized(raw.timelineIntro?.heading, DEFAULT_CONTENT.timelineIntro.heading),
+    intro: toLocalized(raw.timelineIntro?.intro, DEFAULT_CONTENT.timelineIntro.intro),
+  };
+
   const courses: CourseEntry[] = (raw.courses ?? DEFAULT_CONTENT.courses).map((c: any) => ({
     ...c,
     title: toLocalized(c.title, { en: '', fr: '' }),
@@ -1257,7 +1272,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     })),
   };
 
-  return { ...merged, heroVideo, heroText, programs, method, about, contact, footer, stats, timeline, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  return { ...merged, heroVideo, heroText, programs, method, about, contact, footer, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';
