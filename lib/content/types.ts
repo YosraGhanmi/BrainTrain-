@@ -39,7 +39,7 @@ export type CurriculumPhase = {
   points: LocalizedString[];
 };
 
-// One of the three labels floating around the robot on a course page
+// One of the three labels floating around the sprite on a course page
 // ("Recognize"), with an icon name from HIGHLIGHT_ICON_NAMES
 export type CourseHighlight = {
   icon: string;
@@ -56,6 +56,10 @@ export type CourseEntry = {
   sessions: number;
   price: number;
   ageGroupSlug: string;
+  // On the age group page's card: the label over the picture ("Emotions",
+  // hidden when empty) and one short line (the description when empty)
+  category: LocalizedString;
+  summary: LocalizedString;
   videoUrl?: string;
   image?: string;
   curriculum?: CurriculumPhase[];
@@ -193,6 +197,16 @@ export type AboutContent = {
   facts: AboutFact[];
 };
 
+// The questions under the contact section on the home page. The heading's
+// second line shows in colour. A question can show the pre-registration
+// button under its answer; line breaks in an answer are kept.
+export type FaqItem = {
+  question: LocalizedString;
+  answer: LocalizedString;
+  showPreinscriptionButton: boolean;
+};
+export type FaqContent = { heading: LocalizedString; headingAccent: LocalizedString; items: FaqItem[] };
+
 export type SiteContent = {
   heroVideo: HeroVideo;
   heroText: HeroText;
@@ -207,6 +221,7 @@ export type SiteContent = {
   timeline: TimelineEntry[];
   timelineIntro: TimelineIntro;
   contact: ContactContent;
+  faq: FaqContent;
   socials: SocialLink[];
   courses: CourseEntry[];
   ageGroups: AgeGroupEntry[];

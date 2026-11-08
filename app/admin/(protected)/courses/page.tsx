@@ -31,6 +31,8 @@ export default async function AdminCoursesPage(props: { searchParams: Promise<{ 
     sessions: 0,
     price: 0,
     ageGroupSlug: ageGroups[0]?.slug ?? '',
+    category: { en: '', fr: '' },
+    summary: { en: '', fr: '' },
     tagline: { en: '', fr: '' },
     highlights: [],
     outcome: { en: '', fr: '' },

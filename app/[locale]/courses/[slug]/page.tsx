@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import {
   ArrowLeft,
@@ -23,12 +22,11 @@ import {
   Droplet,
   Leaf,
   CheckCircle2,
-  Sun,
   type LucideIcon,
 } from 'lucide-react';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
-import CourseIllustration from '@/components/illustrations/CourseIllustration';
+import CourseCard from '@/components/course/CourseCard';
 import { Link } from '@/i18n/navigation';
 import { courseRegisterHref } from '@/lib/preinscription/course-link';
 import { getDbPreinscriptionSetting } from '@/lib/db/preinscriptions';
@@ -134,47 +132,23 @@ export default async function AgeGroupCoursesPage(props: { params: Promise<{ slu
           </h1>
           <p className="mt-3 max-w-xl text-stone">{group.description}</p>
 
-          <div className="mt-16 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-            {groupCourses.map(({ slug, title, icon: Icon, color, image, summer }, index) => (
-              <div
+          <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2">
+            {groupCourses.map(({ slug, title, category, summary, description, icon, color, image, summer }) => (
+              <CourseCard
                 key={slug}
-                className="relative rounded-tl-xl rounded-tr-[2.5rem] rounded-bl-[2.5rem] rounded-br-xl border border-ink/10 bg-white p-6 pt-9 text-center shadow-sm"
-              >
-                <span className="absolute -top-4 left-6 flex h-9 w-9 items-center justify-center rounded-full border-4 border-surface bg-accent text-sm font-extrabold text-white shadow-sm">
-                  {index + 1}
-                </span>
-                {summer ? (
-                  <span className="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800 shadow-sm">
-                    <Sun className="h-3 w-3" />
-                    {tc('summerBadge')}
-                  </span>
-                ) : null}
-
-                {image ? (
-                  <div className="relative h-32 w-full overflow-hidden rounded-2xl">
-                    <Image src={image} alt={title} fill sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
-                  </div>
-                ) : (
-                  <CourseIllustration icon={Icon} color={color} className="h-32 w-full rounded-2xl" />
-                )}
-
-                <h3 className="mt-5 text-lg font-extrabold text-ink">{title}</h3>
-
-                <div className="mt-4 flex flex-col gap-2">
-                  <Link
-                    href={`/course/${slug}?age=${group.slug}`}
-                    className="w-full rounded-full border border-ink/10 px-4 py-2 text-sm font-bold text-ink transition hover:bg-ink/5"
-                  >
-                    {t('viewDetails')}
-                  </Link>
-                  <Link
-                    href={courseRegisterHref(routeToForm, slug, `/courses/${group.slug}`)}
-                    className="w-full rounded-full bg-[#ff8c42] px-4 py-2 text-sm font-bold text-[#0f1f4d] transition hover:opacity-90"
-                  >
-                    {t('enroll')}
-                  </Link>
-                </div>
-              </div>
+                title={title}
+                category={category}
+                summary={summary || description}
+                icon={icon}
+                color={color}
+                image={image}
+                ageLabel={group.label}
+                summerLabel={summer ? tc('summerBadge') : undefined}
+                detailsHref={`/course/${slug}?age=${group.slug}`}
+                detailsLabel={t('discoverProgram')}
+                enrollHref={courseRegisterHref(routeToForm, slug, `/courses/${group.slug}`)}
+                enrollLabel={t('enroll')}
+              />
             ))}
           </div>
         </div>

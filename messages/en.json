@@ -29,7 +29,7 @@
     "seeMore": "See more",
     "pickAgeGroup": "Pick an age group to see its courses.",
     "allAgeGroups": "All age groups",
-    "viewDetails": "View details",
+    "discoverProgram": "Discover the program",
     "seeCourses": "See courses",
     "enroll": "Enroll",
     "allCourses": "All courses",
@@ -88,6 +88,9 @@
     "send": "Send message",
     "sending": "Sending…",
     "sent": "Message sent"
+  },
+  "faq": {
+    "preinscription": "Pre-register"
   },
   "partners": {
     "heading": "Our Partners"

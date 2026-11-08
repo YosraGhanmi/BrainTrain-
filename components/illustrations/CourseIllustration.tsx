@@ -1,4 +1,4 @@
-import { Bot, Code2, Rocket as RocketIcon, Smile, CircuitBoard, Printer, Terminal as TerminalIcon, type LucideIcon } from 'lucide-react';
+import { Bot, Code2, Cpu, Rocket as RocketIcon, Smile, CircuitBoard, Printer, Terminal as TerminalIcon, type LucideIcon } from 'lucide-react';
 
 import type { JSX } from "react";
 
@@ -6,7 +6,7 @@ const LINE = 'rgba(20,23,31,0.35)';
 
 function Robot({ color }: { color: string }) {
   return (
-    <svg viewBox="0 0 200 200" className="h-full w-full">
+    <svg viewBox="-20 0 200 200" className="h-full w-full">
       <rect x="60" y="20" width="12" height="18" fill={LINE} />
       <circle cx="66" cy="16" r="7" fill="#ff8fa3" />
       <rect x="35" y="38" width="90" height="60" rx="18" fill={color} />
@@ -131,6 +131,7 @@ function Terminal({ color }: { color: string }) {
 // the registry in lib/content/icons.ts hands back.
 const ILLUSTRATIONS = new Map<LucideIcon, (props: { color: string }) => JSX.Element>([
   [Bot, Robot],
+  [Cpu, Robot],
   [Code2, Laptop],
   [RocketIcon, Rocket],
   [Smile, Emotion],

@@ -7,6 +7,7 @@ import StatsSection from '@/components/stats/StatsSection';
 import MilestonesSection from '@/components/timeline/MilestonesSection';
 import MethodSection from '@/components/method/MethodSection';
 import ContactSection from '@/components/contact/ContactSection';
+import FaqSection from '@/components/faq/FaqSection';
 import Footer from '@/components/footer/Footer';
 import { readContent } from '@/lib/content/store';
 import { getRegisterHref } from '@/lib/preinscription/actions';
@@ -29,6 +30,7 @@ export default async function Home() {
         <MethodSection method={content.method} />
         <PartnersSection logos={content.sponsors} />
         <ContactSection contact={content.contact} />
+        <FaqSection faq={content.faq} />
       </main>
       <Footer />
     </div>

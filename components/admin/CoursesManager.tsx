@@ -61,7 +61,7 @@ function CoursePageFields({ course }: { course: CourseEntry }) {
         const highlight = course.highlights[i];
         return (
           <div key={i} className="grid grid-cols-1 gap-3 rounded-xl border border-ink/10 bg-white/60 p-3 sm:grid-cols-[9rem_1fr_1fr]">
-            <Field label={`Floating label ${i + 1} (around the robot) icon`}>
+            <Field label={`Floating label ${i + 1} (around the sprite) icon`}>
               <select name={`highlight${i}_icon`} defaultValue={highlight?.icon ?? 'Lightbulb'} className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30">
                 {HIGHLIGHT_ICON_NAMES.map((name) => (
                   <option key={name} value={name}>
@@ -296,6 +296,39 @@ function CourseFormFields({
         </div>
       )}
 
+      <Field label="Card label (English, over the picture, empty hides it)">
+        <input
+          name="category_en"
+          defaultValue={course.category.en}
+          placeholder="Emotions"
+          className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+        />
+      </Field>
+      <Field label="Card label (French)">
+        <input
+          name="category_fr"
+          defaultValue={course.category.fr}
+          placeholder="Émotions"
+          className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+        />
+      </Field>
+      <Field label="Card summary (English, one short line)">
+        <input
+          name="summary_en"
+          defaultValue={course.summary.en}
+          placeholder="Learn to recognize and express emotions."
+          className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+        />
+      </Field>
+      <Field label="Card summary (French)">
+        <input
+          name="summary_fr"
+          defaultValue={course.summary.fr}
+          placeholder="Apprendre à reconnaître et exprimer ses émotions."
+          className="w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+        />
+      </Field>
+
       <Field label="Description (English)">
         <textarea
           name="description_en"
@@ -334,7 +367,7 @@ function CourseFormFields({
       </div>
 
       <div className="sm:col-span-2">
-        <Field label="Illustration image (overrides the icon above on the age group's course grid, optional)">
+        <Field label="Card picture (replaces the drawing on the age group's course cards, wide images work best, optional)">
           <div className="flex items-center gap-4">
             {course.image ? (
               <img src={course.image} alt="" className="h-16 w-16 rounded-xl border border-ink/10 object-cover" />

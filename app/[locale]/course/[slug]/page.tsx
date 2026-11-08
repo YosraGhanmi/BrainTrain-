@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Baby, Banknote, CalendarDays, Check, Clock, Coin
 import { getTranslations } from 'next-intl/server';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
-import CourseRobotShowcase from '@/components/course/CourseRobotShowcase';
+import CourseSpriteShowcase from '@/components/course/CourseSpriteShowcase';
 import CourseTagline from '@/components/course/CourseTagline';
 import CoursePaymentRow from '@/components/pricing/CoursePaymentRow';
 import { Link } from '@/i18n/navigation';
@@ -243,7 +243,7 @@ export default async function CourseDetailPage(
 
           <div className="relative mx-auto h-[380px] w-full max-w-md sm:h-[460px] lg:h-[min(520px,calc(100dvh-9rem))]">
             <div className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[88%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-[#e8efff] via-white to-[#efeaff]" />
-            <CourseRobotShowcase description={course.description} locale={params.locale} />
+            <CourseSpriteShowcase description={course.description} locale={params.locale} />
             {course.highlights.map((highlight, i) => {
               const Icon = getIcon(highlight.icon);
               return (

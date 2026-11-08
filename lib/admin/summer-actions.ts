@@ -177,6 +177,8 @@ export async function loadSummerSheet(): Promise<void> {
         sessionHours: sheetCourse.sessionHours,
         price: 0,
         ageGroupSlug: ageGroup.slug,
+        category: { en: '', fr: '' },
+        summary: { en: '', fr: '' },
         tagline: { en: '', fr: '' },
         highlights: [],
         outcome: SHEET_OUTCOME,

@@ -1,16 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { Volume2, VolumeX } from 'lucide-react';
+import MarbleSprite from '@/components/course/MarbleSprite';
 
-// Heavy three.js bundle — load in the browser only, same as the homepage hero.
-const CourseRobotModel = dynamic(() => import('@/components/3d/CourseRobotModel'), {
-  ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse rounded-[2rem] bg-ink/5" />,
-});
+// The look tuned in Originkit's editor. Two things differ on purpose: pale glass
+// instead of black, which reads as a dark disc on this light page, and following
+// the cursor across the whole page with lower reach and lean. At the editor's full
+// values a distant cursor would pin the face at its limit and tip the capsule over.
+const LOOK = {
+  restX: 0,
+  restY: 10,
+  roll: 0,
+  maxTurn: 46,
+  seamAngle: 88,
+  seamTilt: 64,
+  seamOffset: -5,
+  shell: 1,
+  lip: 5,
+  spriteSize: 75,
+  eyeGap: 46.5,
+  eyeLength: 31.5,
+  eyeWidth: 10,
+  eyeColor: '#F3F2F8',
+};
 
-export default function CourseRobotShowcase({ description, locale }: { description: string; locale: string }) {
+export default function CourseSpriteShowcase({ description, locale }: { description: string; locale: string }) {
   const [speaking, setSpeaking] = useState(false);
   const [supported, setSupported] = useState(false);
 
@@ -40,7 +55,19 @@ export default function CourseRobotShowcase({ description, locale }: { descripti
 
   return (
     <div className="relative h-full min-h-[320px] w-full sm:min-h-[420px] lg:min-h-[520px]">
-      <CourseRobotModel />
+      <MarbleSprite
+        transparent
+        background="#f3f6ff"
+        spriteColor="#1400F6"
+        scale={86}
+        frost={6.2}
+        follow="page"
+        reach={4}
+        lean={3}
+        blink={10}
+        float={15}
+        advanced={LOOK}
+      />
 
       {supported ? (
         <button
@@ -48,7 +75,7 @@ export default function CourseRobotShowcase({ description, locale }: { descripti
           onClick={toggle}
           aria-label={speaking ? 'Mute' : 'Hear the description'}
           aria-pressed={speaking}
-          className={`absolute bottom-6 left-1/2 z-20 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full shadow-soft transition ${
+          className={`absolute bottom-0 left-1/2 z-20 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full shadow-soft transition ${
             speaking ? 'bg-accent text-white' : 'bg-ink text-white hover:bg-accent'
           }`}
         >

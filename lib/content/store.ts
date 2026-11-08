@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
 import { PROGRAM_KEYS } from './types';
-import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
+import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
@@ -282,6 +282,52 @@ const DEFAULT_CONTENT: SiteContent = {
       summary: { en: 'Coming soon', fr: 'Bientôt' },
     },
   ],
+  faq: {
+    heading: { en: 'Frequently asked', fr: 'Questions' },
+    headingAccent: { en: 'questions', fr: 'fréquentes' },
+    items: [
+      {
+        question: { en: 'What is BrainTrain Academy?', fr: "Qu'est-ce que BrainTrain Academy ?" },
+        answer: {
+          en: "BrainTrain Academy is a Tunisian robotics and technology academy for young people aged 4 to 18, founded in October 2023 in Sousse. Our students carry Tunisia's colours at the FIRST LEGO League and the Arab Championship, and on international stages in Greece and Jordan.",
+          fr: 'BrainTrain Academy est une académie tunisienne de robotique et de technologie pour les jeunes de 4 à 18 ans, fondée en octobre 2023 à Sousse. Nos élèves portent les couleurs de la Tunisie à la FIRST LEGO League, au Championnat arabe et sur des scènes internationales en Grèce et en Jordanie.',
+        },
+        showPreinscriptionButton: false,
+      },
+      {
+        question: { en: 'Where is BrainTrain Academy?', fr: 'Où se trouve BrainTrain Academy ?' },
+        answer: {
+          en: 'We are in Khezama, Sousse, Tunisia. You will find our address and a map in the contact section just above.',
+          fr: 'Nous sommes à Khezama, à Sousse, en Tunisie. Vous trouverez notre adresse et un plan dans la section contact juste au-dessus.',
+        },
+        showPreinscriptionButton: false,
+      },
+      {
+        question: { en: 'What programmes do you offer?', fr: 'Quels programmes proposez-vous ?' },
+        answer: {
+          en: 'We offer three programmes: the year-round programme, with weekly sessions all through the school year; the Summer Academy, with hands-on camps during the holidays; and international competitions, where our teams represent Tunisia abroad.',
+          fr: "Nous proposons trois programmes : le programme annuel, avec des séances chaque semaine tout au long de l'année scolaire ; la Summer Academy, avec des stages pratiques pendant les vacances ; et les compétitions internationales, où nos équipes représentent la Tunisie à l'étranger.",
+        },
+        showPreinscriptionButton: false,
+      },
+      {
+        question: { en: 'How do I enroll my child?', fr: 'Comment inscrire mon enfant ?' },
+        answer: {
+          en: 'You simply fill in the pre-registration form, and our team will contact you very soon.',
+          fr: 'Il vous suffit de remplir le formulaire de préinscription, et notre équipe vous contactera très bientôt.',
+        },
+        showPreinscriptionButton: true,
+      },
+      {
+        question: { en: 'What will my child learn?', fr: 'Que va apprendre mon enfant ?' },
+        answer: {
+          en: 'Your child will learn robotics. By the end of the programme, your child will have become an entrepreneur who can pitch in English on big stages all over the world.',
+          fr: 'Votre enfant apprendra la robotique. À la fin du programme, il sera un entrepreneur capable de présenter ses projets en anglais sur les grandes scènes du monde entier.',
+        },
+        showPreinscriptionButton: false,
+      },
+    ],
+  },
   contact: {
     email: { value: 'contact@braintrain.tn', href: 'mailto:contact@braintrain.tn' },
     phone: { value: '58 996 112', href: 'tel:+21658996112' },
@@ -326,6 +372,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 12,
       price: 0,
       ageGroupSlug: '6-9',
+      category: { en: "Engineering", fr: "Ingénierie" },
+      summary: {
+        en: "Build, wire and program real robots from scratch.",
+        fr: "Construire, câbler et programmer de vrais robots.",
+      },
       outcome: {
         en: 'Your child builds and programs a robot that moves and reacts to its surroundings.',
         fr: 'Votre enfant construit et programme un robot qui se déplace et réagit à son environnement.',
@@ -372,6 +423,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 12,
       price: 0,
       ageGroupSlug: '10-13',
+      category: { en: "Engineering", fr: "Ingénierie" },
+      summary: {
+        en: "Build, wire and program real robots from scratch.",
+        fr: "Construire, câbler et programmer de vrais robots.",
+      },
       outcome: {
         en: 'Your child designs a robot for a real challenge, wires its sensors and programs it to complete a mission on its own.',
         fr: 'Votre enfant conçoit un robot pour un vrai défi, câble ses capteurs et le programme pour accomplir une mission en autonomie.',
@@ -418,6 +474,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 12,
       price: 0,
       ageGroupSlug: '14-18',
+      category: { en: "Engineering", fr: "Ingénierie" },
+      summary: {
+        en: "Build, wire and program real robots from scratch.",
+        fr: "Construire, câbler et programmer de vrais robots.",
+      },
       outcome: {
         en: 'Your child builds an advanced robot, codes its behavior and is ready to compete in national and international robotics challenges.',
         fr: 'Votre enfant construit un robot avancé, programme son comportement et est prêt à concourir dans des défis de robotique nationaux et internationaux.',
@@ -464,6 +525,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 10,
       price: 0,
       ageGroupSlug: '6-9',
+      category: { en: "Code", fr: "Code" },
+      summary: {
+        en: "Learn to code through games and interactive projects.",
+        fr: "Apprendre à coder à travers des jeux et des projets.",
+      },
       outcome: {
         en: 'Your child creates their own animated story and a small game, using loops and conditions.',
         fr: 'Votre enfant crée sa propre histoire animée et un petit jeu, avec des boucles et des conditions.',
@@ -510,6 +576,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 10,
       price: 0,
       ageGroupSlug: '10-13',
+      category: { en: "Code", fr: "Code" },
+      summary: {
+        en: "Learn to code through games and interactive projects.",
+        fr: "Apprendre à coder à travers des jeux et des projets.",
+      },
       outcome: {
         en: 'Your child codes a complete game or app, from the idea to a working version, and knows how to find and fix bugs.',
         fr: "Votre enfant code un jeu ou une application complète, de l'idée à la version qui fonctionne, et sait trouver et corriger ses erreurs.",
@@ -556,6 +627,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 8,
       price: 0,
       ageGroupSlug: '6-9',
+      category: { en: "Business", fr: "Entreprise" },
+      summary: {
+        en: "Turn ideas into real projects and learn to pitch them.",
+        fr: "Transformer ses idées en vrais projets et apprendre à les présenter.",
+      },
       outcome: {
         en: 'Your child invents a product, builds a prototype and presents it confidently in front of an audience.',
         fr: 'Votre enfant invente un produit, en fabrique un prototype et le présente avec assurance devant un public.',
@@ -602,6 +678,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 8,
       price: 0,
       ageGroupSlug: '10-13',
+      category: { en: "Business", fr: "Entreprise" },
+      summary: {
+        en: "Turn ideas into real projects and learn to pitch them.",
+        fr: "Transformer ses idées en vrais projets et apprendre à les présenter.",
+      },
       outcome: {
         en: 'Your child turns an idea into a mini business plan: target customers, price, budget and a pitch.',
         fr: 'Votre enfant transforme une idée en mini business plan : clients visés, prix, budget et pitch.',
@@ -648,6 +729,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 8,
       price: 0,
       ageGroupSlug: '14-18',
+      category: { en: "Business", fr: "Entreprise" },
+      summary: {
+        en: "Turn ideas into real projects and learn to pitch them.",
+        fr: "Transformer ses idées en vrais projets et apprendre à les présenter.",
+      },
       outcome: {
         en: 'Your child runs a startup project from start to finish and pitches it to a jury, just like a real founder.',
         fr: 'Votre enfant mène un projet de startup de A à Z et le présente devant un jury, comme un vrai fondateur.',
@@ -694,6 +780,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 6,
       price: 0,
       ageGroupSlug: '4-5',
+      category: { en: "Emotions", fr: "Émotions" },
+      summary: {
+        en: "Learn to recognize and express emotions.",
+        fr: "Apprendre à reconnaître et exprimer ses émotions.",
+      },
       outcome: {
         en: 'Your child recognizes and names their main emotions and has simple tools to calm down and share.',
         fr: "Votre enfant reconnaît et nomme ses principales émotions et dispose d'outils simples pour se calmer et partager.",
@@ -740,6 +831,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 36,
       price: 0,
       ageGroupSlug: '4-5',
+      category: { en: "Technology", fr: "Technologie" },
+      summary: {
+        en: "Explore, create and understand the digital world.",
+        fr: "Explorer, créer et comprendre le monde numérique.",
+      },
       curriculum: [
         {
           title: { en: 'Year 1: Discover & Control', fr: 'Année 1 : découvrir & contrôler' },
@@ -847,6 +943,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 6,
       price: 0,
       ageGroupSlug: '6-9',
+      category: { en: "Emotions", fr: "Émotions" },
+      summary: {
+        en: "Learn to recognize and express emotions.",
+        fr: "Apprendre à reconnaître et exprimer ses émotions.",
+      },
       outcome: {
         en: 'Your child understands their own emotions and those of others, and handles frustration and teamwork better.',
         fr: 'Votre enfant comprend ses émotions et celles des autres, et gère mieux la frustration et le travail en équipe.',
@@ -893,6 +994,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 10,
       price: 0,
       ageGroupSlug: '10-13',
+      category: { en: "Circuits", fr: "Circuits" },
+      summary: {
+        en: "Build working circuits and discover how electricity powers devices.",
+        fr: "Construire de vrais circuits et comprendre le fonctionnement de l’électricité.",
+      },
       outcome: {
         en: 'Your child reads a simple circuit diagram and builds working circuits with LEDs, buttons and sensors.',
         fr: 'Votre enfant lit un schéma électrique simple et réalise des circuits qui fonctionnent avec LED, boutons et capteurs.',
@@ -939,6 +1045,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 8,
       price: 0,
       ageGroupSlug: '10-13',
+      category: { en: "Design", fr: "Design" },
+      summary: {
+        en: "From sketch to physical object, with a 3D printer.",
+        fr: "Du croquis à l’objet réel, grâce à l’impression 3D.",
+      },
       outcome: {
         en: 'Your child models their own object in 3D and prints it, from the first sketch to the finished piece.',
         fr: "Votre enfant modélise son propre objet en 3D et l'imprime, du premier croquis à la pièce finie.",
@@ -982,6 +1093,11 @@ const DEFAULT_CONTENT: SiteContent = {
       sessions: 12,
       price: 0,
       ageGroupSlug: '14-18',
+      category: { en: "Code", fr: "Code" },
+      summary: {
+        en: "Real-world programming with scripts and small projects.",
+        fr: "Programmer pour de vrai avec des scripts et des petits projets.",
+      },
       outcome: {
         en: 'Your child writes real Python programs: scripts, small games and tools that solve everyday problems.',
         fr: 'Votre enfant écrit de vrais programmes en Python : scripts, petits jeux et outils qui résolvent des problèmes du quotidien.',
@@ -1126,6 +1242,14 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     ...c,
     title: toLocalized(c.title, { en: '', fr: '' }),
     description: toLocalized(c.description, { en: '', fr: '' }),
+    // Courses saved before these existed start from the default wording; once
+    // saved, an empty value stays empty
+    category: c.category
+      ? toLocalized(c.category, { en: '', fr: '' })
+      : (DEFAULT_CONTENT.courses.find((d) => d.slug === c.slug)?.category ?? { en: '', fr: '' }),
+    summary: c.summary
+      ? toLocalized(c.summary, { en: '', fr: '' })
+      : (DEFAULT_CONTENT.courses.find((d) => d.slug === c.slug)?.summary ?? { en: '', fr: '' }),
     sessionHours: typeof c.sessionHours === 'number' && c.sessionHours > 0 ? c.sessionHours : undefined,
     tagline: toLocalized(c.tagline, { en: '', fr: '' }),
     highlights: Array.isArray(c.highlights)
@@ -1246,6 +1370,21 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     cardText: toLocalized(rawContact.cardText, defaultContact.cardText),
   };
 
+  // Falls back to the default questions only when none were ever saved, so
+  // an admin can still remove them all
+  const rawFaq: Partial<FaqContent> = raw.faq ?? {};
+  const faq: FaqContent = {
+    heading: toLocalized(rawFaq.heading, DEFAULT_CONTENT.faq.heading),
+    headingAccent: toLocalized(rawFaq.headingAccent, DEFAULT_CONTENT.faq.headingAccent),
+    items: Array.isArray(rawFaq.items)
+      ? rawFaq.items.map((item) => ({
+          question: toLocalized(item.question, { en: '', fr: '' }),
+          answer: toLocalized(item.answer, { en: '', fr: '' }),
+          showPreinscriptionButton: item.showPreinscriptionButton === true,
+        }))
+      : DEFAULT_CONTENT.faq.items,
+  };
+
   const rawMethod: Partial<MethodContent> = raw.method ?? {};
   const method: MethodContent = {
     heading: toLocalized(rawMethod.heading, DEFAULT_CONTENT.method.heading),
@@ -1272,7 +1411,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     })),
   };
 
-  return { ...merged, heroVideo, heroText, programs, method, about, contact, footer, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

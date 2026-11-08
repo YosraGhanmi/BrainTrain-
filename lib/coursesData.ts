@@ -20,6 +20,8 @@ export type Course = {
   sessions: number;
   price: number;
   ageGroupSlug: string;
+  category: string;
+  summary: string;
   videoUrl?: string;
   image?: string;
   curriculum?: CurriculumPhase[];
@@ -75,6 +77,8 @@ export async function getCourses(locale: AppLocale): Promise<Course[]> {
     ...c,
     title: c.title[locale] || c.title.en,
     description: c.description[locale] || c.description.en,
+    category: c.category[locale] || c.category.en,
+    summary: c.summary[locale] || c.summary.en,
     tagline: c.tagline[locale] || c.tagline.en,
     highlights: c.highlights.map((h) => ({
       icon: h.icon,

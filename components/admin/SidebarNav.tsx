@@ -36,6 +36,7 @@ import {
   LayoutGrid,
   Compass,
   Info,
+  CircleHelp,
 } from 'lucide-react';
 
 const customizationItems = [
@@ -48,6 +49,7 @@ const customizationItems = [
   { label: 'Courses', href: '/admin/courses', icon: BookOpen },
   { label: 'Age groups', href: '/admin/age-groups', icon: Users },
   { label: 'Contact', href: '/admin/contact', icon: Mail },
+  { label: 'FAQ', href: '/admin/faq', icon: CircleHelp },
   { label: 'Social media links', href: '/admin/socials', icon: Share2 },
   { label: 'Achievements gallery', href: '/admin/achievements', icon: ImageIcon },
   { label: 'Timeline', href: '/admin/timeline', icon: Milestone },

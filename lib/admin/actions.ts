@@ -181,6 +181,36 @@ export async function updateContact(formData: FormData): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// FAQ
+// ---------------------------------------------------------------------------
+
+export async function updateFaq(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const localized = (name: string) => ({ en: field(`${name}En`), fr: field(`${name}Fr`) });
+  // Text typed in one language only shows in both, so no visitor sees a blank
+  const bothLanguages = ({ en, fr }: LocalizedString) => ({ en: en || fr, fr: fr || en });
+
+  const content = (await readContent());
+  // One row per saved question, plus the blank "new question" row at the end.
+  // Rows ticked for removal and rows without a question are dropped.
+  const items = [];
+  for (let i = 0; i <= content.faq.items.length; i++) {
+    const question = bothLanguages(localized(`item${i}Question`));
+    if (!question.en || formData.get(`item${i}Remove`) === 'on') continue;
+    items.push({
+      question,
+      answer: bothLanguages(localized(`item${i}Answer`)),
+      showPreinscriptionButton: formData.get(`item${i}Button`) === 'on',
+    });
+  }
+  content.faq = { heading: localized('heading'), headingAccent: localized('headingAccent'), items };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/faq?saved=1');
+}
+
+// ---------------------------------------------------------------------------
 // Social links
 // ---------------------------------------------------------------------------
 
@@ -481,6 +511,8 @@ export async function upsertCourse(formData: FormData): Promise<void> {
   const existingSlug = String(formData.get('existingSlug') ?? '').trim();
   const title = localizedField(formData, 'title');
   const description = localizedField(formData, 'description');
+  const category = localizedField(formData, 'category');
+  const summary = localizedField(formData, 'summary');
   const sessions = Math.max(0, Math.round(Number(formData.get('sessions')) || 0));
   const ageGroupSlug = String(formData.get('ageGroupSlug') ?? '').trim();
   const color = String(formData.get('color') ?? '#3d7fff').trim();
@@ -534,6 +566,8 @@ export async function upsertCourse(formData: FormData): Promise<void> {
         ...content.courses[idx],
         title,
         description,
+        category,
+        summary,
         sessions,
         sessionHours,
         tagline,
@@ -559,6 +593,8 @@ export async function upsertCourse(formData: FormData): Promise<void> {
       slug,
       title,
       description,
+      category,
+      summary,
       sessions,
       sessionHours,
       tagline,
