@@ -2,7 +2,8 @@ import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
 import { PROGRAM_KEYS } from './types';
-import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings } from './types';
+import { DEFAULT_PALMARES } from './palmares-defaults';
+import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings, PalmaresContent } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
@@ -503,6 +504,7 @@ const DEFAULT_CONTENT: SiteContent = {
     { label: 'Instagram', href: 'https://www.instagram.com/braintrain.tn/' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/company/braintrainacademy/' },
   ],
+  palmares: DEFAULT_PALMARES,
   courses: withDefaultSeo([
     {
       slug: 'robotique-6-9',
@@ -1559,6 +1561,66 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
 
   const footer = { tagline: toLocalized(raw.footer?.tagline, DEFAULT_CONTENT.footer.tagline) };
 
+  // Each list falls back to the defaults only when it was never saved, so an
+  // admin can still empty it
+  const rawPalmares: Partial<PalmaresContent> = raw.palmares ?? {};
+  const dp = DEFAULT_PALMARES;
+  const loc = (value: unknown) => toLocalized(value, { en: '', fr: '' });
+  const str = (value: unknown) => (typeof value === 'string' ? value : '');
+  const palmares: PalmaresContent = {
+    seoTitle: toLocalized(rawPalmares.seoTitle, dp.seoTitle),
+    seoDescription: toLocalized(rawPalmares.seoDescription, dp.seoDescription),
+    heading: toLocalized(rawPalmares.heading, dp.heading),
+    intro: toLocalized(rawPalmares.intro, dp.intro),
+    awardsEyebrow: toLocalized(rawPalmares.awardsEyebrow, dp.awardsEyebrow),
+    awardsHeading: toLocalized(rawPalmares.awardsHeading, dp.awardsHeading),
+    awardsIntro: toLocalized(rawPalmares.awardsIntro, dp.awardsIntro),
+    competitions: Array.isArray(rawPalmares.competitions)
+      ? rawPalmares.competitions.map((c: any) => ({
+          title: loc(c.title),
+          intro: loc(c.intro),
+          awards: Array.isArray(c.awards) ? c.awards.map(loc) : [],
+          image: str(c.image),
+          imageAlt: loc(c.imageAlt),
+        }))
+      : dp.competitions,
+    videosHeading: toLocalized(rawPalmares.videosHeading, dp.videosHeading),
+    videos: Array.isArray(rawPalmares.videos)
+      ? rawPalmares.videos.map((v: any) => ({
+          title: loc(v.title),
+          highlight: loc(v.highlight),
+          description: loc(v.description),
+          url: str(v.url),
+          image: str(v.image),
+        }))
+      : dp.videos,
+    mediaHeading: toLocalized(rawPalmares.mediaHeading, dp.mediaHeading),
+    mediaIntro: toLocalized(rawPalmares.mediaIntro, dp.mediaIntro),
+    media: Array.isArray(rawPalmares.media)
+      ? rawPalmares.media.map((m: any) => {
+          // Saved before media had pictures: take the default one for the
+          // same link
+          const fallback = typeof m.image === 'string' ? null : dp.media.find((d) => d.url === m.url);
+          return {
+            name: loc(m.name),
+            // Saved before badges existed: the default label for the same link
+            badge: m.badge ? loc(m.badge) : (dp.media.find((d) => d.url === m.url)?.badge ?? { en: '', fr: '' }),
+            description: loc(m.description),
+            url: str(m.url),
+            image: fallback ? fallback.image : str(m.image),
+            logo: fallback ? fallback.logo : m.logo === true,
+          };
+        })
+      : dp.media,
+    statsHeading: toLocalized(rawPalmares.statsHeading, dp.statsHeading),
+    stats: Array.isArray(rawPalmares.stats)
+      ? rawPalmares.stats.map((s: any) => ({ value: Number(s.value) || 0, label: loc(s.label) }))
+      : dp.stats,
+    photos: Array.isArray(rawPalmares.photos)
+      ? rawPalmares.photos.filter((p: any) => str(p?.src)).map((p: any) => ({ src: str(p.src), alt: loc(p.alt) }))
+      : dp.photos,
+  };
+
   const rawAbout: Partial<AboutContent> = raw.about ?? {};
   const aboutImages = Array.isArray(rawAbout.images) ? rawAbout.images.filter((src) => typeof src === 'string' && src) : [];
   const about: AboutContent = {
@@ -1573,7 +1635,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     })),
   };
 
-  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, palmares, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

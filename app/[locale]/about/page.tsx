@@ -11,12 +11,12 @@ export const revalidate = 300;
 
 const METADATA_BY_LOCALE: Record<string, Metadata> = {
   en: {
-    title: 'About us | BrainTrain',
-    description: 'Founded in Sousse in October 2023, BrainTrain is a multidisciplinary academy for ages 4 to 18 where curiosity becomes skill, from real projects to international competitions.',
+    title: 'About us | Braintrain Academy',
+    description: 'Founded in Sousse in October 2023, Braintrain Academy is a multidisciplinary academy for ages 4 to 18 where curiosity becomes skill, from real projects to international competitions.',
   },
   fr: {
-    title: 'À propos | BrainTrain',
-    description: 'Créée à Sousse en octobre 2023, BrainTrain est une académie pluridisciplinaire pour les 4 à 18 ans où la curiosité devient compétence, des projets concrets aux compétitions internationales.',
+    title: 'À propos | Braintrain Academy',
+    description: 'Créée à Sousse en octobre 2023, Braintrain Academy est une académie pluridisciplinaire pour les 4 à 18 ans où la curiosité devient compétence, des projets concrets aux compétitions internationales.',
   },
 };
 

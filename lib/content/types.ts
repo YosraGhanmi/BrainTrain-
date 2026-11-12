@@ -130,6 +130,62 @@ export type ClassFormat = {
 
 export type SocialLink = { label: string; href: string };
 
+// The Palmarès page (/palmares). Lists with an empty title are dropped on
+// save; a competition only shows once it has at least one award line.
+export type PalmaresCompetition = {
+  title: LocalizedString;
+  intro: LocalizedString;
+  // One line each, "1re place – Prix". A line without " – " is a note
+  // (e.g. a qualification) and shows without a medal.
+  awards: LocalizedString[];
+  image: string;
+  imageAlt: LocalizedString;
+};
+
+export type PalmaresVideo = {
+  title: LocalizedString;
+  // Optional short highlight, e.g. "475 points sur 545"
+  highlight: LocalizedString;
+  description: LocalizedString;
+  url: string;
+  image: string;
+};
+
+// badge: the coloured label on the picture ("Interview"). image: shown at
+// the top of the card. logo: the image is a logo, shown whole on white
+// instead of filling the space
+export type PalmaresMediaItem = {
+  name: LocalizedString;
+  badge: LocalizedString;
+  description: LocalizedString;
+  url: string;
+  image: string;
+  logo: boolean;
+};
+
+export type PalmaresPhoto = { src: string; alt: LocalizedString };
+
+export type PalmaresContent = {
+  seoTitle: LocalizedString;
+  seoDescription: LocalizedString;
+  heading: LocalizedString;
+  intro: LocalizedString;
+  // Beside the competitions timeline. awardsHeading: words in *stars* show
+  // in colour
+  awardsEyebrow: LocalizedString;
+  awardsHeading: LocalizedString;
+  awardsIntro: LocalizedString;
+  competitions: PalmaresCompetition[];
+  videosHeading: LocalizedString;
+  videos: PalmaresVideo[];
+  mediaHeading: LocalizedString;
+  mediaIntro: LocalizedString;
+  media: PalmaresMediaItem[];
+  statsHeading: LocalizedString;
+  stats: { value: number; label: LocalizedString }[];
+  photos: PalmaresPhoto[];
+};
+
 // Admin-posted announcements shown on the parent-portal dashboard — plain
 // text (not localized) since the portal itself isn't localized elsewhere.
 // targetAgeGroups / targetCourses: empty array = no filter on that dimension
@@ -237,6 +293,7 @@ export type SiteContent = {
   contact: ContactContent;
   faq: FaqContent;
   socials: SocialLink[];
+  palmares: PalmaresContent;
   courses: CourseEntry[];
   ageGroups: AgeGroupEntry[];
   news: NewsPost[];

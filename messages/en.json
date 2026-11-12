@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "about": "About",
+    "palmares": "Awards",
     "courses": "Courses",
     "contact": "Contact",
     "login": "Log in"
@@ -71,7 +72,14 @@
   },
   "achievements": {
     "heading": "Could this be <hl>your child</hl>?",
-    "body": "Braintrain Academy is more than a school. Here your child learns to <b>think like an entrepreneur</b>: sharing bold ideas, opening up to the world and representing Tunisia at <b>international competitions</b>. Our students come home with trophies, and with the confidence of <hl>tomorrow's leaders</hl>."
+    "body": "Braintrain Academy is more than a school. Here your child learns to <b>think like an entrepreneur</b>: sharing bold ideas, opening up to the world and representing Tunisia at <b>international competitions</b>. Our students come home with trophies, and with the confidence of <hl>tomorrow's leaders</hl>.",
+    "palmaresLink": "See all our awards"
+  },
+  "palmares": {
+    "eyebrow": "Awards",
+    "watchVideo": "Watch the video",
+    "viewPost": "View the post",
+    "cta": "Discover our courses"
   },
   "contact": {
     "whatsapp": "Message us on WhatsApp",

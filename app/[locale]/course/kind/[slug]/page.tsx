@@ -21,9 +21,9 @@ export function generateStaticParams() {
 export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
   const params = await props.params;
   const kind = await getCourseKind(params.slug, params.locale);
-  if (!kind) return { title: 'Course | BrainTrain' };
+  if (!kind) return { title: 'Course | Braintrain Academy' };
 
-  const title = `${kind.title} | BrainTrain`;
+  const title = `${kind.title} | Braintrain Academy`;
   const path = `/course/kind/${params.slug}`;
   const url = absoluteUrl(params.locale, path);
 

@@ -45,9 +45,9 @@ export function generateStaticParams() {
 export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
   const params = await props.params;
   const group = await getAgeGroup(params.slug, params.locale);
-  if (!group) return { title: 'Courses | BrainTrain' };
+  if (!group) return { title: params.locale === 'fr' ? 'Cours | Braintrain Academy' : 'Courses | Braintrain Academy' };
 
-  const title = `${group.label} Courses | BrainTrain`;
+  const title = params.locale === 'fr' ? `Cours ${group.label} | Braintrain Academy` : `${group.label} Courses | Braintrain Academy`;
   const path = `/courses/${params.slug}`;
   const url = absoluteUrl(params.locale, path);
 

@@ -13,6 +13,7 @@ import {
   Mail,
   Share2,
   Image as ImageIcon,
+  Trophy,
   Milestone,
   Settings2,
   Inbox,
@@ -52,6 +53,7 @@ const customizationItems = [
   { label: 'FAQ', href: '/admin/faq', icon: CircleHelp },
   { label: 'Social media links', href: '/admin/socials', icon: Share2 },
   { label: 'Achievements gallery', href: '/admin/achievements', icon: ImageIcon },
+  { label: 'Palmarès page', href: '/admin/palmares', icon: Trophy },
   { label: 'Timeline', href: '/admin/timeline', icon: Milestone },
 ];
 

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <!-- Interview illustration for the Palmarès "in the media" card: a studio
+       microphone and a camera under a spotlight, in the site's navy and gold -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16265e"/>
+      <stop offset="1" stop-color="#0b1a3a"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="0.5" cy="0.15" r="0.75">
+      <stop offset="0" stop-color="#ffe58a" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffe58a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8e97a6"/>
+      <stop offset="0.45" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#6b7486"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b8860b"/>
+      <stop offset="0.5" stop-color="#ffe08a"/>
+      <stop offset="1" stop-color="#c98a00"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <path d="M250 0 L390 0 L520 360 L120 360 Z" fill="url(#spot)"/>
+  <g fill="#ffffff" opacity="0.35">
+    <circle cx="70" cy="60" r="2"/><circle cx="560" cy="44" r="2.5"/><circle cx="600" cy="150" r="1.8"/>
+    <circle cx="40" cy="200" r="1.6"/><circle cx="470" cy="90" r="1.6"/>
+  </g>
+
+  <!-- Sound waves -->
+  <g fill="none" stroke="#7b91f4" stroke-linecap="round" stroke-width="7">
+    <path d="M232 110 A70 70 0 0 0 232 210" opacity="0.9"/>
+    <path d="M204 86 A100 100 0 0 0 204 234" opacity="0.55"/>
+    <path d="M408 110 A70 70 0 0 1 408 210" opacity="0.9"/>
+    <path d="M436 86 A100 100 0 0 1 436 234" opacity="0.55"/>
+  </g>
+
+  <!-- Studio microphone -->
+  <rect x="300" y="250" width="40" height="70" fill="url(#metal)"/>
+  <rect x="250" y="314" width="140" height="16" rx="8" fill="url(#metal)"/>
+  <path d="M272 176 C272 236 368 236 368 176" fill="none" stroke="url(#gold)" stroke-width="10" stroke-linecap="round"/>
+  <rect x="314" y="226" width="12" height="28" fill="url(#gold)"/>
+  <rect x="280" y="70" width="80" height="150" rx="40" fill="url(#metal)"/>
+  <g stroke="#4b5566" stroke-width="3" opacity="0.55">
+    <line x1="290" y1="100" x2="350" y2="100"/><line x1="286" y1="116" x2="354" y2="116"/>
+    <line x1="284" y1="132" x2="356" y2="132"/><line x1="284" y1="148" x2="356" y2="148"/>
+    <line x1="286" y1="164" x2="354" y2="164"/>
+  </g>
+  <rect x="280" y="176" width="80" height="12" fill="#ef4b4b"/>
+  <path d="M296 80 C300 76 306 74 312 74" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Camera -->
+  <g transform="translate(470 196) rotate(-8)">
+    <rect x="0" y="0" width="110" height="70" rx="12" fill="#2f4fd6"/>
+    <rect x="0" y="0" width="110" height="18" rx="9" fill="#4a68f0"/>
+    <path d="M110 18 L150 0 L150 70 L110 52 Z" fill="#1f3bb3"/>
+    <circle cx="40" cy="42" r="20" fill="#0b1a3a"/>
+    <circle cx="40" cy="42" r="11" fill="#7b91f4"/>
+    <circle cx="35" cy="37" r="4" fill="#ffffff" opacity="0.8"/>
+    <circle cx="92" cy="30" r="5" fill="#ef4b4b"/>
+  </g>
+  <g stroke="#2f4fd6" stroke-width="6" stroke-linecap="round">
+    <line x1="528" y1="268" x2="508" y2="340"/><line x1="528" y1="268" x2="548" y2="340"/><line x1="528" y1="268" x2="528" y2="342"/>
+  </g>
+
+  <!-- On air sign, bottom left: the card's label covers the top left -->
+  <g transform="translate(56 262)">
+    <rect width="140" height="44" rx="22" fill="#ef4b4b"/>
+    <circle cx="24" cy="22" r="7" fill="#ffffff"/>
+    <text x="42" y="29" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" letter-spacing="2" fill="#ffffff">ON AIR</text>
+  </g>
+</svg>

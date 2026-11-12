@@ -23,7 +23,7 @@ export default async function AdminProtectedLayout({ children }: { children: Rea
   const sidebar = (
     <>
       <div className="relative h-10 w-full px-2">
-        <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill className="object-contain object-left" />
+        <Image src="/ID BRAINTRAIN.png" alt="Braintrain Academy logo" fill className="object-contain object-left" />
       </div>
 
       <SidebarNav

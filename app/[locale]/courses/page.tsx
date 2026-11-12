@@ -11,12 +11,12 @@ export const revalidate = 300;
 
 const METADATA_BY_LOCALE: Record<string, Metadata> = {
   en: {
-    title: 'Courses by Age Group | BrainTrain',
-    description: 'Explore BrainTrain courses grouped by age, from 4 to 18 years old.',
+    title: 'Courses by Age Group | Braintrain Academy',
+    description: 'Explore Braintrain Academy courses grouped by age, from 4 to 18 years old.',
   },
   fr: {
-    title: 'Cours par tranche d\'âge | BrainTrain',
-    description: 'Découvrez les cours BrainTrain regroupés par âge, de 4 à 18 ans.',
+    title: 'Cours par tranche d\'âge | Braintrain Academy',
+    description: 'Découvrez les cours Braintrain Academy regroupés par âge, de 4 à 18 ans.',
   },
 };
 

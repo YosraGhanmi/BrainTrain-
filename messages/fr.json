@@ -2,6 +2,7 @@
   "nav": {
     "home": "Accueil",
     "about": "À propos",
+    "palmares": "Palmarès",
     "courses": "Cours",
     "contact": "Contact",
     "login": "Connexion"
@@ -71,7 +72,14 @@
   },
   "achievements": {
     "heading": "Et si c'était <hl>votre enfant</hl> ?",
-    "body": "Braintrain Academy, ce n'est pas qu'une école. Ici, votre enfant apprend à <b>penser en entrepreneur</b> : il ose partager ses idées, s'ouvre au monde et défend les couleurs de la Tunisie dans des <b>compétitions internationales</b>. Nos élèves en reviennent avec des trophées, et avec l'assurance des <hl>leaders de demain</hl>."
+    "body": "Braintrain Academy, ce n'est pas qu'une école. Ici, votre enfant apprend à <b>penser en entrepreneur</b> : il ose partager ses idées, s'ouvre au monde et défend les couleurs de la Tunisie dans des <b>compétitions internationales</b>. Nos élèves en reviennent avec des trophées, et avec l'assurance des <hl>leaders de demain</hl>.",
+    "palmaresLink": "Voir tout notre palmarès"
+  },
+  "palmares": {
+    "eyebrow": "Palmarès",
+    "watchVideo": "Voir la vidéo",
+    "viewPost": "Voir la publication",
+    "cta": "Découvrir nos cours"
   },
   "contact": {
     "whatsapp": "Écrire sur WhatsApp",

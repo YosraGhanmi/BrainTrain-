@@ -18,8 +18,8 @@ import type { AppLocale } from '@/i18n/routing';
 const CARD_STYLE: Record<ProgramKey, { accent: string; deep: string; href: string }> = {
   yearRound: { accent: '#7b91f4', deep: '#283880', href: '/courses' },
   summer: { accent: '#ff8c42', deep: '#d9560f', href: '/preinscription?program=summer' },
-  competitions: { accent: '#ef4b4b', deep: '#c83030', href: '/#stats' },
-  events: { accent: '#2ec4b6', deep: '#0f7f74', href: '/#timeline' },
+  competitions: { accent: '#ef4b4b', deep: '#c83030', href: '/palmares' },
+  events: { accent: '#2ec4b6', deep: '#0f7f74', href: '/palmares' },
 };
 
 gsap.registerPlugin(ScrollTrigger);

@@ -19,7 +19,16 @@ import {
 import { listDbCourseSessionsByCourse, updateDbCourseSession } from '@/lib/db/sessions';
 import { SCHOOL_YEAR_PLAN_TYPES, SUMMER_PLAN_TYPES, summerTerm } from '@/lib/content/summer';
 import { DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
-import { PROGRAM_KEYS, type TimelineEntry, type LocalizedString } from '@/lib/content/types';
+import {
+  PROGRAM_KEYS,
+  type TimelineEntry,
+  type LocalizedString,
+  type PalmaresCompetition,
+  type PalmaresContent,
+  type PalmaresMediaItem,
+  type PalmaresPhoto,
+  type PalmaresVideo,
+} from '@/lib/content/types';
 
 function localizedField(formData: FormData, name: string): LocalizedString {
   return {
@@ -190,6 +199,122 @@ export async function updateContact(formData: FormData): Promise<void> {
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/contact?saved=1');
+}
+
+// ---------------------------------------------------------------------------
+// Palmarès page
+// ---------------------------------------------------------------------------
+
+// The form numbers each list's rows (c0_, c1_, ... for competitions) and
+// always adds one empty row to fill in. A row left without a title is dropped.
+export async function updatePalmares(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const loc = (name: string) => localizedField(formData, name);
+  const count = (name: string) => Math.max(0, Math.min(100, Number(formData.get(name)) || 0));
+  const hasText = (value: LocalizedString) => Boolean(value.en || value.fr);
+
+  // A newly picked file wins, then the "remove" box, then the current image
+  async function image(prefix: string): Promise<string> {
+    const file = formData.get(`${prefix}_image`) as File | null;
+    if (file && file.size > 0) return saveUploadedImage(file, 'ach');
+    if (formData.get(`${prefix}_imageRemove`) === 'on') return '';
+    return field(`${prefix}_imageExisting`);
+  }
+
+  // Two textareas, one line each, paired by line number
+  function lines(name: string): LocalizedString[] {
+    const split = (lang: 'en' | 'fr') =>
+      field(`${name}_${lang}`)
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    const en = split('en');
+    const fr = split('fr');
+    return Array.from({ length: Math.max(en.length, fr.length) }, (_, i) => ({ en: en[i] ?? fr[i], fr: fr[i] ?? en[i] }));
+  }
+
+  const competitions: PalmaresCompetition[] = [];
+  for (let i = 0; i < count('competitionCount'); i++) {
+    const title = loc(`c${i}_title`);
+    if (!hasText(title)) continue;
+    competitions.push({
+      title,
+      intro: loc(`c${i}_intro`),
+      awards: lines(`c${i}_awards`),
+      image: await image(`c${i}`),
+      imageAlt: loc(`c${i}_imageAlt`),
+    });
+  }
+
+  const videos: PalmaresVideo[] = [];
+  for (let i = 0; i < count('videoCount'); i++) {
+    const title = loc(`v${i}_title`);
+    if (!hasText(title)) continue;
+    videos.push({
+      title,
+      highlight: loc(`v${i}_highlight`),
+      description: loc(`v${i}_description`),
+      url: field(`v${i}_url`),
+      image: await image(`v${i}`),
+    });
+  }
+
+  const media: PalmaresMediaItem[] = [];
+  for (let i = 0; i < count('mediaCount'); i++) {
+    const name = loc(`m${i}_name`);
+    if (!hasText(name)) continue;
+    media.push({
+      name,
+      badge: loc(`m${i}_badge`),
+      description: loc(`m${i}_description`),
+      url: field(`m${i}_url`),
+      image: await image(`m${i}`),
+      logo: formData.get(`m${i}_logo`) === 'on',
+    });
+  }
+
+  const stats: PalmaresContent['stats'] = [];
+  for (let i = 0; i < count('statCount'); i++) {
+    const label = loc(`s${i}_label`);
+    if (!hasText(label)) continue;
+    stats.push({ value: Math.max(0, Math.round(Number(formData.get(`s${i}_value`)) || 0)), label });
+  }
+
+  const photos: PalmaresPhoto[] = [];
+  for (let i = 0; i < count('photoCount'); i++) {
+    const src = field(`p${i}_src`);
+    if (!src || formData.get(`p${i}_remove`) === 'on') continue;
+    photos.push({ src, alt: loc(`p${i}_alt`) });
+  }
+  for (const file of formData.getAll('newPhotos')) {
+    if (file instanceof File && file.size > 0) {
+      photos.push({ src: await saveUploadedImage(file, 'ach'), alt: { en: '', fr: '' } });
+    }
+  }
+
+  const content = await readContent();
+  content.palmares = {
+    seoTitle: loc('seoTitle'),
+    seoDescription: loc('seoDescription'),
+    heading: loc('heading'),
+    intro: loc('intro'),
+    awardsEyebrow: loc('awardsEyebrow'),
+    awardsHeading: loc('awardsHeading'),
+    awardsIntro: loc('awardsIntro'),
+    competitions,
+    videosHeading: loc('videosHeading'),
+    videos,
+    mediaHeading: loc('mediaHeading'),
+    mediaIntro: loc('mediaIntro'),
+    media,
+    statsHeading: loc('statsHeading'),
+    stats,
+    photos,
+  };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/palmares?saved=1');
 }
 
 // ---------------------------------------------------------------------------

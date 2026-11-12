@@ -27,6 +27,7 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
     { label: t('about'), href: '/about', active: pathname === '/about' },
     // Also the age-group and single course pages under it
     { label: t('courses'), href: '/courses', active: pathname.startsWith('/courses') || pathname.startsWith('/course/') },
+    { label: t('palmares'), href: '/palmares', active: pathname === '/palmares' },
     { label: t('contact'), href: '/#contact', active: onHome && atContact },
   ];
 
@@ -51,7 +52,7 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
       >
         <Link className="flex shrink-0 items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
           <span className="relative h-10 w-28 overflow-hidden">
-            <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" fill sizes="112px" className="object-contain object-left opacity-90" />
+            <Image src="/ID BRAINTRAIN.png" alt="Logo Braintrain Academy" fill sizes="112px" className="object-contain object-left opacity-90" />
           </span>
         </Link>
 

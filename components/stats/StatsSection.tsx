@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ArrowRight, Trophy } from 'lucide-react';
 import RoundCarousel from '@/components/carousel/RoundCarousel';
+import { Link } from '@/i18n/navigation';
 
 function useResponsiveCarouselSize() {
   const [size, setSize] = useState(520);
@@ -47,6 +49,14 @@ export default function StatsSection({ achievementsImages }: { achievementsImage
               hl: (chunks) => <span className="font-semibold text-[#ef4b4b]">{chunks}</span>,
             })}
           </p>
+          <Link
+            href="/palmares"
+            className="group inline-flex items-center gap-2 rounded-full bg-[#0b1a3a] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgba(11,26,58,0.6)] transition hover:bg-accent"
+          >
+            <Trophy className="h-4 w-4 text-[#f5c542]" aria-hidden="true" />
+            {t('palmaresLink')}
+            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" />
+          </Link>
         </div>
       </div>
 

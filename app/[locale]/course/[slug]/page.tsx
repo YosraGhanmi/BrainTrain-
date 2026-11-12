@@ -36,9 +36,9 @@ const CHIP_POSITIONS = ['-right-4 top-[2%]', '-left-8 top-[58%]', '-right-4 bott
 export async function generateMetadata(props: { params: Promise<{ slug: string; locale: AppLocale }> }): Promise<Metadata> {
   const params = await props.params;
   const course = await getCourse(params.slug, params.locale);
-  if (!course) return { title: 'Course | BrainTrain' };
+  if (!course) return { title: `Course | ${SITE_NAME}` };
 
-  const title = course.seoTitle || `${course.title} | BrainTrain`;
+  const title = course.seoTitle || `${course.title} | ${SITE_NAME}`;
   const description = course.seoDescription || course.description;
   const path = `/course/${params.slug}`;
   const url = absoluteUrl(params.locale, path);

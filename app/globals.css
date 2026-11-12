@@ -268,3 +268,67 @@ section {
     animation: none;
   }
 }
+
+/* Palmarès page lighting. Visitors who prefer reduced motion get none of
+   these (motion-reduce: classes in components/palmares/PalmaresView.tsx) */
+
+/* Stage lights swinging from the top of the hero. Each beam is centred on
+   its lamp with translateX(-50%), kept here since the animation replaces the
+   element's own transform */
+@keyframes palmares-beam-left {
+  0%, 100% { transform: translateX(-50%) rotate(-30deg); opacity: 0.75; }
+  50% { transform: translateX(-50%) rotate(-6deg); opacity: 1; }
+}
+
+@keyframes palmares-beam-right {
+  0%, 100% { transform: translateX(-50%) rotate(30deg); opacity: 0.75; }
+  50% { transform: translateX(-50%) rotate(6deg); opacity: 1; }
+}
+
+/* A glow slowly swelling and settling */
+@keyframes palmares-breathe {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+}
+
+/* Same, for glows that aren't centred with a translate */
+@keyframes palmares-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes palmares-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.4); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+
+/* Gold light travelling across the title */
+@keyframes palmares-shimmer {
+  0% { background-position: 150% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* The awards trophy: light across the cup, a spark round its orbit ring */
+@keyframes palmares-cup-shine {
+  0% { transform: translateX(0) skewX(-18deg); }
+  45%, 100% { transform: translateX(220px) skewX(-18deg); }
+}
+
+@keyframes palmares-orbit {
+  from { stroke-dashoffset: 0; }
+  /* The ring's length (the dash + gap in AwardsArt.tsx), for a seamless loop */
+  to { stroke-dashoffset: -751; }
+}
+
+/* The spark running along the gold wave above the footer. The path is
+   normalised to a length of 1000 (pathLength in PalmaresView.tsx). */
+@keyframes palmares-wave-spark {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* A glint crossing a medal or button, then resting */
+@keyframes palmares-glint {
+  0% { left: -100%; }
+  35%, 100% { left: 160%; }
+}

@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
 const CARDS: Record<ProgramKey, { name: string; button: string }> = {
   yearRound: { name: 'Year-round programme', button: 'Its link opens the courses page.' },
   summer: { name: 'Summer Academy', button: 'Its link opens the preinscription form with only the summer courses (while the summer school is open).' },
-  competitions: { name: 'International competitions', button: 'Its link scrolls down to the achievements gallery.' },
-  events: { name: 'Our events', button: 'Its link scrolls down to the timeline.' },
+  competitions: { name: 'International competitions', button: 'Its link opens the Palmarès page.' },
+  events: { name: 'Our events', button: 'Its link opens the Palmarès page.' },
 };
 
 // In the order they appear on the card. Optional ones are hidden on the site

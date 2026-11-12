@@ -198,7 +198,7 @@ export default function MilestonesSection({ milestones, intro }: { milestones: T
                     >
                       {milestone.logo ? (
                         <span className="absolute -top-5 left-6 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-ink/10 bg-white shadow-md">
-                          <Image src="/ID BRAINTRAIN.png" alt="BrainTrain logo" width={28} height={28} className="object-contain" />
+                          <Image src="/ID BRAINTRAIN.png" alt="Logo Braintrain Academy" width={28} height={28} className="object-contain" />
                         </span>
                       ) : null}
 

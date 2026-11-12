@@ -26,11 +26,11 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(props: { params: Promise<{ locale: AppLocale }> }): Promise<Metadata> {
   const params = await props.params;
-  const title = params.locale === 'fr' ? 'Preinscription | BrainTrain' : 'Pre-registration | BrainTrain';
+  const title = params.locale === 'fr' ? 'Préinscription | Braintrain Academy' : 'Pre-registration | Braintrain Academy';
   const description =
     params.locale === 'fr'
-      ? "Remplissez le formulaire de preinscription BrainTrain pour votre enfant."
-      : 'Fill out the BrainTrain pre-registration form for your child.';
+      ? "Remplissez le formulaire de préinscription Braintrain Academy pour votre enfant."
+      : 'Fill out the Braintrain Academy pre-registration form for your child.';
   const url = absoluteUrl(params.locale, '/preinscription');
   return {
     title,
