@@ -4,10 +4,20 @@ export type StatEntry = { value: number; label: LocalizedString };
 
 export type ContactDetail = { value: string; href: string };
 
+export type PostalAddress = { street: string; city: string; postalCode: string; country: string };
+
+// "HH:MM", 24-hour
+export type DayHours = { opens: string; closes: string };
+
 export type ContactContent = {
   email: ContactDetail;
   phone: ContactDetail;
   location: ContactDetail;
+  // The address split into parts for Google's structured data (the shown
+  // address is location.value). country: two-letter code, e.g. "TN"
+  address: PostalAddress;
+  // One entry per weekday, Monday first. Empty opens/closes = closed that day
+  hours: DayHours[];
   mapsEmbedSrc: string;
   // The number the "Écrire sur WhatsApp" button opens, as typed (spaces and
   // a leading + are fine)

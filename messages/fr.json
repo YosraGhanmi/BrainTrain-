@@ -13,7 +13,7 @@
     "scroll": "Défiler"
   },
   "method": {
-    "cta": "Rejoindre BrainTrain Academy"
+    "cta": "Rejoindre Braintrain Academy"
   },
   "about": {
     "gallery": "Photos de BrainTrain. Cliquez sur la photo ou utilisez les flèches du clavier pour en changer."
@@ -71,12 +71,14 @@
   },
   "achievements": {
     "heading": "Et si c'était <hl>votre enfant</hl> ?",
-    "body": "BrainTrain, ce n'est pas qu'une école. Ici, votre enfant apprend à <b>penser en entrepreneur</b> : il ose partager ses idées, s'ouvre au monde et défend les couleurs de la Tunisie dans des <b>compétitions internationales</b>. Nos élèves en reviennent avec des trophées, et avec l'assurance des <hl>leaders de demain</hl>."
+    "body": "Braintrain Academy, ce n'est pas qu'une école. Ici, votre enfant apprend à <b>penser en entrepreneur</b> : il ose partager ses idées, s'ouvre au monde et défend les couleurs de la Tunisie dans des <b>compétitions internationales</b>. Nos élèves en reviennent avec des trophées, et avec l'assurance des <hl>leaders de demain</hl>."
   },
   "contact": {
     "whatsapp": "Écrire sur WhatsApp",
     "call": "Appeler le {phone}",
-    "mapTitle": "Plan d'accès à BrainTrain Academy",
+    "mapTitle": "Plan d'accès à Braintrain Academy",
+    "hoursTitle": "Horaires",
+    "closed": "fermé",
     "openMap": "Ouvrir dans Google Maps",
     "email": "E-mail",
     "formTitle": "Envoyez-nous un message",
@@ -104,7 +106,9 @@
     "parentPortal": "Espace parent",
     "whatsapp": "Écrire sur WhatsApp",
     "followUs": "Suivez-nous",
-    "rights": "Tous droits réservés."
+    "rights": "Tous droits réservés.",
+    "hoursTitle": "Horaires",
+    "closed": "fermé"
   },
   "languageSwitcher": {
     "en": "EN",

@@ -1,10 +1,11 @@
 import { getLocale, getTranslations } from 'next-intl/server';
-import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
+import { Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import SocialIcon from '@/components/social/SocialIcon';
 import TextMorph from '@/components/text/TextMorph';
 import { readContent } from '@/lib/content/store';
 import { whatsappHref } from '@/lib/contact/whatsapp';
+import { formatOpeningHours } from '@/lib/content/hours';
 import type { AppLocale } from '@/i18n/routing';
 import type { LocalizedString } from '@/lib/content/types';
 
@@ -46,6 +47,7 @@ export default async function Footer() {
   const text = (value: LocalizedString) => value[locale] || value.en;
   const { contact, socials, ageGroups } = content;
   const whatsapp = whatsappHref(contact.whatsapp);
+  const openingHours = formatOpeningHours(contact.hours, locale, t('closed'));
 
   const quickLinks = [
     { label: nav('home'), href: '/' },
@@ -86,7 +88,7 @@ export default async function Footer() {
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr] lg:gap-10">
           <div>
             {/* The same "Train" / "Brain" morph as the dark portal sidebar */}
-            <Link href="/" aria-label="BrainTrain" className="block h-12 w-40">
+            <Link href="/" aria-label="Braintrain Academy" className="block h-12 w-40">
               <TextMorph
                 words="Train,Brain"
                 color="#ffffff"
@@ -177,12 +179,29 @@ export default async function Footer() {
                 </li>
               ))}
             </ul>
+
+            {openingHours.length > 0 ? (
+              <div className="mt-5 flex items-start gap-3 text-sm">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0" style={{ color: RED }} strokeWidth={1.75} aria-hidden="true" />
+                <div>
+                  <h3 className="font-semibold text-white/85">{t('hoursTitle')}</h3>
+                  <dl className="mt-1.5 space-y-1 text-white/60">
+                    {openingHours.map(({ days, time }) => (
+                      <div key={days}>
+                        <dt>{days}</dt>
+                        <dd className="font-medium text-white/80">{time}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
 
         <div className="mt-14 border-t border-white/10 pt-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
-            &copy; {new Date().getFullYear()} BrainTrain Academy. {t('rights')}
+            &copy; {new Date().getFullYear()} Braintrain Academy. {t('rights')}
           </p>
         </div>
       </div>

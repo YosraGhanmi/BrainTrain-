@@ -1,7 +1,7 @@
 import { readContent } from '@/lib/content/store';
 import { updateContact } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
-import { Mail, Phone, MapPin, Map, Type, PanelBottom } from 'lucide-react';
+import { Mail, Phone, MapPin, Map, Type, PanelBottom, Search, Clock } from 'lucide-react';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { LucideIcon } from 'lucide-react';
 
@@ -23,6 +23,23 @@ function Field({ label, name, defaultValue, rows }: { label: string; name: strin
     </div>
   );
 }
+
+function TimeField({ label, name, defaultValue }: { label: string; name: string; defaultValue: string }) {
+  return (
+    <label className="block space-y-1">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-stone">{label}</span>
+      <input
+        type="time"
+        name={name}
+        defaultValue={defaultValue}
+        className="w-full rounded-lg border border-accent/15 bg-white px-2 py-1.5 text-sm text-ink outline-none focus:border-accent/40"
+      />
+    </label>
+  );
+}
+
+// Same order as contact.hours
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const LANGS = [
   { suffix: 'En', locale: 'en', language: 'English' },
@@ -70,6 +87,36 @@ export default async function AdminContactPage() {
             <Field label="Maps link" name="location_href" defaultValue={contact.location.href} />
           </Card>
         </div>
+
+        <Card icon={Search} title="Address for Google">
+          <p className="text-sm text-stone">
+            The same address split into parts, for Google&apos;s business details. Not shown on the site.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Street" name="address_street" defaultValue={contact.address.street} />
+            <Field label="City" name="address_city" defaultValue={contact.address.city} />
+            <Field label="Postal code" name="address_postalCode" defaultValue={contact.address.postalCode} />
+            <Field label="Country code (TN)" name="address_country" defaultValue={contact.address.country} />
+          </div>
+        </Card>
+
+        <Card icon={Clock} title="Opening hours">
+          <p className="text-sm text-stone">
+            Shown in the contact section, the footer and Google&apos;s business details. Leave both times empty for a
+            closed day.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {contact.hours.map((day, i) => (
+              <div key={WEEKDAYS[i]} className="space-y-2 rounded-xl border border-accent/15 bg-white p-3">
+                <p className="text-sm font-semibold text-ink">{WEEKDAYS[i]}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <TimeField label="Opens" name={`hours${i}_opens`} defaultValue={day.opens} />
+                  <TimeField label="Closes" name={`hours${i}_closes`} defaultValue={day.closes} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         <Card icon={Map} title="Map embed">
           <Field label="Maps embed URL" name="mapsEmbedSrc" defaultValue={contact.mapsEmbedSrc} />

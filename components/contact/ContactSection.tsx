@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, MapPin, Phone, CheckCircle2, Loader2, MessageCircle, ArrowUpRight } from 'lucide-react';
+import { Mail, MapPin, Phone, CheckCircle2, Clock, Loader2, MessageCircle, ArrowUpRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ContactContent, LocalizedString } from '@/lib/content/types';
 import type { AppLocale } from '@/i18n/routing';
 import { submitContactMessage } from '@/lib/contact/actions';
 import { whatsappHref } from '@/lib/contact/whatsapp';
+import { formatOpeningHours } from '@/lib/content/hours';
 
 const inputClass =
   'w-full rounded-xl border border-[#0b1a3a]/10 bg-surface px-4 py-3 text-sm text-ink outline-none transition focus:border-[#0b1a3a]/30 focus-visible:ring-2 focus-visible:ring-accent/40';
@@ -20,6 +21,7 @@ export default function ContactSection({ contact }: { contact: ContactContent })
 
   const whatsapp = whatsappHref(contact.whatsapp);
   const highlights = contact.highlights.map(text).filter(Boolean);
+  const openingHours = formatOpeningHours(contact.hours, locale, t('closed'));
   const details = [
     { Icon: MapPin, value: contact.location.value, href: contact.location.href, strong: true },
     { Icon: Phone, value: contact.phone.value, href: contact.phone.href, strong: false },
@@ -77,6 +79,23 @@ export default function ContactSection({ contact }: { contact: ContactContent })
               </li>
             ))}
           </ul>
+
+          {openingHours.length > 0 ? (
+            <div className="mt-6 flex items-start gap-3">
+              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#ff8c42]" strokeWidth={1.75} aria-hidden="true" />
+              <div>
+                <h2 className="text-[0.95rem] font-semibold text-[#0b1a3a]">{t('hoursTitle')}</h2>
+                <dl className="mt-2 space-y-1.5 text-[0.95rem] text-stone">
+                  {openingHours.map(({ days, time }) => (
+                    <div key={days} className="flex flex-wrap gap-x-2">
+                      <dt>{days}{locale === 'fr' ? ' :' : ':'}</dt>
+                      <dd className="font-medium text-[#0b1a3a]/80">{time}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
+          ) : null}
 
           {/* The map takes its own clicks (pan, zoom), so the link to open it
               in Google Maps sits under it rather than around it */}

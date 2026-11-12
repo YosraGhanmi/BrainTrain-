@@ -468,6 +468,17 @@ const DEFAULT_CONTENT: SiteContent = {
       value: 'Rue Gp1, Khzema Ouest, Sousse, Tunisia, 4071',
       href: 'https://www.google.com/maps/place/Braintrain+Academy/@35.8441536,10.6122719,17z/data=!3m1!4b1!4m6!3m5!1s0x12fd8b0074c0577b:0x4e986dd851ffe308!8m2!3d35.8441493!4d10.6148468!16s%2Fg%2F11vzg1d9bv?entry=tts&g_ep=EgoyMDI0MDkxOC4xKgBIAVAD',
     },
+    address: { street: 'Rue Gp1, Khzema Ouest', city: 'Sousse', postalCode: '4071', country: 'TN' },
+    // Monday to Sunday
+    hours: [
+      { opens: '', closes: '' },
+      { opens: '', closes: '' },
+      { opens: '09:00', closes: '18:00' },
+      { opens: '09:00', closes: '17:00' },
+      { opens: '09:00', closes: '18:00' },
+      { opens: '09:00', closes: '18:00' },
+      { opens: '09:00', closes: '17:00' },
+    ],
     mapsEmbedSrc: 'https://www.google.com/maps?q=35.8441493,10.6148468&z=17&output=embed',
     whatsapp: '+216 58 996 112',
     heading: { en: "We're with you", fr: 'On vous accompagne' },
@@ -1501,6 +1512,16 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     ...defaultContact,
     ...rawContact,
     whatsapp: typeof rawContact.whatsapp === 'string' ? rawContact.whatsapp : defaultContact.whatsapp,
+    address: {
+      ...defaultContact.address,
+      ...(rawContact.address && typeof rawContact.address === 'object' ? rawContact.address : {}),
+    },
+    hours: defaultContact.hours.map((fallback, i) => {
+      if (!Array.isArray(rawContact.hours)) return fallback;
+      const day = rawContact.hours[i];
+      const time = (value: unknown) => (typeof value === 'string' && /^\d{2}:\d{2}$/.test(value) ? value : '');
+      return { opens: time(day?.opens), closes: time(day?.closes) };
+    }),
     heading: toLocalized(rawContact.heading, defaultContact.heading),
     headingAccent: toLocalized(rawContact.headingAccent, defaultContact.headingAccent),
     intro: toLocalized(rawContact.intro, defaultContact.intro),

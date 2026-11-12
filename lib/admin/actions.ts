@@ -165,6 +165,18 @@ export async function updateContact(formData: FormData): Promise<void> {
     email: { value: field('email_value'), href: field('email_href') },
     phone: { value: field('phone_value'), href: field('phone_href') },
     location: { value: field('location_value'), href: field('location_href') },
+    address: {
+      street: field('address_street'),
+      city: field('address_city'),
+      postalCode: field('address_postalCode'),
+      country: field('address_country').toUpperCase(),
+    },
+    // Both times needed for a day to count as open
+    hours: content.contact.hours.map((_, i) => {
+      const opens = field(`hours${i}_opens`);
+      const closes = field(`hours${i}_closes`);
+      return opens && closes ? { opens, closes } : { opens: '', closes: '' };
+    }),
     mapsEmbedSrc: field('mapsEmbedSrc'),
     whatsapp: field('whatsapp'),
     heading: localized('heading'),

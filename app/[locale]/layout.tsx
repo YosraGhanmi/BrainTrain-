@@ -8,7 +8,8 @@ import SocialSidebar from '@/components/social/SocialSidebar';
 import AdminShortcut from '@/components/admin/AdminShortcut';
 import { readContent } from '@/lib/content/store';
 import { routing, type AppLocale } from '@/i18n/routing';
-import { SITE_URL, absoluteUrl, localeAlternates } from '@/lib/seo';
+import { SITE_NAME, SITE_URL, absoluteUrl, internationalPhone, localeAlternates } from '@/lib/seo';
+import { openingHoursSpecification } from '@/lib/content/hours';
 import '../globals.css';
 
 // Content is admin-editable at runtime, but ISR + on-demand revalidation
@@ -51,12 +52,12 @@ export function generateStaticParams() {
 
 const METADATA_BY_LOCALE: Record<string, { tagline: string; description: string }> = {
   en: {
-    tagline: 'BrainTrain: Don\'t Just Prepare For The Future. Build It.',
-    description: 'BrainTrain is a Tunisian academy where curious kids become creators: robotics, AI, 3D design and entrepreneurship, built through real projects and international competitions.',
+    tagline: 'Braintrain Academy: Don\'t Just Prepare For The Future. Build It.',
+    description: 'Braintrain Academy is a Tunisian academy where curious kids become creators: robotics, AI, 3D design and entrepreneurship, built through real projects and international competitions.',
   },
   fr: {
-    tagline: 'BrainTrain : ne vous contentez pas de préparer l\'avenir. Construisez-le.',
-    description: 'BrainTrain est une académie tunisienne où des enfants curieux deviennent des créateurs : robotique, IA, design 3D et entrepreneuriat, à travers des projets concrets et des compétitions internationales.',
+    tagline: 'Braintrain Academy : ne vous contentez pas de préparer l\'avenir. Construisez-le.',
+    description: 'Braintrain Academy est une académie tunisienne où des enfants curieux deviennent des créateurs : robotique, IA, design 3D et entrepreneuriat, à travers des projets concrets et des compétitions internationales.',
   },
 };
 
@@ -78,7 +79,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: AppLoc
       title: base.tagline,
       description: base.description,
       url,
-      siteName: 'BrainTrain',
+      siteName: SITE_NAME,
       locale: params.locale,
       type: 'website',
       images: ['/ID BRAINTRAIN.png'],
@@ -111,18 +112,25 @@ export default async function LocaleLayout(
   const messages = await getMessages();
   const { socials, contact } = (await readContent());
 
+  // LocalBusiness as well, since opening hours only apply to a place
   const organizationJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'EducationalOrganization',
-    name: 'BrainTrain',
+    '@type': ['EducationalOrganization', 'LocalBusiness'],
+    '@id': `${SITE_URL}/#organization`,
+    name: SITE_NAME,
     url: SITE_URL,
-    logo: `${SITE_URL}/ID BRAINTRAIN.png`,
+    logo: `${SITE_URL}/ID%20BRAINTRAIN.png`,
+    image: `${SITE_URL}/ID%20BRAINTRAIN.png`,
     email: contact.email.value,
-    telephone: contact.phone.value,
+    telephone: internationalPhone(contact.phone),
     address: {
       '@type': 'PostalAddress',
-      streetAddress: contact.location.value,
+      streetAddress: contact.address.street,
+      addressLocality: contact.address.city,
+      postalCode: contact.address.postalCode,
+      addressCountry: contact.address.country,
     },
+    openingHoursSpecification: openingHoursSpecification(contact.hours),
     sameAs: socials.map((s) => s.href),
   };
 

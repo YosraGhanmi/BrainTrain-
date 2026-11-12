@@ -15,7 +15,7 @@ import { getAgeGroup, getCourse } from '@/lib/coursesData';
 import { getIcon } from '@/lib/content/icons';
 import { formatSummerDates } from '@/lib/content/summer';
 import type { AppLocale } from '@/i18n/routing';
-import { absoluteUrl, localeAlternates } from '@/lib/seo';
+import { SITE_NAME, SITE_URL, absoluteUrl, localeAlternates } from '@/lib/seo';
 
 // Reads ?age= (the age group the visitor came from) on every request
 export const dynamic = 'force-dynamic';
@@ -125,8 +125,9 @@ export default async function CourseDetailPage(
     description: course.description,
     provider: {
       '@type': 'EducationalOrganization',
-      name: 'BrainTrain',
-      sameAs: absoluteUrl(params.locale),
+      '@id': `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      sameAs: SITE_URL,
     },
   };
 

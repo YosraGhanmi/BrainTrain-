@@ -13,7 +13,7 @@
     "scroll": "Scroll"
   },
   "method": {
-    "cta": "Join BrainTrain Academy"
+    "cta": "Join Braintrain Academy"
   },
   "about": {
     "gallery": "BrainTrain photos. Click the photo or use the arrow keys to change it."
@@ -71,12 +71,14 @@
   },
   "achievements": {
     "heading": "Could this be <hl>your child</hl>?",
-    "body": "BrainTrain is more than a school. Here your child learns to <b>think like an entrepreneur</b>: sharing bold ideas, opening up to the world and representing Tunisia at <b>international competitions</b>. Our students come home with trophies, and with the confidence of <hl>tomorrow's leaders</hl>."
+    "body": "Braintrain Academy is more than a school. Here your child learns to <b>think like an entrepreneur</b>: sharing bold ideas, opening up to the world and representing Tunisia at <b>international competitions</b>. Our students come home with trophies, and with the confidence of <hl>tomorrow's leaders</hl>."
   },
   "contact": {
     "whatsapp": "Message us on WhatsApp",
     "call": "Call {phone}",
-    "mapTitle": "Map to BrainTrain Academy",
+    "mapTitle": "Map to Braintrain Academy",
+    "hoursTitle": "Opening hours",
+    "closed": "Closed",
     "openMap": "Open in Google Maps",
     "email": "Email",
     "formTitle": "Send us a message",
@@ -104,7 +106,9 @@
     "parentPortal": "Parent portal",
     "whatsapp": "Message us on WhatsApp",
     "followUs": "Follow us",
-    "rights": "All Rights Reserved."
+    "rights": "All Rights Reserved.",
+    "hoursTitle": "Opening hours",
+    "closed": "Closed"
   },
   "languageSwitcher": {
     "en": "EN",
