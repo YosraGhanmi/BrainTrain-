@@ -548,6 +548,8 @@ export async function upsertCourse(formData: FormData): Promise<void> {
     .map((t) => t.trim())
     .filter(Boolean);
   const summer = String(formData.get('summer') ?? '') === 'on';
+  const seoTitle = localizedField(formData, 'seoTitle');
+  const seoDescription = localizedField(formData, 'seoDescription');
 
   if (!title.en || !ageGroupSlug) redirect('/admin/courses?error=1');
 
@@ -575,6 +577,8 @@ export async function upsertCourse(formData: FormData): Promise<void> {
         outcome,
         skills,
         tools,
+        seoTitle,
+        seoDescription,
         ageGroupSlug,
         color,
         icon,
@@ -602,6 +606,8 @@ export async function upsertCourse(formData: FormData): Promise<void> {
       outcome,
       skills,
       tools,
+      seoTitle,
+      seoDescription,
       price: 0,
       ageGroupSlug,
       color,

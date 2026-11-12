@@ -63,7 +63,17 @@ export default async function Footer() {
   ];
 
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-[#0b1a3a] px-6 pb-8 pt-16 text-white md:px-10 lg:px-16">
+    <footer className="relative overflow-x-clip bg-[#0b1a3a] px-6 pb-8 pt-16 text-white md:px-10 lg:px-16">
+      {/* Wavy top edge: rises out of the footer into the section above. The
+          1px overlap hides the seam between the wave and the footer. */}
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 1440 60"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute bottom-full left-0 h-6 w-full translate-y-px sm:h-10 lg:h-12"
+      >
+        <path d="M0 30 C180 60 360 0 540 30 S900 60 1080 30 S1260 0 1440 30 V60 H0 Z" fill="#0b1a3a" />
+      </svg>
       <div
         className="pointer-events-none absolute inset-0 opacity-30"
         style={{

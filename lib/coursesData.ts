@@ -31,6 +31,8 @@ export type Course = {
   outcome: string;
   skills: string[];
   tools: string[];
+  seoTitle: string;
+  seoDescription: string;
   summer?: boolean;
 };
 
@@ -87,6 +89,8 @@ export async function getCourses(locale: AppLocale): Promise<Course[]> {
     })),
     outcome: c.outcome[locale] || c.outcome.en,
     skills: c.skills.map((s) => s[locale] || s.en).filter(Boolean),
+    seoTitle: c.seoTitle[locale] || c.seoTitle.en,
+    seoDescription: c.seoDescription[locale] || c.seoDescription.en,
     icon: getIcon(c.icon),
     curriculum: c.curriculum?.map((phase) => ({
       title: phase.title[locale] || phase.title.en,

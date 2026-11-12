@@ -7,6 +7,139 @@ import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, Abou
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
 
+// Search engine title and meta description of each course page, by course
+// slug. Editable per course in the admin (Courses > course > Search engines).
+const DEFAULT_SEO: Record<string, { title: LocalizedString; description: LocalizedString }> = {
+  'tech-explorers-4-5': {
+    title: {
+      en: 'Robotics for Kids Aged 4–5 in Sousse | Tech Explorers – Braintrain',
+      fr: 'Robotique pour enfants 4–5 ans à Sousse | Tech Explorers – Braintrain',
+    },
+    description: {
+      en: 'Your 4–5 year old builds mechanisms, guides a small robot (Tiny Bot, Thymio) and writes their first commands. 1.5 hours a week in Khzema, Sousse.',
+      fr: 'Votre enfant de 4–5 ans construit des mécanismes, guide un petit robot (Tiny Bot, Thymio) et écrit ses premières commandes. 1h30/semaine à Khzema, Sousse.',
+    },
+  },
+  'robotique-6-9': {
+    title: {
+      en: 'Robotics Classes for Kids Aged 6–9 in Sousse | Braintrain Academy',
+      fr: 'Cours de robotique pour enfants 6–9 ans à Sousse | Braintrain Academy',
+    },
+    description: {
+      en: 'Your child builds and programs a robot that moves and reacts to its surroundings. Groups of 12 max, 2-hour sessions in Sousse.',
+      fr: 'Votre enfant construit et programme un robot qui se déplace et réagit à son environnement. Groupes de 12 max, séances de 2h à Sousse.',
+    },
+  },
+  'robotique-10-13': {
+    title: {
+      en: 'Robotics Classes for Ages 10–13 in Sousse | Braintrain Academy',
+      fr: 'Cours de robotique 10–13 ans à Sousse | Braintrain Academy',
+    },
+    description: {
+      en: 'Your child designs a robot, wires its sensors and programs it to complete a mission on its own. Preparation for robotics challenges.',
+      fr: 'Votre enfant conçoit un robot, câble ses capteurs et le programme pour réussir une mission en autonomie. Préparation aux défis de robotique.',
+    },
+  },
+  'robotique-14-18': {
+    title: {
+      en: 'Robotics for Teens Aged 14–18 in Sousse | Competitions | Braintrain',
+      fr: 'Robotique pour ados 14–18 ans à Sousse | Compétitions | Braintrain',
+    },
+    description: {
+      en: 'Advanced robots, programming and preparation for national and international competitions (FIRST LEGO League). Classes in Khzema, Sousse.',
+      fr: 'Robots avancés, programmation et préparation aux compétitions nationales et internationales (FIRST LEGO League). Cours à Khzema, Sousse.',
+    },
+  },
+  'programmation-6-9': {
+    title: {
+      en: 'Coding Classes for Kids Aged 6–9 in Sousse | Braintrain Academy',
+      fr: 'Cours de programmation pour enfants 6–9 ans à Sousse | Braintrain',
+    },
+    description: {
+      en: 'Your child learns to code by creating their own animated story and a small game, using loops and conditions. 2-hour sessions in Sousse.',
+      fr: 'Votre enfant apprend à coder en créant sa propre histoire animée et un petit jeu, avec boucles et conditions. Séances de 2h à Sousse.',
+    },
+  },
+  'programmation-10-13': {
+    title: {
+      en: 'Coding for Ages 10–13 in Sousse | Games and Apps | Braintrain',
+      fr: 'Cours de coding 10–13 ans à Sousse | Jeux et applications | Braintrain',
+    },
+    description: {
+      en: 'Your child codes a complete game or app, from the idea to a working version, and learns to find and fix bugs.',
+      fr: "Votre enfant code un jeu ou une application complète, de l'idée à la version qui fonctionne, et apprend à corriger ses erreurs.",
+    },
+  },
+  'python-14-18': {
+    title: {
+      en: 'Python Classes for Teens Aged 14–18 in Sousse | Braintrain Academy',
+      fr: 'Cours de Python pour ados 14–18 ans à Sousse | Braintrain Academy',
+    },
+    description: {
+      en: 'Scripts, small games and useful tools: your teen learns real programming with Python. Groups of 12 max in Khzema, Sousse.',
+      fr: 'Scripts, petits jeux et outils utiles : votre ado apprend la vraie programmation en Python. Groupes de 12 max à Khzema, Sousse.',
+    },
+  },
+  'entrepreneuriat-6-9': {
+    title: {
+      en: 'Entrepreneurship for Kids Aged 6–9 in Sousse | Braintrain Academy',
+      fr: 'Entrepreneuriat pour enfants 6–9 ans à Sousse | Braintrain Academy',
+    },
+    description: {
+      en: 'Your child invents a product, builds a prototype and presents it confidently in front of an audience.',
+      fr: 'Votre enfant invente un produit, fabrique un prototype et le présente avec assurance devant un public.',
+    },
+  },
+  'entrepreneuriat-10-13': {
+    title: {
+      en: 'Entrepreneurship for Ages 10–13 in Sousse | Business Plan & Pitch | Braintrain',
+      fr: 'Entrepreneuriat 10–13 ans à Sousse | Business plan et pitch | Braintrain',
+    },
+    description: {
+      en: 'Your child turns an idea into a mini business plan: customers, price, budget and pitch.',
+      fr: 'Votre enfant transforme une idée en mini business plan : clients, prix, budget et pitch.',
+    },
+  },
+  'entrepreneuriat-14-18': {
+    title: {
+      en: 'Entrepreneurship for Teens Aged 14–18 in Sousse | Startup Project | Braintrain',
+      fr: 'Entrepreneuriat pour ados 14–18 ans à Sousse | Projet startup | Braintrain',
+    },
+    description: {
+      en: 'Your teen runs a startup project from start to finish and pitches it to a jury, just like a real founder.',
+      fr: 'Votre ado mène un projet de startup de A à Z et le présente devant un jury, comme un vrai fondateur.',
+    },
+  },
+  'electronique-10-13': {
+    title: {
+      en: 'Electronics Classes for Kids Aged 10–13 in Sousse | Braintrain',
+      fr: "Cours d'électronique pour enfants 10–13 ans à Sousse | Braintrain",
+    },
+    description: {
+      en: 'Your child reads a simple diagram and safely builds working circuits with LEDs, buttons and sensors.',
+      fr: 'Votre enfant lit un schéma simple et monte de vrais circuits avec LED, boutons et capteurs, en toute sécurité.',
+    },
+  },
+  'impression-design-3d-10-13': {
+    title: {
+      en: '3D Printing & Design for Kids Aged 10–13 in Sousse | Braintrain',
+      fr: 'Impression 3D et design pour enfants 10–13 ans à Sousse | Braintrain',
+    },
+    description: {
+      en: 'From sketch to real object: your child models their own object in 3D and prints it on a 3D printer.',
+      fr: "Du croquis à l'objet réel : votre enfant modélise son objet en 3D et l'imprime sur une imprimante 3D.",
+    },
+  },
+};
+
+function withDefaultSeo(courses: Omit<CourseEntry, 'seoTitle' | 'seoDescription'>[]): CourseEntry[] {
+  return courses.map((c) => ({
+    ...c,
+    seoTitle: DEFAULT_SEO[c.slug]?.title ?? { en: '', fr: '' },
+    seoDescription: DEFAULT_SEO[c.slug]?.description ?? { en: '', fr: '' },
+  }));
+}
+
 const DEFAULT_CONTENT: SiteContent = {
   heroVideo: { src: '/hero/hero.mp4', poster: '/hero/hero-poster.jpg' },
   heroText: {
@@ -359,7 +492,7 @@ const DEFAULT_CONTENT: SiteContent = {
     { label: 'Instagram', href: 'https://www.instagram.com/braintrain.tn/' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/company/braintrainacademy/' },
   ],
-  courses: [
+  courses: withDefaultSeo([
     {
       slug: 'robotique-6-9',
       title: { en: 'Robotics', fr: 'Robotique' },
@@ -1129,7 +1262,7 @@ const DEFAULT_CONTENT: SiteContent = {
         { en: 'Complete a full project', fr: 'Mener un projet complet' },
       ],
     },
-  ],
+  ]),
   ageGroups: [
     {
       slug: '4-5',
@@ -1262,6 +1395,14 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     outcome: toLocalized(c.outcome, { en: '', fr: '' }),
     skills: Array.isArray(c.skills) ? c.skills.map((s: any) => toLocalized(s, { en: '', fr: '' })) : [],
     tools: Array.isArray(c.tools) ? c.tools.map(String).filter(Boolean) : [],
+    // Same as category/summary: courses saved before these existed pick up
+    // the default wording
+    seoTitle: c.seoTitle
+      ? toLocalized(c.seoTitle, { en: '', fr: '' })
+      : (DEFAULT_SEO[c.slug]?.title ?? { en: '', fr: '' }),
+    seoDescription: c.seoDescription
+      ? toLocalized(c.seoDescription, { en: '', fr: '' })
+      : (DEFAULT_SEO[c.slug]?.description ?? { en: '', fr: '' }),
     summer: c.summer === true ? true : undefined,
   }));
 

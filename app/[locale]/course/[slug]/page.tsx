@@ -38,20 +38,21 @@ export async function generateMetadata(props: { params: Promise<{ slug: string; 
   const course = await getCourse(params.slug, params.locale);
   if (!course) return { title: 'Course | BrainTrain' };
 
-  const title = `${course.title} | BrainTrain`;
+  const title = course.seoTitle || `${course.title} | BrainTrain`;
+  const description = course.seoDescription || course.description;
   const path = `/course/${params.slug}`;
   const url = absoluteUrl(params.locale, path);
 
   return {
     title,
-    description: course.description,
+    description,
     alternates: {
       canonical: url,
       languages: localeAlternates(path),
     },
     openGraph: {
       title,
-      description: course.description,
+      description,
       url,
       type: 'website',
       ...(course.image ? { images: [course.image] } : {}),
@@ -59,7 +60,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string; 
     twitter: {
       card: 'summary_large_image',
       title,
-      description: course.description,
+      description,
       ...(course.image ? { images: [course.image] } : {}),
     },
   };

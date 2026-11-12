@@ -280,7 +280,7 @@ export default function MethodSection({ method }: { method: MethodContent }) {
 
         <div className="mt-12 flex justify-center">
           <Link
-            href="/parent-portal/login"
+            href="/preinscription"
             className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[#0b1a3a] px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent"
           >
             {t('cta')}

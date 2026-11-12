@@ -38,6 +38,8 @@ export default async function AdminCoursesPage(props: { searchParams: Promise<{ 
     outcome: { en: '', fr: '' },
     skills: [],
     tools: [],
+    seoTitle: { en: '', fr: '' },
+    seoDescription: { en: '', fr: '' },
   };
 
   const groupedCourses = ageGroups.map((group, i) => ({

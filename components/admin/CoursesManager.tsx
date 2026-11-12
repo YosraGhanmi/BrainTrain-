@@ -351,6 +351,47 @@ function CourseFormFields({
 
       <CoursePageFields course={course} />
 
+      <div className="space-y-4 rounded-xl border border-ink/10 bg-slate-50 p-4 sm:col-span-2">
+        <div>
+          <p className="text-sm font-semibold text-ink">Search engines</p>
+          <p className="mt-1 text-xs text-stone">
+            Title and description Google shows for the course page. Empty uses the course title and description.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Page title (English, about 60 characters)">
+            <input
+              name="seoTitle_en"
+              defaultValue={course.seoTitle.en}
+              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+          <Field label="Page title (French)">
+            <input
+              name="seoTitle_fr"
+              defaultValue={course.seoTitle.fr}
+              className="w-full rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+          <Field label="Meta description (English, about 155 characters)">
+            <textarea
+              name="seoDescription_en"
+              defaultValue={course.seoDescription.en}
+              rows={3}
+              className="w-full resize-none rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+          <Field label="Meta description (French)">
+            <textarea
+              name="seoDescription_fr"
+              defaultValue={course.seoDescription.fr}
+              rows={3}
+              className="w-full resize-none rounded-xl border border-ink/10 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-ink/30"
+            />
+          </Field>
+        </div>
+      </div>
+
       <div className="sm:col-span-2">
         <Field label="Video link (YouTube or Facebook, optional)">
           <input

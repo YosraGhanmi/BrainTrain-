@@ -184,6 +184,8 @@ export async function loadSummerSheet(): Promise<void> {
         outcome: SHEET_OUTCOME,
         skills: SHEET_SKILLS,
         tools: [],
+        seoTitle: { en: '', fr: '' },
+        seoDescription: { en: '', fr: '' },
         summer: true,
       };
       // Saved before its prices and groups: if those fail half-way, the

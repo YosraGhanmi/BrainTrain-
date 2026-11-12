@@ -75,6 +75,10 @@ export type CourseEntry = {
   outcome: LocalizedString;
   skills: LocalizedString[];
   tools: string[];
+  // Search engine <title> and meta description of the course page; empty
+  // falls back to "<title> | BrainTrain" and the description
+  seoTitle: LocalizedString;
+  seoDescription: LocalizedString;
   // Summer school course: only offered while the summer school is open,
   // billed monthly or for the whole season instead of the school-year plans
   summer?: boolean;
