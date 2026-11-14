@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring } from 'framer-motion';
-import { ArrowRight, ArrowUpRight, Landmark, Mic, Newspaper, Plane, Play, Star, Tv } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Landmark, Mic, Newspaper, Play, Star, Tv } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { BrickDecor, Laurel, TrophyPodium } from '@/components/palmares/AwardsArt';
 import PalmaresHero from '@/components/palmares/PalmaresHero';
@@ -100,14 +100,7 @@ function SectionHeading({ children, light = false }: { children: React.ReactNode
   );
 }
 
-function Medal({ rank, place }: { rank: number | null; place: string }) {
-  if (!place) {
-    return (
-      <span className="mx-1 flex size-12 shrink-0 items-center justify-center rounded-full bg-[#e8efff] text-accent shadow-[0_0_0_6px_rgba(61,127,255,0.08)]">
-        <Plane className="size-5" strokeWidth={1.75} aria-hidden="true" />
-      </span>
-    );
-  }
+function Medal({ rank }: { rank: number | null }) {
   const m = (rank && MEDALS[rank]) || OTHER_MEDAL;
   const id = `medal-${rank ?? 0}`;
   return (
@@ -209,26 +202,36 @@ function CompetitionCard({ competition, index }: { competition: PalmaresViewData
           {competition.intro ? <p className="mt-4 px-1 text-stone">{competition.intro}</p> : null}
 
           <ul className="mt-4 space-y-1.5 sm:mt-5">
-              {competition.awards.map((award, i) => (
-                <motion.li
-                  key={`${award.place}-${award.prize}`}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-60px' }}
-                  transition={{ duration: 0.5, delay: 0.15 + i * 0.08, ease: EASE }}
-                  className={`group/award flex items-center gap-4 rounded-2xl px-3 py-2 transition ${award.place ? 'hover:bg-[#fff8e6]' : 'bg-[#f2f6ff] py-2.5'}`}
-                >
-                  <Medal rank={award.rank} place={award.place} />
-                  <span className="min-w-0">
-                    {award.place ? (
+              {competition.awards.map((award, i) =>
+                award.place ? (
+                  <motion.li
+                    key={`${award.place}-${award.prize}`}
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-60px' }}
+                    transition={{ duration: 0.5, delay: 0.15 + i * 0.08, ease: EASE }}
+                    className="group/award flex items-center gap-4 rounded-2xl px-3 py-2 transition hover:bg-[#fff8e6]"
+                  >
+                    <Medal rank={award.rank} />
+                    <span className="min-w-0">
                       <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#b8860b]">{award.place}</span>
-                    ) : null}
-                    <span className={`block text-pretty leading-snug ${award.place ? 'font-semibold text-[#0b1a3a]' : 'font-semibold text-accent'}`}>
-                      {award.prize}
+                      <span className="block text-pretty font-semibold leading-snug text-[#0b1a3a]">{award.prize}</span>
                     </span>
-                  </span>
-                </motion.li>
-              ))}
+                  </motion.li>
+                ) : (
+                  // A note (e.g. a qualification): plain text under the medals
+                  <motion.li
+                    key={award.prize}
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-60px' }}
+                    transition={{ duration: 0.5, delay: 0.15 + i * 0.08, ease: EASE }}
+                    className="mt-3 border-t border-[#0b1a3a]/10 px-3 pt-3 text-sm leading-relaxed text-[#0b1a3a]/70"
+                  >
+                    {award.prize}
+                  </motion.li>
+                )
+              )}
           </ul>
 
           {competition.image && !image.broken ? (
