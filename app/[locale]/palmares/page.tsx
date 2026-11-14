@@ -44,6 +44,9 @@ export default async function PalmaresPage(props: { params: Promise<{ locale: Ap
   const data: PalmaresViewData = {
     heading: text(palmares.heading),
     intro: text(palmares.intro),
+    heroPhotos: palmares.heroPhotos,
+    heroCaptionTitle: text(palmares.heroCaptionTitle),
+    heroCaptionText: text(palmares.heroCaptionText),
     awardsEyebrow: text(palmares.awardsEyebrow),
     awardsHeading: text(palmares.awardsHeading),
     awardsIntro: text(palmares.awardsIntro),
@@ -96,8 +99,8 @@ export default async function PalmaresPage(props: { params: Promise<{ locale: Ap
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      {/* The page opens on the dark hero, like the home page's video */}
-      <Navbar overHero />
+      {/* The page opens on the dark navy hero */}
+      <Navbar overHero lightLogo />
       <main className="flex-1">
         <PalmaresView data={data} />
       </main>

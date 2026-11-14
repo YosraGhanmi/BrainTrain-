@@ -10,7 +10,9 @@ import { Link, usePathname } from '@/i18n/navigation';
 
 // `overHero`: the page opens on a full-screen video, so at the top the pill is
 // a clear frosted glass with light text instead of cutting a white band across it.
-export default function Navbar({ solid = false, overHero = false }: { solid?: boolean; overHero?: boolean }) {
+// `lightLogo`: that hero is dark navy, where the blue logo would disappear, so
+// the white logo is shown until the pill turns white on scroll.
+export default function Navbar({ solid = false, overHero = false, lightLogo = false }: { solid?: boolean; overHero?: boolean; lightLogo?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const shrink = solid || scrolled;
@@ -52,7 +54,13 @@ export default function Navbar({ solid = false, overHero = false }: { solid?: bo
       >
         <Link className="flex shrink-0 items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-ink" href="/">
           <span className="relative h-10 w-28 overflow-hidden">
-            <Image src="/ID BRAINTRAIN.png" alt="Logo Braintrain Academy" fill sizes="112px" className="object-contain object-left opacity-90" />
+            <Image
+              src={onVideo && lightLogo ? '/logo-white.png' : '/ID BRAINTRAIN.png'}
+              alt="Logo Braintrain Academy"
+              fill
+              sizes="112px"
+              className="object-contain object-left opacity-90"
+            />
           </span>
         </Link>
 

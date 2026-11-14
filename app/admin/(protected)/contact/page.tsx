@@ -1,7 +1,7 @@
 import { readContent } from '@/lib/content/store';
 import { updateContact } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
-import { Mail, Phone, MapPin, Map, Type, PanelBottom, Search, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Map, Type, PanelBottom, Search, Clock, ChartNoAxesColumn } from 'lucide-react';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import type { LucideIcon } from 'lucide-react';
 
@@ -63,7 +63,7 @@ function Card({ icon: Icon, title, children }: { icon: LucideIcon; title: string
 
 export default async function AdminContactPage() {
   await requireAdminOnly();
-  const { contact, footer } = (await readContent());
+  const { contact, footer, analytics } = (await readContent());
 
   return (
     <div>
@@ -167,6 +167,16 @@ export default async function AdminContactPage() {
                 rows={3}
               />
             ))}
+          </div>
+        </Card>
+
+        <Card icon={ChartNoAxesColumn} title="Google Analytics">
+          <p className="text-sm text-stone">
+            The measurement ID of the Google Analytics property that counts visits, pre-registrations sent, and clicks
+            on the phone number and WhatsApp button. Leave empty to turn tracking off.
+          </p>
+          <div className="max-w-xs">
+            <Field label="Measurement ID (G-XXXXXXXXXX)" name="gaMeasurementId" defaultValue={analytics.gaMeasurementId} />
           </div>
         </Card>
 

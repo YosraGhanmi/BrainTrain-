@@ -1,10 +1,10 @@
-import { ExternalLink, Film, Hash, Images, Newspaper, Trophy, Type } from 'lucide-react';
+import { Award, ExternalLink, Film, Hash, Images, Newspaper, Trophy, Type } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { readContent } from '@/lib/content/store';
 import { updatePalmares } from '@/lib/admin/actions';
 import { requireAdminOnly } from '@/lib/admin/guard';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
-import type { LocalizedString } from '@/lib/content/types';
+import { PALMARES_HERO_PHOTO_SLOTS, type LocalizedString } from '@/lib/content/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,8 +109,22 @@ export default async function AdminPalmaresPage() {
         <Card icon={Type} title="Page" hint="The Google title and description, then the big title and intro at the top of the page.">
           <Pair label="Google title" name="seoTitle" value={palmares.seoTitle} />
           <Pair label="Google description" name="seoDescription" value={palmares.seoDescription} rows={2} />
-          <Pair label="Title" name="heading" value={palmares.heading} />
+          <Pair label="Title (*stars* = gold words)" name="heading" value={palmares.heading} />
           <Pair label="Intro" name="intro" value={palmares.intro} rows={3} />
+        </Card>
+
+        <Card
+          icon={Award}
+          title="Top of the page: the big 1re"
+          hint="The photos take turns inside the big “1re” (“1st” in English), in this order. Tall photos with the subject near the middle work best. Under it, a caption: a gold line, then one or two lines of text."
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: PALMARES_HERO_PHOTO_SLOTS }, (_, i) => (
+              <ImageField key={i} prefix={`h${i}`} image={palmares.heroPhotos[i] ?? ''} label={`Photo ${i + 1}`} />
+            ))}
+          </div>
+          <Pair label="Caption, gold line" name="heroCaptionTitle" value={palmares.heroCaptionTitle} />
+          <Pair label="Caption, text" name="heroCaptionText" value={palmares.heroCaptionText} rows={2} />
         </Card>
 
         <Card

@@ -6,6 +6,8 @@ import localFont from 'next/font/local';
 import SmoothScroll from '@/components/providers/SmoothScroll';
 import SocialSidebar from '@/components/social/SocialSidebar';
 import AdminShortcut from '@/components/admin/AdminShortcut';
+import GoogleTag from '@/components/analytics/GoogleTag';
+import ContactClickTracker from '@/components/analytics/ContactClickTracker';
 import { readContent } from '@/lib/content/store';
 import { routing, type AppLocale } from '@/i18n/routing';
 import { SITE_NAME, SITE_URL, absoluteUrl, internationalPhone, localeAlternates } from '@/lib/seo';
@@ -110,7 +112,9 @@ export default async function LocaleLayout(
 
   setRequestLocale(locale);
   const messages = await getMessages();
-  const { socials, contact } = (await readContent());
+  const { socials, contact, analytics } = (await readContent());
+  // Production only, so local and preview visits stay out of the statistics
+  const gaId = process.env.NODE_ENV === 'production' ? analytics.gaMeasurementId : '';
 
   // LocalBusiness as well, since opening hours only apply to a place
   const organizationJsonLd = {
@@ -136,6 +140,7 @@ export default async function LocaleLayout(
 
   return (
     <html lang={locale} className={`no-scrollbar ${display.variable} ${body.variable} ${comfortaa.variable}`}>
+      <head>{gaId ? <GoogleTag gaId={gaId} /> : null}</head>
       <body className="bg-bg text-ink antialiased">
         <script
           type="application/ld+json"
@@ -144,6 +149,7 @@ export default async function LocaleLayout(
         />
         <NextIntlClientProvider messages={messages}>
           <AdminShortcut />
+          {gaId ? <ContactClickTracker /> : null}
           <SocialSidebar socials={socials} />
           <SmoothScroll>{children}</SmoothScroll>
         </NextIntlClientProvider>

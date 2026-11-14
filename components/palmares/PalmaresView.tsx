@@ -1,10 +1,11 @@
 'use client';
 
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring } from 'framer-motion';
 import { ArrowRight, ArrowUpRight, Landmark, Mic, Newspaper, Plane, Play, Star, Tv } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { BrickDecor, Laurel, TrophyPodium } from '@/components/palmares/AwardsArt';
+import PalmaresHero from '@/components/palmares/PalmaresHero';
 import { Link } from '@/i18n/navigation';
 
 export type PalmaresAward = { place: string; prize: string; rank: number | null };
@@ -12,6 +13,9 @@ export type PalmaresAward = { place: string; prize: string; rank: number | null 
 export type PalmaresViewData = {
   heading: string;
   intro: string;
+  heroPhotos: string[];
+  heroCaptionTitle: string;
+  heroCaptionText: string;
   awardsEyebrow: string;
   awardsHeading: string;
   awardsIntro: string;
@@ -43,29 +47,6 @@ const MEDIA_ICONS = [Mic, Landmark, Newspaper, Tv];
 
 // The gold separator above the footer: four gentle swells across the page
 const GOLD_WAVE = 'M0 20 C120 2 240 38 360 20 S600 2 720 20 S960 38 1080 20 S1320 2 1440 20';
-
-// Stage lights hung along the top of the hero, each swinging on its own
-// rhythm (the negative delays start them mid-swing, out of step)
-const BEAMS = [
-  { position: '6%', color: '#7b91f4', width: 'w-72', animation: 'animate-[palmares-beam-left_11s_ease-in-out_infinite]', delay: '0s' },
-  { position: '28%', color: '#ffffff', width: 'w-44', animation: 'animate-[palmares-beam-left_8s_ease-in-out_infinite]', delay: '-3s' },
-  { position: '72%', color: '#ffe58a', width: 'w-44', animation: 'animate-[palmares-beam-right_9s_ease-in-out_infinite]', delay: '-5s' },
-  { position: '94%', color: '#f5c542', width: 'w-72', animation: 'animate-[palmares-beam-right_13s_ease-in-out_infinite]', delay: '-1s' },
-];
-
-// Sparkle positions in the hero, fixed so server and client render the same
-const SPARKLES = [
-  { top: '14%', left: '8%', size: 3, delay: 0 },
-  { top: '22%', left: '86%', size: 4, delay: 1.2 },
-  { top: '38%', left: '18%', size: 2, delay: 2.1 },
-  { top: '64%', left: '92%', size: 3, delay: 0.6 },
-  { top: '72%', left: '6%', size: 4, delay: 1.8 },
-  { top: '12%', left: '58%', size: 2, delay: 2.6 },
-  { top: '50%', left: '74%', size: 2, delay: 0.3 },
-  { top: '82%', left: '38%', size: 3, delay: 1.5 },
-  { top: '30%', left: '44%', size: 2, delay: 3 },
-  { top: '58%', left: '28%', size: 3, delay: 2.4 },
-];
 
 // True once the image has failed to load, so it can be hidden. An image that
 // fails before hydration fires onError before the component has mounted, and
@@ -116,98 +97,6 @@ function SectionHeading({ children, light = false }: { children: React.ReactNode
     >
       {children}
     </motion.h2>
-  );
-}
-
-function Hero({ heading, intro }: { heading: string; intro: string }) {
-  const t = useTranslations('palmares');
-  const reduce = useReducedMotion();
-  const words = heading.split(' ');
-
-  return (
-    <section className="relative isolate overflow-x-clip px-6 pb-36 pt-44 text-white md:px-10 lg:px-16 lg:pb-44 lg:pt-56" style={{ backgroundColor: NAVY }}>
-      {/* Stage lighting: two beams sweeping from the top corners, a warm
-          glow behind the title, the same dot grid as the footer */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-25"
-          style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 0.6px, transparent 0.6px)', backgroundSize: '18px 18px' }}
-        />
-        <div className="absolute left-1/2 top-1/2 h-[30rem] w-[44rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f5c542]/20 blur-[120px] animate-[palmares-breathe_7s_ease-in-out_infinite] motion-reduce:animate-none" />
-        {/* Where the beams land: a pool of light behind the title */}
-        <div className="absolute bottom-16 left-1/2 h-40 w-[48rem] max-w-full -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse,rgba(255,229,138,0.28),transparent_70%)] blur-2xl" />
-        {BEAMS.map((beam) => (
-          <Fragment key={beam.position}>
-            {/* The lamp the beam comes from */}
-            <span
-              className="absolute -top-3 size-6 -translate-x-1/2 rounded-full blur-[6px]"
-              style={{ left: beam.position, backgroundColor: beam.color, boxShadow: `0 0 40px 14px ${beam.color}` }}
-            />
-            {/* The blur sits on the wrapper so it softens the clipped cone's edges */}
-            <div
-              className={`absolute -top-2 h-[44rem] -translate-x-1/2 origin-top mix-blend-screen blur-lg motion-reduce:animate-none ${beam.width} ${beam.animation}`}
-              style={{ left: beam.position, animationDelay: beam.delay }}
-            >
-              <div
-                className="h-full w-full [clip-path:polygon(44%_0,56%_0,100%_100%,0_100%)]"
-                style={{ backgroundImage: `linear-gradient(to bottom, ${beam.color}cc, ${beam.color}40 45%, transparent 90%)` }}
-              />
-            </div>
-          </Fragment>
-        ))}
-        {SPARKLES.map((s, i) => (
-          <span
-            key={i}
-            className="absolute rounded-full bg-[#ffe58a] shadow-[0_0_12px_3px_rgba(255,229,138,0.7)] animate-[palmares-twinkle_3.6s_ease-in-out_infinite] motion-reduce:animate-none"
-            style={{ top: s.top, left: s.left, width: s.size, height: s.size, animationDelay: `${s.delay}s` }}
-          />
-        ))}
-      </div>
-
-      <div className="relative mx-auto max-w-4xl text-center">
-        <motion.p
-          initial={reduce ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
-          className="text-xs font-bold uppercase tracking-[0.35em] text-[#f5c542]"
-        >
-          {t('eyebrow')}
-        </motion.p>
-
-        <h1 className="mt-5 text-balance font-display text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
-          {/* The space sits between the spans: inside an inline-block it
-              would collapse */}
-          {words.map((word, i) => (
-            <Fragment key={`${word}-${i}`}>
-              <motion.span
-                initial={reduce ? false : { opacity: 0, y: 28, filter: 'blur(8px)' }}
-                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                transition={{ duration: 0.7, delay: 0.25 + i * 0.07, ease: EASE }}
-                className="inline-block bg-[linear-gradient(110deg,#ffffff_35%,#ffe58a_50%,#ffffff_65%)] bg-[length:250%_100%] bg-clip-text text-transparent animate-[palmares-shimmer_6s_linear_infinite] motion-reduce:animate-none"
-              >
-                {word}
-              </motion.span>
-              {i < words.length - 1 ? ' ' : null}
-            </Fragment>
-          ))}
-        </h1>
-
-        <motion.p
-          initial={reduce ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 + words.length * 0.07, ease: EASE }}
-          className="mx-auto mt-7 max-w-2xl text-pretty text-lg leading-relaxed text-white/75 sm:text-xl"
-        >
-          {intro}
-        </motion.p>
-      </div>
-
-      {/* Wavy bottom edge into the awards section (same colour as its top),
-          mirroring the footer's top */}
-      <svg aria-hidden="true" viewBox="0 0 1440 60" preserveAspectRatio="none" className="pointer-events-none absolute inset-x-0 bottom-0 h-8 w-full translate-y-px sm:h-12 lg:h-14">
-        <path d="M0 30 C180 0 360 60 540 30 S900 0 1080 30 S1260 60 1440 30 V60 H0 Z" fill="#eef0ff" />
-      </svg>
-    </section>
   );
 }
 
@@ -767,7 +656,15 @@ function NumbersAndPhotos({ data }: { data: PalmaresViewData }) {
 export default function PalmaresView({ data }: { data: PalmaresViewData }) {
   return (
     <>
-      <Hero heading={data.heading} intro={data.intro} />
+      <PalmaresHero
+        data={{
+          heading: data.heading,
+          intro: data.intro,
+          captionTitle: data.heroCaptionTitle,
+          captionText: data.heroCaptionText,
+          photos: data.heroPhotos,
+        }}
+      />
       <Competitions data={data} />
 
       {data.videos.length > 0 ? (

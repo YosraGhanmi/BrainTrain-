@@ -12,12 +12,18 @@ export const DEFAULT_PALMARES: PalmaresContent = {
     fr: 'Des prix à la FIRST LEGO League Tunisie et au championnat arabe RFO en Jordanie : découvrez les trophées des élèves de Braintrain Academy à Sousse.',
   },
   heading: {
-    en: 'Braintrain Academy awards and trophies',
-    fr: 'Palmarès et trophées de Braintrain Academy',
+    en: 'Braintrain Academy *awards* and trophies',
+    fr: 'Palmarès et *trophées* de Braintrain Academy',
   },
   intro: {
     en: 'Since 2023, Braintrain Academy students aged 4 to 18 have represented Sousse and Tunisia at national and international robotics competitions. Here are their main results.',
     fr: 'Depuis 2023, les élèves de Braintrain Academy, de 4 à 18 ans, représentent Sousse et la Tunisie dans des compétitions de robotique nationales et internationales. Voici leurs principaux résultats.',
+  },
+  heroPhotos: ['/palmares/hero/petra.webp', '/palmares/hero/stage.webp', '/palmares/hero/fll-trophies.webp', '/palmares/hero/group.webp'],
+  heroCaptionTitle: { en: '3 × 1st place', fr: '3 × 1re place' },
+  heroCaptionText: {
+    en: 'RFO Arab Championship\nJordan, December 2025',
+    fr: 'Championnat arabe RFO\nJordanie, décembre 2025',
   },
   awardsEyebrow: { en: 'Our awards', fr: 'Nos récompenses' },
   awardsHeading: { en: 'Our *journey*, our victories', fr: 'Notre *parcours*, nos victoires' },

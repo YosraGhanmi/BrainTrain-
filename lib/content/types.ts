@@ -165,11 +165,21 @@ export type PalmaresMediaItem = {
 
 export type PalmaresPhoto = { src: string; alt: LocalizedString };
 
+// How many photos the hero's "1re" can cycle through
+export const PALMARES_HERO_PHOTO_SLOTS = 4;
+
 export type PalmaresContent = {
   seoTitle: LocalizedString;
   seoDescription: LocalizedString;
+  // heading: words in *stars* show in gold
   heading: LocalizedString;
   intro: LocalizedString;
+  // The hero's big "1re": the photos that take turns inside the letters (the
+  // first one alone for reduced-motion visitors) and the caption under it
+  // ("3 x 1re place", then a line or two; line breaks are kept)
+  heroPhotos: string[];
+  heroCaptionTitle: LocalizedString;
+  heroCaptionText: LocalizedString;
   // Beside the competitions timeline. awardsHeading: words in *stars* show
   // in colour
   awardsEyebrow: LocalizedString;
@@ -285,6 +295,8 @@ export type SiteContent = {
   about: AboutContent;
   // The line under the logo in the footer
   footer: { tagline: LocalizedString };
+  // Google Analytics 4 measurement ID ("G-XXXXXXXXXX"); empty = no tracking
+  analytics: { gaMeasurementId: string };
   sponsors: string[];
   stats: StatEntry[];
   achievementsImages: string[];

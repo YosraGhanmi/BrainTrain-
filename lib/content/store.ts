@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
 import { PROGRAM_KEYS } from './types';
 import { DEFAULT_PALMARES } from './palmares-defaults';
+import { normalizeGaId } from '@/lib/analytics/ga';
 import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings, PalmaresContent } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
@@ -209,6 +210,7 @@ const DEFAULT_CONTENT: SiteContent = {
       fr: 'Une académie tunisienne pluridisciplinaire pour les jeunes esprits de 4 à 18 ans, où la curiosité devient compétence.',
     },
   },
+  analytics: { gaMeasurementId: 'G-XG7K4Y0DD0' },
   timelineIntro: {
     heading: {
       en: 'Step by step, *celebrate our victories* with us',
@@ -1561,6 +1563,11 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
 
   const footer = { tagline: toLocalized(raw.footer?.tagline, DEFAULT_CONTENT.footer.tagline) };
 
+  // Never saved: the default ID. Saved empty (or invalid): tracking is off
+  const analytics = {
+    gaMeasurementId: raw.analytics ? normalizeGaId(raw.analytics.gaMeasurementId) : DEFAULT_CONTENT.analytics.gaMeasurementId,
+  };
+
   // Each list falls back to the defaults only when it was never saved, so an
   // admin can still empty it
   const rawPalmares: Partial<PalmaresContent> = raw.palmares ?? {};
@@ -1572,6 +1579,12 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     seoDescription: toLocalized(rawPalmares.seoDescription, dp.seoDescription),
     heading: toLocalized(rawPalmares.heading, dp.heading),
     intro: toLocalized(rawPalmares.intro, dp.intro),
+    // Saved before the hero had photos: the defaults. Saved empty: no photos
+    heroPhotos: Array.isArray(rawPalmares.heroPhotos)
+      ? rawPalmares.heroPhotos.filter((src): src is string => typeof src === 'string' && src !== '')
+      : dp.heroPhotos,
+    heroCaptionTitle: toLocalized(rawPalmares.heroCaptionTitle, dp.heroCaptionTitle),
+    heroCaptionText: toLocalized(rawPalmares.heroCaptionText, dp.heroCaptionText),
     awardsEyebrow: toLocalized(rawPalmares.awardsEyebrow, dp.awardsEyebrow),
     awardsHeading: toLocalized(rawPalmares.awardsHeading, dp.awardsHeading),
     awardsIntro: toLocalized(rawPalmares.awardsIntro, dp.awardsIntro),
@@ -1635,7 +1648,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     })),
   };
 
-  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, palmares, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, analytics, palmares, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

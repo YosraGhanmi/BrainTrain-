@@ -16,6 +16,7 @@ import {
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import PreinscriptionForm from '@/components/preinscription/PreinscriptionForm';
+import PreinscriptionConversion from '@/components/analytics/PreinscriptionConversion';
 import { submitPreinscription } from '@/lib/preinscription/actions';
 import { getCourses } from '@/lib/coursesData';
 import { readContent } from '@/lib/content/store';
@@ -99,6 +100,7 @@ export default async function PreinscriptionPage(
         <div className="mx-auto w-full max-w-3xl">
           {searchParams.sent ? (
             <section className="mt-6 rounded-[2rem] border border-ink/10 bg-white px-6 py-12 text-center shadow-soft md:px-12 md:py-16">
+              <PreinscriptionConversion submissionId={searchParams.sent} />
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                 <Sparkles className="h-8 w-8" aria-hidden="true" />
               </div>

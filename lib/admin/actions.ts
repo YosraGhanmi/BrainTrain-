@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { readContent, writeContent } from '@/lib/content/store';
+import { normalizeGaId } from '@/lib/analytics/ga';
 import { saveUpload, type UploadFolder } from '@/lib/uploads';
 import { setMessageRead, deleteMessage as deleteMessageEntry } from '@/lib/messages/store';
 import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
@@ -21,6 +22,7 @@ import { SCHOOL_YEAR_PLAN_TYPES, SUMMER_PLAN_TYPES, summerTerm } from '@/lib/con
 import { DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
 import {
   PROGRAM_KEYS,
+  PALMARES_HERO_PHOTO_SLOTS,
   type TimelineEntry,
   type LocalizedString,
   type PalmaresCompetition,
@@ -196,6 +198,7 @@ export async function updateContact(formData: FormData): Promise<void> {
     cardText: localized('cardText'),
   };
   content.footer = { tagline: localized('footerTagline') };
+  content.analytics = { gaMeasurementId: normalizeGaId(field('gaMeasurementId')) };
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/contact?saved=1');
@@ -293,12 +296,22 @@ export async function updatePalmares(formData: FormData): Promise<void> {
     }
   }
 
+  // A slot left empty closes up
+  const heroPhotos: string[] = [];
+  for (let i = 0; i < PALMARES_HERO_PHOTO_SLOTS; i++) {
+    const src = await image(`h${i}`);
+    if (src) heroPhotos.push(src);
+  }
+
   const content = await readContent();
   content.palmares = {
     seoTitle: loc('seoTitle'),
     seoDescription: loc('seoDescription'),
     heading: loc('heading'),
     intro: loc('intro'),
+    heroPhotos,
+    heroCaptionTitle: loc('heroCaptionTitle'),
+    heroCaptionText: loc('heroCaptionText'),
     awardsEyebrow: loc('awardsEyebrow'),
     awardsHeading: loc('awardsHeading'),
     awardsIntro: loc('awardsIntro'),

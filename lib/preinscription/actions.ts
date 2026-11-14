@@ -1,5 +1,6 @@
 'use server';
 
+import { randomUUID } from 'crypto';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
@@ -77,7 +78,9 @@ export async function submitPreinscription(formData: FormData): Promise<void> {
 
   revalidatePath('/admin/preinscriptions');
   revalidatePath('/admin');
-  redirect(`/${locale}/preinscription?sent=1`);
+  // A fresh token each time, so Google Analytics counts every request sent
+  // once (see PreinscriptionConversion)
+  redirect(`/${locale}/preinscription?sent=${randomUUID().slice(0, 8)}`);
 }
 
 export async function requirePreinscriptionAccess() {
