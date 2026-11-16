@@ -54,6 +54,7 @@ export default async function Footer() {
     { label: nav('about'), href: '/about' },
     { label: nav('courses'), href: '/courses' },
     { label: nav('palmares'), href: '/palmares' },
+    { label: nav('events'), href: '/events' },
     { label: t('preinscription'), href: '/preinscription' },
     { label: nav('contact'), href: '/#contact' },
     { label: t('parentPortal'), href: '/parent-portal/login' },

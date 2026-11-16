@@ -3,9 +3,22 @@
     "home": "Accueil",
     "about": "À propos",
     "palmares": "Palmarès",
+    "events": "Événements",
     "courses": "Cours",
     "contact": "Contact",
     "login": "Connexion"
+  },
+  "eventsPage": {
+    "closeVideo": "Fermer la vidéo",
+    "readStory": "Lire l'histoire",
+    "heroAlt": "Photos des événements de Braintrain Academy",
+    "zoomPhoto": "Agrandir la photo",
+    "playVideo": "Lire la vidéo",
+    "videoOf": "Vidéo : {title}",
+    "viewPost": "Voir la publication sur Facebook",
+    "speakers": "Intervenants",
+    "register": "Inscrire votre enfant",
+    "back": "Voir notre palmarès"
   },
   "hero": {
     "register": "Inscrire votre enfant",

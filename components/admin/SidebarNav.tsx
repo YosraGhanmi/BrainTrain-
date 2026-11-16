@@ -14,6 +14,7 @@ import {
   Share2,
   Image as ImageIcon,
   Trophy,
+  Newspaper,
   Milestone,
   Settings2,
   Inbox,
@@ -54,6 +55,7 @@ const customizationItems = [
   { label: 'Social media links', href: '/admin/socials', icon: Share2 },
   { label: 'Achievements gallery', href: '/admin/achievements', icon: ImageIcon },
   { label: 'Palmarès page', href: '/admin/palmares', icon: Trophy },
+  { label: 'Events page', href: '/admin/events', icon: Newspaper },
   { label: 'Timeline', href: '/admin/timeline', icon: Milestone },
 ];
 

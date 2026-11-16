@@ -196,6 +196,62 @@ export type PalmaresContent = {
   photos: PalmaresPhoto[];
 };
 
+// The Events page (/events), laid out like a journal: one story per event.
+// A story's video plays from `videoFile` (our own player) when one is
+// uploaded, otherwise from the Facebook video at `facebookUrl`; with neither,
+// the story shows `poster` or a typographic panel. Stories without a title are
+// dropped on save.
+export type EventEntry = {
+  id: string;
+  // Small line above the title, e.g. "Inspire Talks · Édition 2"
+  kicker: LocalizedString;
+  title: LocalizedString;
+  date: LocalizedString;
+  // The line under the title
+  standfirst: LocalizedString;
+  // Paragraphs separated by a blank line
+  body: LocalizedString;
+  // One per line, "Name | Role" (the role is optional)
+  speakers: LocalizedString[];
+  // Full facebook.com/reel/... or facebook.com/<page>/videos/... address
+  facebookUrl: string;
+  videoFile: string;
+  poster: string;
+  // Reels are tall; a landscape video gets a wide frame instead
+  portrait: boolean;
+  // The Facebook post, for the "see the post" link
+  postUrl: string;
+};
+
+// The "coming soon" block: the next competition
+export type EventsUpcoming = {
+  eyebrow: LocalizedString;
+  // Words in *stars* are highlighted
+  title: LocalizedString;
+  tagline: LocalizedString;
+  text: LocalizedString;
+  // e.g. "2026 - 2027"
+  dateLabel: LocalizedString;
+  image: string;
+  imageAlt: LocalizedString;
+  facebookUrl: string;
+  videoFile: string;
+  poster: string;
+  portrait: boolean;
+};
+
+export type EventsContent = {
+  seoTitle: LocalizedString;
+  seoDescription: LocalizedString;
+  mastheadTitle: LocalizedString;
+  mastheadTagline: LocalizedString;
+  intro: LocalizedString;
+  // The photos floating across the top of the page, in this order
+  heroImages: string[];
+  upcoming: EventsUpcoming;
+  events: EventEntry[];
+};
+
 // Admin-posted announcements shown on the parent-portal dashboard — plain
 // text (not localized) since the portal itself isn't localized elsewhere.
 // targetAgeGroups / targetCourses: empty array = no filter on that dimension
@@ -306,6 +362,7 @@ export type SiteContent = {
   faq: FaqContent;
   socials: SocialLink[];
   palmares: PalmaresContent;
+  events: EventsContent;
   courses: CourseEntry[];
   ageGroups: AgeGroupEntry[];
   news: NewsPost[];

@@ -3,8 +3,9 @@ import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
 import { PROGRAM_KEYS } from './types';
 import { DEFAULT_PALMARES } from './palmares-defaults';
+import { DEFAULT_EVENTS } from './events-defaults';
 import { normalizeGaId } from '@/lib/analytics/ga';
-import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings, PalmaresContent } from './types';
+import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings, PalmaresContent, EventsContent } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
@@ -507,6 +508,7 @@ const DEFAULT_CONTENT: SiteContent = {
     { label: 'LinkedIn', href: 'https://www.linkedin.com/company/braintrainacademy/' },
   ],
   palmares: DEFAULT_PALMARES,
+  events: DEFAULT_EVENTS,
   courses: withDefaultSeo([
     {
       slug: 'robotique-6-9',
@@ -1634,6 +1636,53 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
       : dp.photos,
   };
 
+  // The stories fall back to the defaults only when never saved, so an admin
+  // can still remove them all
+  const rawEvents: Partial<EventsContent> = raw.events ?? {};
+  const de = DEFAULT_EVENTS;
+  const rawUpcoming: any = rawEvents.upcoming ?? {};
+  const events: EventsContent = {
+    seoTitle: toLocalized(rawEvents.seoTitle, de.seoTitle),
+    seoDescription: toLocalized(rawEvents.seoDescription, de.seoDescription),
+    mastheadTitle: toLocalized(rawEvents.mastheadTitle, de.mastheadTitle),
+    mastheadTagline: toLocalized(rawEvents.mastheadTagline, de.mastheadTagline),
+    intro: toLocalized(rawEvents.intro, de.intro),
+    heroImages: Array.isArray(rawEvents.heroImages)
+      ? rawEvents.heroImages.filter((src): src is string => typeof src === 'string' && src !== '')
+      : de.heroImages,
+    upcoming: rawEvents.upcoming
+      ? {
+          eyebrow: loc(rawUpcoming.eyebrow),
+          title: loc(rawUpcoming.title),
+          tagline: loc(rawUpcoming.tagline),
+          text: loc(rawUpcoming.text),
+          dateLabel: loc(rawUpcoming.dateLabel),
+          image: str(rawUpcoming.image),
+          imageAlt: loc(rawUpcoming.imageAlt),
+          facebookUrl: str(rawUpcoming.facebookUrl),
+          videoFile: str(rawUpcoming.videoFile),
+          poster: str(rawUpcoming.poster),
+          portrait: rawUpcoming.portrait !== false,
+        }
+      : de.upcoming,
+    events: Array.isArray(rawEvents.events)
+      ? rawEvents.events.map((e: any, i: number) => ({
+          id: str(e.id) || `event-${i + 1}`,
+          kicker: loc(e.kicker),
+          title: loc(e.title),
+          date: loc(e.date),
+          standfirst: loc(e.standfirst),
+          body: loc(e.body),
+          speakers: Array.isArray(e.speakers) ? e.speakers.map(loc) : [],
+          facebookUrl: str(e.facebookUrl),
+          videoFile: str(e.videoFile),
+          poster: str(e.poster),
+          portrait: e.portrait !== false,
+          postUrl: str(e.postUrl),
+        }))
+      : de.events,
+  };
+
   const rawAbout: Partial<AboutContent> = raw.about ?? {};
   const aboutImages = Array.isArray(rawAbout.images) ? rawAbout.images.filter((src) => typeof src === 'string' && src) : [];
   const about: AboutContent = {
@@ -1648,7 +1697,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     })),
   };
 
-  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, analytics, palmares, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, analytics, palmares, events, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

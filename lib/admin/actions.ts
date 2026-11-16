@@ -31,6 +31,7 @@ import {
   type PalmaresMediaItem,
   type PalmaresPhoto,
   type PalmaresVideo,
+  type EventEntry,
 } from '@/lib/content/types';
 
 function localizedField(formData: FormData, name: string): LocalizedString {
@@ -338,6 +339,117 @@ export async function updatePalmares(formData: FormData): Promise<void> {
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/palmares?saved=1');
+}
+
+// ---------------------------------------------------------------------------
+// Events page
+// ---------------------------------------------------------------------------
+
+const EVENT_VIDEO_TYPES: Record<string, string> = { 'video/mp4': '.mp4', 'video/webm': '.webm' };
+
+// Same row numbering as updatePalmares (e0_, e1_, ... for stories, plus one
+// empty row to add). A story left without a title is dropped.
+export async function updateEvents(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim();
+  const loc = (name: string) => localizedField(formData, name);
+  const count = (name: string) => Math.max(0, Math.min(100, Number(formData.get(name)) || 0));
+  const hasText = (value: LocalizedString) => Boolean(value.en || value.fr);
+  // Paragraph breaks matter in a story body, so only normalise the line ends
+  const longLoc = (name: string): LocalizedString => ({
+    en: String(formData.get(`${name}_en`) ?? '').replace(/\r\n/g, '\n').trim(),
+    fr: String(formData.get(`${name}_fr`) ?? '').replace(/\r\n/g, '\n').trim(),
+  });
+
+  // A newly picked file wins, then the "remove" box, then the current one
+  async function image(prefix: string, key: string): Promise<string> {
+    const file = formData.get(`${prefix}_${key}`) as File | null;
+    if (file && file.size > 0) return saveUploadedImage(file, 'events');
+    if (formData.get(`${prefix}_${key}Remove`) === 'on') return '';
+    return field(`${prefix}_${key}Existing`);
+  }
+
+  async function video(prefix: string): Promise<string> {
+    const file = formData.get(`${prefix}_videoFile`) as File | null;
+    if (file && file.size > 0) {
+      const ext = EVENT_VIDEO_TYPES[file.type];
+      if (!ext) redirect('/admin/events?error=type');
+      return saveUpload('events', `${Date.now()}-video${ext}`, Buffer.from(await file.arrayBuffer()));
+    }
+    if (formData.get(`${prefix}_videoFileRemove`) === 'on') return '';
+    return field(`${prefix}_videoFileExisting`);
+  }
+
+  // Two textareas, one line each, paired by line number
+  function lines(name: string): LocalizedString[] {
+    const split = (lang: 'en' | 'fr') =>
+      field(`${name}_${lang}`)
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    const en = split('en');
+    const fr = split('fr');
+    return Array.from({ length: Math.max(en.length, fr.length) }, (_, i) => ({ en: en[i] ?? fr[i], fr: fr[i] ?? en[i] }));
+  }
+
+  const heroImages: string[] = [];
+  for (let i = 0; i < count('heroImageCount'); i++) {
+    const src = field(`hi${i}_src`);
+    if (src && formData.get(`hi${i}_remove`) !== 'on') heroImages.push(src);
+  }
+  for (const file of formData.getAll('newHeroImages')) {
+    if (file instanceof File && file.size > 0) heroImages.push(await saveUploadedImage(file, 'events'));
+  }
+
+  const takenIds: string[] = [];
+  const events: EventEntry[] = [];
+  for (let i = 0; i < count('eventCount'); i++) {
+    const title = loc(`e${i}_title`);
+    if (!hasText(title)) continue;
+    const id = uniqueSlug(field(`e${i}_id`) || slugify(title.en || title.fr), takenIds);
+    takenIds.push(id);
+    events.push({
+      id,
+      kicker: loc(`e${i}_kicker`),
+      title,
+      date: loc(`e${i}_date`),
+      standfirst: loc(`e${i}_standfirst`),
+      body: longLoc(`e${i}_body`),
+      speakers: lines(`e${i}_speakers`),
+      facebookUrl: field(`e${i}_facebookUrl`),
+      videoFile: await video(`e${i}`),
+      poster: await image(`e${i}`, 'poster'),
+      portrait: formData.get(`e${i}_portrait`) === 'on',
+      postUrl: field(`e${i}_postUrl`),
+    });
+  }
+
+  const content = await readContent();
+  content.events = {
+    seoTitle: loc('seoTitle'),
+    seoDescription: loc('seoDescription'),
+    mastheadTitle: loc('mastheadTitle'),
+    mastheadTagline: loc('mastheadTagline'),
+    intro: loc('intro'),
+    heroImages,
+    upcoming: {
+      eyebrow: loc('up_eyebrow'),
+      title: loc('up_title'),
+      tagline: loc('up_tagline'),
+      text: longLoc('up_text'),
+      dateLabel: loc('up_dateLabel'),
+      image: await image('up', 'image'),
+      imageAlt: loc('up_imageAlt'),
+      facebookUrl: field('up_facebookUrl'),
+      videoFile: await video('up'),
+      poster: await image('up', 'poster'),
+      portrait: formData.get('up_portrait') === 'on',
+    },
+    events,
+  };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/events?saved=1');
 }
 
 // ---------------------------------------------------------------------------

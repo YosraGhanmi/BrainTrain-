@@ -30,6 +30,7 @@ export default function Navbar({ solid = false, overHero = false, lightLogo = fa
     // Also the age-group and single course pages under it
     { label: t('courses'), href: '/courses', active: pathname.startsWith('/courses') || pathname.startsWith('/course/') },
     { label: t('palmares'), href: '/palmares', active: pathname === '/palmares' },
+    { label: t('events'), href: '/events', active: pathname === '/events' },
     { label: t('contact'), href: '/#contact', active: onHome && atContact },
   ];
 
