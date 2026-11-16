@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 import { mapPortalProfile } from '@/lib/db/portal-auth';
+import { signToken, verifyToken } from '@/lib/auth/signed-token';
 
 // Node's crypto module (not Edge-compatible) — server-only.
 export const PORTAL_SESSION_COOKIE_NAME = 'braintrain_portal_session';
@@ -48,44 +49,27 @@ export async function revokeAllSessions(userId: string): Promise<void> {
 export const PENDING_TEACHER_COOKIE_NAME = 'braintrain_teacher_pending';
 const PENDING_TEACHER_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-function pendingSecret(): string {
-  const secret = process.env.ADMIN_SESSION_SECRET?.trim();
-  if (!secret) throw new Error('ADMIN_SESSION_SECRET is not configured.');
-  return secret;
-}
-
-function signPending(payload: string): string {
-  return crypto.createHmac('sha256', pendingSecret()).update(payload).digest('hex');
-}
-
 export function createPendingTeacherToken(userId: string): string {
-  const payload = JSON.stringify({ userId, exp: Date.now() + PENDING_TEACHER_TTL_MS });
-  const encoded = Buffer.from(payload).toString('base64url');
-  return `${encoded}.${signPending(encoded)}`;
+  return signToken('teacher-pending', { userId }, PENDING_TEACHER_TTL_MS);
 }
 
 export function verifyPendingTeacherToken(token: string | undefined | null): string | null {
-  if (!token) return null;
-  const [encoded, sig] = token.split('.');
-  if (!encoded || !sig) return null;
+  const claims = verifyToken('teacher-pending', token);
+  return claims && typeof claims.userId === 'string' ? claims.userId : null;
+}
 
-  let expectedSig: string;
-  try {
-    expectedSig = signPending(encoded);
-  } catch {
-    return null;
-  }
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expectedSig);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+// Same idea for parents who turned on two-factor sign-in: the password was
+// right, the emailed code is still to come.
+export const PENDING_PARENT_COOKIE_NAME = 'braintrain_parent_pending';
+export const PENDING_PARENT_TTL_MS = 10 * 60 * 1000;
 
-  try {
-    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf-8'));
-    if (typeof payload.userId !== 'string' || typeof payload.exp !== 'number' || payload.exp < Date.now()) return null;
-    return payload.userId;
-  } catch {
-    return null;
-  }
+export function createPendingParentToken(userId: string): string {
+  return signToken('parent-2fa-pending', { userId }, PENDING_PARENT_TTL_MS);
+}
+
+export function verifyPendingParentToken(token: string | undefined | null): string | null {
+  const claims = verifyToken('parent-2fa-pending', token);
+  return claims && typeof claims.userId === 'string' ? claims.userId : null;
 }
 
 export type PortalSessionUser = {
@@ -99,6 +83,7 @@ export type PortalSessionUser = {
   role: 'PARENT' | 'TEACHER' | 'SECRETARY';
   parentId: string | null;
   teacherId: string | null;
+  mustChangePassword: boolean;
 };
 
 export async function getPortalSessionUser(): Promise<PortalSessionUser | null> {

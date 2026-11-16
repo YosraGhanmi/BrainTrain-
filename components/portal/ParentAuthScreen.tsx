@@ -158,7 +158,11 @@ export default function ParentAuthScreen({
                 {t('passwordChanged')}
               </p>
             ) : null}
-            {loginError === 'frozen' ? (
+            {loginError === 'throttled' ? (
+              <p data-field className="text-sm font-semibold text-red-600">
+                {t('tooManyAttempts')}
+              </p>
+            ) : loginError === 'frozen' ? (
               <p data-field className="text-sm font-semibold text-red-600">
                 {t('accountSuspended')}
               </p>
@@ -252,7 +256,11 @@ export default function ParentAuthScreen({
               <PasswordInput name="confirmPassword" autoComplete="new-password" inputClassName="shorter:py-2.5" />
             </div>
 
-            {registerError === 'exists' ? (
+            {registerError === 'throttled' ? (
+              <p data-field className="text-sm font-semibold text-red-600">
+                {t('tooManyAttempts')}
+              </p>
+            ) : registerError === 'exists' ? (
               <p data-field className="text-sm font-semibold text-red-600">
                 {t('accountExists')}
               </p>

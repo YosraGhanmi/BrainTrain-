@@ -3,7 +3,6 @@ import { checkRoute, expectNoHorizontalOverflow, uniqueEmail } from './helpers';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@braintrain.tn';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'braintrain-admin';
-const DEFAULT_TEACHER_PASSWORD = 'braintrain@TEACHER';
 
 test.describe('Teacher portal — admin creates account, teacher logs in and navigates', () => {
   test('create teacher via admin, log in as teacher, verify code, browse the portal', async ({ page, browser }, testInfo) => {
@@ -33,22 +32,32 @@ test.describe('Teacher portal — admin creates account, teacher logs in and nav
     await createForm.getByRole('button', { name: /create teacher account/i }).click();
     await adminPage.waitForURL(/\/admin\/teachers\?/, { timeout: 15_000 });
 
-    const url = new URL(adminPage.url());
-    const secretCode = url.searchParams.get('code');
-    expect(secretCode, 'admin should redirect back with the generated secret code in the URL').toBeTruthy();
+    // Shown once on the page, never in the address
+    const temporaryPassword = (await adminPage.getByTestId('teacher-password').textContent())?.trim();
+    const secretCode = (await adminPage.getByTestId('teacher-secret-code').textContent())?.trim();
+    expect(temporaryPassword, 'admin should see the generated password once').toBeTruthy();
+    expect(secretCode, 'admin should see the generated secret code once').toBeTruthy();
+    expect(adminPage.url(), 'credentials must not be in the address').not.toContain(secretCode!);
     await adminContext.close();
 
     // --- Teacher logs in -----------------------------------------------------
     await page.goto('/en/teacher/login');
     await page.locator('#teacher-login-email').fill(email);
-    await page.locator('input[name="password"]').fill(DEFAULT_TEACHER_PASSWORD);
+    await page.locator('input[name="password"]').fill(temporaryPassword!);
     await page.getByRole('button', { name: /log in/i }).click();
     await page.waitForURL(/\/teacher\/verify/, { timeout: 15_000 });
     await expectNoHorizontalOverflow(page, 'teacher verify page');
 
     await page.locator('input[name="code"]').fill(secretCode!);
     await page.getByRole('button', { name: /confirm/i }).click();
-    await page.waitForURL(/\/teacher(?!\/(login|verify))/, { timeout: 15_000 });
+    // First sign-in: the teacher has to replace the password they were given
+    await page.waitForURL(/\/teacher\/change-password/, { timeout: 15_000 });
+    await expectNoHorizontalOverflow(page, 'teacher choose-password page');
+    const ownPassword = `e2e-${Date.now()}-own-password`;
+    await page.locator('input[name="newPassword"]').fill(ownPassword);
+    await page.locator('input[name="confirmPassword"]').fill(ownPassword);
+    await page.getByRole('button', { name: /save and continue/i }).click();
+    await page.waitForURL(/\/teacher(?!\/(login|verify|change-password))/, { timeout: 15_000 });
     await expectNoHorizontalOverflow(page, 'teacher dashboard after login');
 
     // --- Mobile drawer sanity check ------------------------------------------

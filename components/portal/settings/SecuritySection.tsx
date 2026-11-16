@@ -48,7 +48,6 @@ export default async function SecuritySection({
           <div>
             <h2 className="font-display text-lg font-bold text-ink">{t('twoFactor')}</h2>
             <p className="mt-1 text-sm text-stone">{twoFactorEnabled ? t('twoFactorEnabled') : t('twoFactorDisabled')}</p>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-600">{t('comingSoon')}</p>
           </div>
         </div>
 

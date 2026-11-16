@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { resolveUpload } from '@/lib/uploads';
+import { prisma } from '@/lib/db/prisma';
+import { getAdminSession } from '@/lib/admin/guard';
+import { getPortalSessionUser } from '@/lib/portal-auth/session';
 
 const CONTENT_TYPES: Record<string, string> = {
   '.png': 'image/png',
@@ -14,7 +17,7 @@ const CONTENT_TYPES: Record<string, string> = {
   '.webm': 'video/webm',
 };
 
-const HEADERS = {
+const PUBLIC_HEADERS = {
   // File names carry a timestamp, so a file never changes
   'Cache-Control': 'public, max-age=31536000, immutable',
   'X-Content-Type-Options': 'nosniff',
@@ -41,13 +44,43 @@ function parseRange(header: string, size: number): [number, number] | null {
   return start <= end && start < size ? [start, end] : null;
 }
 
+// Children's photos are private: staff, the child's own parent, and a teacher
+// of one of the child's current groups. File names are "<childId>-<time>.jpg"
+// (see uploadChildPhoto).
+async function canSeeChildPhoto(fileName: string): Promise<boolean> {
+  const childId = fileName.slice(0, fileName.lastIndexOf('-'));
+  if (!childId) return false;
+
+  if (await getAdminSession()) return true;
+  const user = await getPortalSessionUser();
+  if (!user) return false;
+
+  if (user.role === 'PARENT') {
+    return (await prisma.child.count({ where: { id: childId, parentId: user.id } })) > 0;
+  }
+  if (user.role === 'TEACHER') {
+    const shared = await prisma.enrollment.count({
+      where: { childId, status: { in: ['PENDING', 'ACTIVE'] }, courseSession: { teacherId: user.id } },
+    });
+    return shared > 0;
+  }
+  return false;
+}
+
 // Serves uploaded images and videos from the uploads folder (see
 // lib/uploads.ts). Videos need byte ranges: Safari won't play a video from a
 // server that can't answer them, and other browsers use them to seek.
 export async function GET(request: Request, { params }: { params: Promise<{ path: string[] }> }): Promise<Response> {
-  const file = resolveUpload((await params).path);
+  const segments = (await params).path;
+  const file = resolveUpload(segments);
   const contentType = file ? CONTENT_TYPES[path.extname(file).toLowerCase()] : undefined;
   if (!file || !contentType) return new Response('Not found', { status: 404 });
+
+  // Same answer as a missing file, so the address tells nothing either way
+  const privateFile = segments[0] === 'children';
+  if (privateFile && !(await canSeeChildPhoto(path.basename(file)))) return new Response('Not found', { status: 404 });
+  // Never kept by shared caches; the browser may keep its own copy for an hour
+  const HEADERS = privateFile ? { ...PUBLIC_HEADERS, 'Cache-Control': 'private, max-age=3600' } : PUBLIC_HEADERS;
 
   let size: number;
   try {

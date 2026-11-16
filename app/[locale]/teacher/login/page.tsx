@@ -49,7 +49,9 @@ export default async function TeacherLoginPage(
           <PasswordInput name="password" autoComplete="current-password" />
         </div>
 
-        {searchParams.error === 'frozen' ? (
+        {searchParams.error === 'throttled' ? (
+          <p className="text-sm font-semibold text-red-600">{t('tooManyAttempts')}</p>
+        ) : searchParams.error === 'frozen' ? (
           <p className="text-sm font-semibold text-red-600">{t('accountSuspended')}</p>
         ) : searchParams.error ? (
           <p className="text-sm font-semibold text-red-600">{t('incorrectCredentials')}</p>

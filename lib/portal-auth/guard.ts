@@ -23,5 +23,8 @@ export async function requireTeacher(locale: AppLocale): Promise<PortalSessionUs
   if (!user || user.role !== 'TEACHER' || !user.teacherId) {
     redirect(localizedPath(locale, '/teacher/login'));
   }
+  // Still on the password staff picked for them: nothing else until they
+  // choose their own
+  if (user.mustChangePassword) redirect(localizedPath(locale, '/teacher/change-password'));
   return user as PortalSessionUser & { teacherId: string };
 }

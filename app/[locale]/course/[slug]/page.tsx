@@ -1,3 +1,4 @@
+import { jsonLdScript } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Baby, Banknote, CalendarDays, Check, Clock, Coins, PiggyBank, Sun, Target, Users } from 'lucide-react';
@@ -136,7 +137,7 @@ export default async function CourseDetailPage(
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(courseJsonLd) }}
       />
       <Navbar />
       <main className="relative flex-1 overflow-hidden px-6 pb-16 pt-28 md:px-10 lg:flex lg:min-h-dvh lg:items-center lg:px-16 lg:pb-4 lg:pt-[5.5rem] xl:pb-6 xl:pt-[5.5rem]">

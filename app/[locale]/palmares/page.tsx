@@ -1,3 +1,4 @@
+import { jsonLdScript } from '@/lib/json-ld';
 import type { Metadata } from 'next';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
@@ -97,7 +98,7 @@ export default async function PalmaresPage(props: { params: Promise<{ locale: Ap
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }}
       />
       {/* The page opens on the dark navy hero */}
       <Navbar overHero lightLogo />

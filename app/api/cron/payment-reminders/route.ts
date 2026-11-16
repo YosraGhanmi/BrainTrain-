@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { sendSms } from '@/lib/sms/send';
 import { flipOverduePayments } from '@/lib/db/enrollments';
+import { purgeOldAttempts } from '@/lib/auth/rate-limit';
 
 const REMINDER_WINDOW_DAYS = 3;
 
@@ -9,10 +11,17 @@ const REMINDER_WINDOW_DAYS = 3;
 // an external scheduler (OVH cron, GitHub Actions, etc.) on a daily schedule,
 // authenticated with a shared secret header rather than a user session.
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const secret = req.headers.get('x-cron-secret');
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  const secret = req.headers.get('x-cron-secret') ?? '';
+  const expected = process.env.CRON_SECRET?.trim() ?? '';
+  // Hashed first so the comparison takes the same time whatever was sent
+  const digest = (value: string) => crypto.createHash('sha256').update(value).digest();
+  if (!secret || !expected || !crypto.timingSafeEqual(digest(secret), digest(expected))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // Housekeeping: expired sessions and stale attempt counters
+  await prisma.portalSession.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+  await purgeOldAttempts();
 
   const now = new Date();
 

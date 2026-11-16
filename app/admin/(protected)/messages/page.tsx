@@ -1,5 +1,6 @@
 import { Mail, MailOpen } from 'lucide-react';
 import { readMessages } from '@/lib/messages/store';
+import { requireAdmin } from '@/lib/admin/guard';
 import { markMessageRead, deleteMessage } from '@/lib/admin/actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
@@ -17,6 +18,7 @@ function formatDate(iso: string): string {
 }
 
 export default async function AdminMessagesPage() {
+  await requireAdmin();
   const messages = await readMessages();
 
   return (

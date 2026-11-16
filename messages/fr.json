@@ -180,7 +180,6 @@
       "twoFactor": "Authentification à deux facteurs",
       "twoFactorEnabled": "Activée : un code à 6 chiffres vous est envoyé par e-mail comme vérification supplémentaire.",
       "twoFactorDisabled": "Ajoutez une couche de sécurité supplémentaire. Un code à 6 chiffres vous sera envoyé par e-mail pour confirmer vos connexions.",
-      "comingSoon": "Bientôt disponible. Pas encore requis à la connexion.",
       "confirmToTurnOff": "Confirmez votre mot de passe pour désactiver",
       "turnOff": "Désactiver",
       "enterCode": "Entrez le code à 6 chiffres que nous vous avons envoyé",
@@ -253,6 +252,18 @@
       "next": "Suivant",
       "enroll": "S'inscrire"
     },
+    "verify": {
+      "eyebrow": "Espace parents",
+      "title": "Saisissez votre code",
+      "backToLogin": "Retour à la connexion",
+      "headingTop": "Encore une",
+      "headingAccent": "étape !",
+      "tagline": "La double authentification protège le compte de votre famille.",
+      "body": "Nous vous avons envoyé un code à 6 chiffres par e-mail. Saisissez-le pour terminer la connexion. Il expire dans 10 minutes.",
+      "code": "Code de connexion",
+      "incorrectCode": "Code incorrect ou expiré. Réessayez.",
+      "confirm": "Confirmer"
+    },
     "forgotPassword": {
       "eyebrow": "Espace parent",
       "title": "Réinitialiser votre mot de passe",
@@ -292,6 +303,7 @@
       "phoneNumber": "Numéro de téléphone",
       "passwordReset": "Mot de passe réinitialisé. Connectez-vous avec votre nouveau mot de passe.",
       "passwordChanged": "Mot de passe modifié. Connectez-vous avec votre nouveau mot de passe.",
+      "tooManyAttempts": "Trop de tentatives. Patientez 15 minutes, puis réessayez.",
       "accountSuspended": "Ce compte a été suspendu. Contactez BrainTrain pour obtenir de l'aide.",
       "accountPending": "Votre compte est toujours en attente d'approbation. Nous vous enverrons un e-mail une fois qu'il aura été examiné.",
       "accountRejected": "Votre inscription n'a pas été approuvée. Veuillez contacter l'administration de BrainTrain.",
@@ -524,10 +536,24 @@
       "tagline": "Vos classes, vos élèves, leur progression, tout au même endroit.",
       "email": "E-mail",
       "password": "Mot de passe",
+      "tooManyAttempts": "Trop de tentatives. Patientez 15 minutes, puis réessayez.",
       "accountSuspended": "Ce compte a été suspendu. Contactez BrainTrain pour obtenir de l'aide.",
       "incorrectCredentials": "E-mail ou mot de passe incorrect.",
       "logIn": "Se connecter",
       "accountsCreatedByStaff": "Les comptes enseignants sont créés par le personnel de BrainTrain."
+    },
+    "changePassword": {
+      "eyebrow": "BrainTrain Enseignant",
+      "title": "Choisissez votre mot de passe",
+      "backToLogin": "Retour à la connexion",
+      "headingTop": "Un mot de passe",
+      "headingAccent": "rien qu’à vous.",
+      "tagline": "Le mot de passe reçu servait uniquement à démarrer.",
+      "body": "Avant de continuer, choisissez un mot de passe que vous seul connaissez. Au moins 10 caractères.",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmez le nouveau mot de passe",
+      "error": "Utilisez au moins 10 caractères, saisissez deux fois le même mot de passe et choisissez-en un différent de celui que vous avez reçu.",
+      "submit": "Enregistrer et continuer"
     },
     "verify": {
       "eyebrow": "BrainTrain Enseignant",
@@ -535,8 +561,8 @@
       "backToLogin": "Retour à la connexion",
       "oneMore": "Encore une",
       "stepToGo": "étape !",
-      "tagline": "Un code à 4 chiffres protège les notes et évaluations de vos élèves.",
-      "body": "Entrez le code secret à 4 chiffres que votre administrateur vous a donné avec votre mot de passe.",
+      "tagline": "Un code secret protège les notes et évaluations de vos élèves.",
+      "body": "Entrez le code secret que votre administrateur vous a donné avec votre mot de passe.",
       "secretCode": "Code secret",
       "incorrectCode": "Code incorrect. Réessayez.",
       "confirm": "Confirmer"

@@ -180,7 +180,6 @@
       "twoFactor": "Two-factor authentication",
       "twoFactorEnabled": "Enabled: a 6-digit code is emailed to you as an extra check.",
       "twoFactorDisabled": "Add an extra layer of security. A 6-digit code will be emailed to you to confirm sign-ins.",
-      "comingSoon": "Coming soon. Not yet required at login.",
       "confirmToTurnOff": "Confirm your password to turn this off",
       "turnOff": "Turn off",
       "enterCode": "Enter the 6-digit code we emailed you",
@@ -253,6 +252,18 @@
       "next": "Next",
       "enroll": "Enroll"
     },
+    "verify": {
+      "eyebrow": "Parent portal",
+      "title": "Enter your code",
+      "backToLogin": "Back to login",
+      "headingTop": "One more",
+      "headingAccent": "step to go!",
+      "tagline": "Two-factor sign-in keeps your family’s account safe.",
+      "body": "We emailed you a 6-digit code. Enter it to finish signing in. It expires in 10 minutes.",
+      "code": "Sign-in code",
+      "incorrectCode": "Incorrect or expired code. Try again.",
+      "confirm": "Confirm"
+    },
     "forgotPassword": {
       "eyebrow": "Parent Portal",
       "title": "Reset your password",
@@ -292,6 +303,7 @@
       "phoneNumber": "Phone number",
       "passwordReset": "Password reset. Log in with your new password.",
       "passwordChanged": "Password changed. Log in with your new password.",
+      "tooManyAttempts": "Too many attempts. Wait 15 minutes, then try again.",
       "accountSuspended": "This account has been suspended. Contact BrainTrain for help.",
       "accountPending": "Your account is still awaiting admin approval. We'll email you once it's reviewed.",
       "accountRejected": "Your registration wasn't approved. Please see the BrainTrain admin.",
@@ -524,10 +536,24 @@
       "tagline": "Your classes, your students, their progress, all in one place.",
       "email": "Email",
       "password": "Password",
+      "tooManyAttempts": "Too many attempts. Wait 15 minutes, then try again.",
       "accountSuspended": "This account has been suspended. Contact BrainTrain for help.",
       "incorrectCredentials": "Incorrect email or password.",
       "logIn": "Log in",
       "accountsCreatedByStaff": "Teacher accounts are created by BrainTrain staff."
+    },
+    "changePassword": {
+      "eyebrow": "BrainTrain Teacher",
+      "title": "Choose your password",
+      "backToLogin": "Back to login",
+      "headingTop": "Make it",
+      "headingAccent": "yours.",
+      "tagline": "The password you were given was only for getting started.",
+      "body": "Before you continue, choose a password only you know. Use at least 10 characters.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "error": "Use at least 10 characters, type the same password twice, and pick one different from the password you were given.",
+      "submit": "Save and continue"
     },
     "verify": {
       "eyebrow": "BrainTrain Teacher",
@@ -535,8 +561,8 @@
       "backToLogin": "Back to login",
       "oneMore": "One more",
       "stepToGo": "step to go!",
-      "tagline": "A quick 4-digit code keeps your students' notes and grades secure.",
-      "body": "Enter the 4-digit secret code your admin gave you along with your password.",
+      "tagline": "A quick secret code keeps your students' notes and grades secure.",
+      "body": "Enter the secret code your admin gave you along with your password.",
       "secretCode": "Secret code",
       "incorrectCode": "Incorrect code. Try again.",
       "confirm": "Confirm"

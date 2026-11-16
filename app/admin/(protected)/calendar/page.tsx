@@ -1,4 +1,5 @@
 import { readContent } from '@/lib/content/store';
+import { requireAdmin } from '@/lib/admin/guard';
 import { addCalendarEvent, deleteCalendarEvent } from '@/lib/admin/actions';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
@@ -6,6 +7,7 @@ import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminCalendarPage(props: { searchParams: Promise<{ error?: string }> }) {
+  await requireAdmin();
   const searchParams = await props.searchParams;
   const { calendarEvents, ageGroups, courses } = (await readContent());
   const sorted = [...calendarEvents].sort((a, b) => a.date.localeCompare(b.date));

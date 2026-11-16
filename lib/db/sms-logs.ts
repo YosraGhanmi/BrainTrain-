@@ -18,7 +18,8 @@ async function logSms(params: SmsLogInput, status: SmsStatus): Promise<void> {
     data: {
       parentId: params.parentId || null,
       phone: params.phone,
-      message: params.message,
+      // One-time codes never go into the log
+      message: params.purpose === 'PASSWORD_RESET' ? params.message.replace(/\d{6}/g, '******') : params.message,
       purpose: params.purpose,
       status,
       provider: params.provider,

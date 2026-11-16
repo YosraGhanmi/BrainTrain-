@@ -9,7 +9,8 @@ import { readContent, writeContent } from '@/lib/content/store';
 import { normalizeGaId } from '@/lib/analytics/ga';
 import { saveUpload, type UploadFolder } from '@/lib/uploads';
 import { setMessageRead, deleteMessage as deleteMessageEntry } from '@/lib/messages/store';
-import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { checkCredentials, createSessionToken, SESSION_COOKIE_NAME, SESSION_TTL_MS } from '@/lib/auth/session';
+import { clearAttempts, clientIp, takeAttempts, WINDOW } from '@/lib/auth/rate-limit';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 import { destroyPortalSession } from '@/lib/portal-auth/session';
 import {
@@ -55,9 +56,18 @@ function revalidatePublicContent(): void {
 export async function login(formData: FormData): Promise<void> {
   const email = String(formData.get('email') ?? '');
   const password = String(formData.get('password') ?? '');
+  // Per address, plus a ceiling for everyone together
+  const ipKey = `admin-login-ip:${await clientIp()}`;
+  const allowed = await takeAttempts([
+    [ipKey, 10, WINDOW.fifteenMinutes],
+    ['admin-login', 100, WINDOW.fifteenMinutes],
+  ]);
+  if (!allowed) redirect('/admin/login?role=admin&error=throttled');
   if (!checkCredentials(email, password)) {
     redirect('/admin/login?role=admin&error=1');
   }
+  // Only failed attempts count against this address
+  await clearAttempts(ipKey);
   // Clear any leftover reception portal session from this browser so logging
   // out of the admin account later doesn't fall back into that session.
   await destroyPortalSession();
@@ -66,7 +76,7 @@ export async function login(formData: FormData): Promise<void> {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: SESSION_TTL_MS / 1000,
   });
   redirect('/admin');
 }

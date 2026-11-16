@@ -22,21 +22,42 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let event;
   try {
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-  } catch (err) {
-    return NextResponse.json({ error: `Invalid signature: ${(err as Error).message}` }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as { id: string; payment_intent: string | null };
+    const session = event.data.object as {
+      id: string;
+      payment_intent: string | null;
+      payment_status?: string;
+      amount_total?: number | null;
+      currency?: string | null;
+      metadata?: { paymentId?: string } | null;
+    };
 
-    const payment = await prisma.payment.findUnique({ where: { stripeSessionId: session.id } });
+    // The checkout the parent last opened, or failing that the payment named
+    // when the checkout was created (an earlier checkout for the same payment)
+    const payment =
+      (await prisma.payment.findUnique({ where: { stripeSessionId: session.id } })) ??
+      (session.metadata?.paymentId ? await prisma.payment.findUnique({ where: { id: session.metadata.paymentId } }) : null);
+
+    // Only money that actually arrived, for the amount that was due
+    const settled =
+      payment !== null &&
+      session.payment_status === 'paid' &&
+      session.amount_total === Math.round(Number(payment.amount) * 100) &&
+      session.currency?.toLowerCase() === payment.currency.toLowerCase();
+    if (payment && !settled) {
+      console.error(`[stripe:webhook] checkout ${session.id} does not match payment ${payment.id}; left unpaid`);
+    }
 
     // Idempotent: re-delivered webhook for an already-paid payment is a no-op.
-    if (payment && payment.status !== 'PAID') {
+    if (payment && settled && payment.status !== 'PAID') {
       await prisma.$transaction([
         prisma.payment.update({
           where: { id: payment.id },
-          data: { status: 'PAID', paidAt: new Date(), stripePaymentIntentId: session.payment_intent ?? null, parentNotifiedAt: null },
+          data: { status: 'PAID', paidAt: new Date(), stripeSessionId: session.id, stripePaymentIntentId: session.payment_intent ?? null, parentNotifiedAt: null },
         }),
         // Activate the enrollment if not already active
         prisma.enrollment.updateMany({

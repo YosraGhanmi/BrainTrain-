@@ -10,6 +10,7 @@ import { ageGroupSlugForBirthDate, listAgeGroupEntries, getAgeGroupEntryOrThrow 
 import { claimDbChild, createDbChild, getDbChild, updateDbChild } from '@/lib/db/children';
 import { createDbNotification } from '@/lib/db/notifications';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
+import { takeAttempt, WINDOW } from '@/lib/auth/rate-limit';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -61,7 +62,8 @@ export async function claimChild(formData: FormData): Promise<void> {
   const locale = getLocale(formData);
   const parent = await requireParent(locale);
 
-  const child = await claimDbChild(field(formData, 'code'), parent.parentId);
+  const allowed = await takeAttempt(`claim:${parent.parentId}`, 10, WINDOW.hour);
+  const child = allowed ? await claimDbChild(field(formData, 'code'), parent.parentId) : null;
   if (!child) {
     redirect(localizedPath(locale, '/parent-portal/children/new?codeError=1'));
   }

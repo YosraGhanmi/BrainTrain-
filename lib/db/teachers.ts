@@ -17,7 +17,7 @@ export type DbTeacherProfile = {
   // JSON-stringified course slugs assigned to this teacher
   courseSlugs: string;
   teacherSecretCodeHash: string | null;
-  teacherSecretCode: string | null; // plaintext, staff-visible in admin panel
+  mustChangePassword: boolean;
   isFrozen: boolean;
   twoFactorEnabled: boolean;
 };
@@ -33,7 +33,7 @@ function mapTeacher(row: User): DbTeacherProfile {
     teacherId: row.id,
     courseSlugs: stringifyTeacherCourseSlugs(row.teacherCourseSlugs),
     teacherSecretCodeHash: row.teacherSecretCodeHash,
-    teacherSecretCode: row.teacherSecretCode,
+    mustChangePassword: row.mustChangePassword,
     isFrozen: row.isFrozen,
     twoFactorEnabled: row.twoFactorEnabled,
   };
@@ -46,7 +46,6 @@ export async function createDbTeacherProfile(input: {
   phone: string;
   courseSlugs: string;
   teacherSecretCodeHash: string;
-  teacherSecretCode: string;
 }): Promise<string> {
   const row = await prisma.user.create({
     data: {
@@ -57,7 +56,8 @@ export async function createDbTeacherProfile(input: {
       passwordHash: await hashPassword(input.password),
       teacherCourseSlugs: parseTeacherCourseSlugs(input.courseSlugs),
       teacherSecretCodeHash: input.teacherSecretCodeHash,
-      teacherSecretCode: input.teacherSecretCode,
+      // The first password is picked for them, so they choose their own
+      mustChangePassword: true,
     },
   });
   return row.id;
@@ -81,7 +81,7 @@ export async function listDbTeachers(): Promise<DbTeacherProfile[]> {
 
 export async function updateDbTeacherProfile(
   uid: string,
-  data: Partial<Pick<DbTeacherProfile, 'courseSlugs' | 'teacherSecretCodeHash' | 'teacherSecretCode' | 'isFrozen'>>,
+  data: Partial<Pick<DbTeacherProfile, 'courseSlugs' | 'teacherSecretCodeHash' | 'isFrozen'>>,
 ): Promise<void> {
   const { courseSlugs, ...rest } = data;
   const update: Prisma.UserUpdateInput = { ...rest };

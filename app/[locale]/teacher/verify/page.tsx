@@ -45,11 +45,11 @@ export default async function TeacherVerifyPage(
             name="code"
             type="text"
             inputMode="numeric"
-            pattern="[0-9]{4}"
-            maxLength={4}
+            pattern="[0-9]{4,6}"
+            maxLength={6}
             required
             autoFocus
-            className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-4 text-center text-2xl font-bold tracking-[0.5em] text-ink outline-none transition focus:border-accent"
+            className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-4 text-center text-2xl font-bold tracking-[0.4em] text-ink outline-none transition focus:border-accent"
           />
         </div>
 

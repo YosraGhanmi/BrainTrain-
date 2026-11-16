@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
+import { clientIp, takeAttempt, WINDOW } from '@/lib/auth/rate-limit';
 import {
   createDbPreinscription,
   createDbPreinscriptionNotification,
@@ -56,7 +57,20 @@ export async function submitPreinscription(formData: FormData): Promise<void> {
   const course = await getCourse(field(formData, 'courseSlug'), locale);
   const courseQuery = course ? `&course=${encodeURIComponent(course.slug)}` : '';
 
-  if (!childFullName || !Number.isFinite(childAge) || childAge < 1 || childAge > 25 || !institution || !parentFullName || !parentPhone || !EMAIL_PATTERN.test(parentEmail)) {
+  // Open to everyone: every field has a ceiling
+  const tooLong =
+    childFullName.length > 120 ||
+    institution.length > 160 ||
+    parentFullName.length > 120 ||
+    parentPhone.length > 30 ||
+    parentEmail.length > 254 ||
+    (parentPhone2?.length ?? 0) > 30;
+
+  if (tooLong || !childFullName || !Number.isFinite(childAge) || childAge < 1 || childAge > 25 || !institution || !parentFullName || !parentPhone || !EMAIL_PATTERN.test(parentEmail)) {
+    redirect(`/${locale}/preinscription?error=1${courseQuery}`);
+  }
+  // ...and so does the number of requests from one address
+  if (!(await takeAttempt(`preinscription-ip:${await clientIp()}`, 5, WINDOW.tenMinutes))) {
     redirect(`/${locale}/preinscription?error=1${courseQuery}`);
   }
 

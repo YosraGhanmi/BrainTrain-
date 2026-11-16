@@ -31,7 +31,9 @@ export async function sendEmail(params: { to: string; subject: string; text: str
 
   if (!transport) {
     // No SMTP configured — log so the flow is visible during local dev.
-    console.log(`[email:no-smtp] to=${params.to} subject="${params.subject}"\n${params.text}`);
+    // The body can hold a one-time code, so it is only printed outside production
+    const body = process.env.NODE_ENV === 'production' ? '' : `\n${params.text}`;
+    console.log(`[email:no-smtp] to=${params.to} subject="${params.subject}"${body}`);
     return;
   }
 

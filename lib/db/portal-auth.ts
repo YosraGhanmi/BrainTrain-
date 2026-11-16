@@ -20,6 +20,7 @@ export type DbPortalProfile = {
   teacherId: string | null;
   isFrozen: boolean;
   parentStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  mustChangePassword: boolean;
 };
 
 export function mapPortalProfile(row: User): DbPortalProfile {
@@ -38,6 +39,7 @@ export function mapPortalProfile(row: User): DbPortalProfile {
     teacherId: row.role === 'TEACHER' ? row.id : null,
     isFrozen: row.isFrozen,
     parentStatus: row.parentStatus,
+    mustChangePassword: row.mustChangePassword,
   };
 }
 
@@ -54,8 +56,13 @@ export async function verifyDbUserPassword(email: string, password: string): Pro
   return (await verifyPassword(password, user.passwordHash)) ? user.id : null;
 }
 
-export async function setDbUserPassword(userId: string, password: string): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { passwordHash: await hashPassword(password) } });
+// mustChange: the password was picked by staff, so the person is asked to
+// choose their own at the next sign-in (teacher portal)
+export async function setDbUserPassword(userId: string, password: string, mustChange = false): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: await hashPassword(password), mustChangePassword: mustChange },
+  });
 }
 
 // ---------------------------------------------------------------------------

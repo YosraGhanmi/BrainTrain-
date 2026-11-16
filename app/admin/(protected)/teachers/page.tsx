@@ -10,7 +10,8 @@ import {
   regenerateTeacherSecretCode, setAccountPassword,
 } from '@/lib/admin/portal-actions';
 import { readContent } from '@/lib/content/store';
-import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
+import { cookies } from 'next/headers';
+import { TEACHER_CREDENTIALS_COOKIE, parseTeacherCredentialsNotice } from '@/lib/admin/teacher-credentials';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import FreezeToggleButton from '@/components/admin/FreezeToggleButton';
 import RegenerateCodeButton from '@/components/admin/RegenerateCodeButton';
@@ -73,12 +74,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminTeachersPage(
   props: {
-    searchParams: Promise<{ error?: string; courseError?: string; saved?: string; code?: string; email?: string; passwordError?: string }>;
+    searchParams: Promise<{ error?: string; courseError?: string; saved?: string; passwordError?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
   const session = await requireAdmin();
   const canEdit = session.kind === 'admin';
+  const credentials = parseTeacherCredentialsNotice((await cookies()).get(TEACHER_CREDENTIALS_COOKIE)?.value);
   const content = (await readContent());
   const { courses, ageGroups } = content;
   const courseBySlug = new Map(courses.map((c) => [c.slug, c]));
@@ -98,14 +100,14 @@ export default async function AdminTeachersPage(
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl font-semibold text-ink">Teachers</h1>
-        <AddTeacherDialog defaultOpen={Boolean(searchParams.error)} closeKey={searchParams.code}>
+        <AddTeacherDialog defaultOpen={Boolean(searchParams.error)} closeKey={credentials?.code}>
           <form action={createTeacher} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <input name="fullName" placeholder="Full name" required className={selectClassName} />
             <input name="email" type="email" placeholder="Email" required className={selectClassName} />
             <input name="phone" type="tel" placeholder="Phone" required className={selectClassName} />
             <CourseSelect name="courseSlug" courses={courses} ageGroups={ageGroups} className={selectClassName} />
             <p className="text-xs text-stone sm:col-span-2">
-              A default password (<span className="font-mono">{DEFAULT_TEACHER_PASSWORD}</span>) and a random 4-digit secret code are generated automatically — you&apos;ll see the code once, right after creating the account. They can be assigned more courses below once the account exists.
+              A password and a 6-digit secret code are generated for this teacher. You&apos;ll see both once, right after creating the account, and the teacher picks their own password at the first sign-in. They can be assigned more courses below once the account exists.
             </p>
             {searchParams.error === 'exists' ? (
               <p className="text-sm font-semibold text-red-600 sm:col-span-2">A user with that email or phone already exists.</p>
@@ -122,19 +124,22 @@ export default async function AdminTeachersPage(
       {searchParams.passwordError ? (
         <p className="mt-4 text-sm font-semibold text-red-600">Password not saved: use at least 8 characters.</p>
       ) : null}
-      {searchParams.code ? (
+      {credentials ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
           <p className="text-sm font-semibold text-emerald-800">
-            Account created for {searchParams.email}. Give them these credentials — the secret code won&apos;t be shown again:
+            {credentials.password ? 'Account created' : 'New secret code'} for {credentials.email}. Write this down and give it to
+            them now: it is shown for two minutes and can&apos;t be looked up afterwards.
           </p>
           <div className="mt-3 flex flex-wrap gap-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Password</p>
-              <p className="font-mono text-lg font-bold text-emerald-900">{DEFAULT_TEACHER_PASSWORD}</p>
-            </div>
+            {credentials.password ? (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Temporary password</p>
+                <p data-testid="teacher-password" className="font-mono text-lg font-bold text-emerald-900">{credentials.password}</p>
+              </div>
+            ) : null}
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Secret code</p>
-              <p className="font-mono text-lg font-bold text-emerald-900">{searchParams.code}</p>
+              <p data-testid="teacher-secret-code" className="font-mono text-lg font-bold text-emerald-900">{credentials.code}</p>
             </div>
           </div>
         </div>
@@ -176,12 +181,10 @@ export default async function AdminTeachersPage(
                 <td className="px-5 py-4 text-stone align-top">{t.email}</td>
                 <td className="px-5 py-4 text-stone align-top">{t.phone}</td>
                 <td className="px-5 py-4 align-top">
-                  {t.teacherSecretCode ? (
-                    <span className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-sm font-bold text-ink">
-                      {t.teacherSecretCode}
-                    </span>
+                  {t.teacherSecretCodeHash ? (
+                    <span className="text-xs text-stone">Set. Regenerate if forgotten.</span>
                   ) : (
-                    <span className="text-xs text-stone">Not set — regenerate</span>
+                    <span className="text-xs text-stone">Not set. Regenerate.</span>
                   )}
                 </td>
                 <td className="px-5 py-4 align-top">

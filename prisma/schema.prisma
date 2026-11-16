@@ -50,10 +50,13 @@ model User {
   passwordResetCodeHash      String?
   passwordResetCodeExpiresAt DateTime?
 
-  // Teachers: courses they teach, and the 4-digit PIN asked after password
+  // Teachers: courses they teach, and the secret code asked after the
+  // password (bcrypt only: staff regenerate a forgotten code, never read it)
   teacherCourseSlugs    String[] @default([])
   teacherSecretCodeHash String?
-  teacherSecretCode     String?
+  // Set on accounts created with a password picked by staff: the person has
+  // to choose their own before using the portal
+  mustChangePassword    Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,6 +84,17 @@ model PortalSession {
 
   @@index([userId])
   @@map("portal_sessions")
+}
+
+// Attempt counters for sign-ins, one-time codes and the public forms (see
+// lib/auth/rate-limit.ts). key is a sha256, never the email or phone itself.
+model AuthAttempt {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+
+  @@index([windowStart])
+  @@map("auth_attempts")
 }
 
 // ---------------------------------------------------------------------------

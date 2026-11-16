@@ -146,7 +146,9 @@ export default async function AdminLoginPage(
                   <PasswordField />
                 </div>
 
-                {searchParams.error === 'frozen' ? (
+                {searchParams.error === 'throttled' ? (
+                  <p className="text-sm font-semibold text-red-600">Too many attempts. Wait 15 minutes, then try again.</p>
+                ) : searchParams.error === 'frozen' ? (
                   <p className="text-sm font-semibold text-red-600">This account has been suspended. Contact BrainTrain for help.</p>
                 ) : searchParams.error === 'exists' ? (
                   <p className="text-sm font-semibold text-red-600">A user with that email or phone already exists.</p>

@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  poweredByHeader: false,
   experimental: {
     serverActions: {
       // Photos straight from a phone camera are often 3-8 MB; the default
@@ -24,6 +25,8 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // Browsers ignore this over plain HTTP, so local development is unaffected
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
         ],
       },
     ];

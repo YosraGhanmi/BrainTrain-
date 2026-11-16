@@ -1,12 +1,13 @@
 'use server';
 
 import crypto from 'crypto';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, requireAdminOnly } from '@/lib/admin/guard';
 import { hashPassword } from '@/lib/portal-auth/password';
 import { revokeAllSessions } from '@/lib/portal-auth/session';
-import { DEFAULT_TEACHER_PASSWORD } from '@/lib/admin/teacher-defaults';
+import { TEACHER_CREDENTIALS_COOKIE, type TeacherCredentialsNotice } from '@/lib/admin/teacher-credentials';
 import { sendEmail } from '@/lib/email/send';
 import { sendSms } from '@/lib/sms/send';
 import { absoluteUrl } from '@/lib/seo';
@@ -67,6 +68,23 @@ function field(formData: FormData, name: string): string {
   return String(formData.get(name) ?? '').trim();
 }
 
+function newTeacherSecretCode(): string {
+  return crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+}
+
+// New credentials are handed to the Teachers page in a short-lived cookie
+// only this browser sends back, never in the address bar (which ends up in
+// the server logs and the browser history).
+async function showTeacherCredentialsOnce(notice: TeacherCredentialsNotice): Promise<void> {
+  (await cookies()).set(TEACHER_CREDENTIALS_COOKIE, JSON.stringify(notice), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/admin/teachers',
+    maxAge: 120,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Teachers
 // ---------------------------------------------------------------------------
@@ -82,24 +100,27 @@ export async function createTeacher(formData: FormData): Promise<void> {
     redirect('/admin/teachers?error=1');
   }
 
-  const secretCode = crypto.randomInt(0, 10000).toString().padStart(4, '0');
-  const [secretCodeHash] = await Promise.all([hashPassword(secretCode)]);
+  // A password of their own for each teacher (replaced at their first
+  // sign-in) and a secret code, both shown to staff once
+  const password = crypto.randomBytes(9).toString('base64url');
+  const secretCode = newTeacherSecretCode();
+  const secretCodeHash = await hashPassword(secretCode);
 
   try {
     await createDbTeacherProfile({
       email,
-      password: DEFAULT_TEACHER_PASSWORD,
+      password,
       fullName,
       phone,
       courseSlugs: stringifyTeacherCourseSlugs([courseSlug]),
       teacherSecretCodeHash: secretCodeHash,
-      teacherSecretCode: secretCode,
     });
   } catch {
     redirect('/admin/teachers?error=exists');
   }
 
-  redirect(`/admin/teachers?saved=1&code=${secretCode}&email=${encodeURIComponent(email)}`);
+  await showTeacherCredentialsOnce({ email, password, code: secretCode });
+  redirect('/admin/teachers?saved=1');
 }
 
 export async function deleteTeacher(userId: string): Promise<void> {
@@ -113,13 +134,14 @@ export async function regenerateTeacherSecretCode(userId: string): Promise<void>
   const profile = await getDbTeacherProfile(userId);
   if (!profile || profile.role !== 'TEACHER') redirect('/admin/teachers?error=1');
 
-  const secretCode = crypto.randomInt(0, 10000).toString().padStart(4, '0');
+  const secretCode = newTeacherSecretCode();
   const teacherSecretCodeHash = await hashPassword(secretCode);
 
-  await updateDbTeacherProfile(userId, { teacherSecretCodeHash, teacherSecretCode: secretCode });
+  await updateDbTeacherProfile(userId, { teacherSecretCodeHash });
   await revokeAllSessions(userId);
 
-  redirect(`/admin/teachers?saved=1&code=${secretCode}&email=${encodeURIComponent(profile!.email)}`);
+  await showTeacherCredentialsOnce({ email: profile!.email, code: secretCode });
+  redirect('/admin/teachers?saved=1');
 }
 
 export async function addTeacherCourse(teacherId: string, formData: FormData): Promise<void> {
@@ -209,9 +231,11 @@ export async function setAccountPassword(userId: string, formData: FormData): Pr
   await requireAdminOnly();
   const returnTo = PASSWORD_PAGES.includes(field(formData, 'returnTo')) ? field(formData, 'returnTo') : '/admin';
   const password = field(formData, 'password');
-  if (password.length < 8 || !(await getDbPortalProfile(userId))) redirect(`${returnTo}?passwordError=1`);
+  const account = await getDbPortalProfile(userId);
+  if (password.length < 8 || !account) redirect(`${returnTo}?passwordError=1`);
 
-  await setDbUserPassword(userId, password);
+  // A teacher replaces a staff-picked password at their next sign-in
+  await setDbUserPassword(userId, password, account!.role === 'TEACHER');
   await revokeAllSessions(userId);
   redirect(`${returnTo}?saved=password`);
 }
@@ -236,7 +260,7 @@ export async function setParentFrozen(userId: string, isFrozen: boolean): Promis
 export async function approveParent(userId: string): Promise<void> {
   await requireAdmin();
   const user = await getDbPortalProfile(userId);
-  if (!user) redirect('/admin/parents?error=1');
+  if (!user || user.role !== 'PARENT') redirect('/admin/parents?error=1');
   await updateDbPortalProfile(userId, { parentStatus: 'APPROVED' });
   const loginUrl = absoluteUrl(routing.defaultLocale, '/parent-portal/login');
   await sendEmail({
@@ -249,6 +273,8 @@ export async function approveParent(userId: string): Promise<void> {
 
 export async function rejectParent(userId: string): Promise<void> {
   await requireAdmin();
+  const user = await getDbPortalProfile(userId);
+  if (!user || user.role !== 'PARENT') redirect('/admin/parents?error=1');
   await updateDbPortalProfile(userId, { parentStatus: 'REJECTED' });
   redirect('/admin/parents?saved=1');
 }

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { requireTeacher, localizedPath } from '@/lib/portal-auth/guard';
 import { isValidStickerUrl } from '@/lib/badges/stickers';
+import { safeReturnPath } from '@/lib/portal-auth/return-path';
 import { createDbTeacherNote } from '@/lib/db/teacher-notes';
 import { createDbBadge } from '@/lib/db/badges';
 import { getDbCourseSession } from '@/lib/db/sessions';
@@ -18,7 +19,7 @@ function getLocale(formData: FormData): AppLocale {
 }
 
 function returnPath(formData: FormData, courseSessionId: string, childId: string): string {
-  return field(formData, 'returnTo') || `/teacher/sessions/${courseSessionId}/students/${childId}`;
+  return safeReturnPath(field(formData, 'returnTo')) ?? `/teacher/sessions/${courseSessionId}/students/${childId}`;
 }
 
 export async function addTeacherNote(formData: FormData): Promise<void> {
@@ -31,7 +32,7 @@ export async function addTeacherNote(formData: FormData): Promise<void> {
   const back = returnPath(formData, courseSessionId, childId);
 
   const fail = () => redirect(localizedPath(locale, `${back}?error=1`));
-  if (!content) fail();
+  if (!content || content.length > 4000) fail();
 
   const session = await getDbCourseSession(courseSessionId);
   if (!session || session.teacherId !== teacher.teacherId) {
@@ -69,7 +70,7 @@ export async function awardBadge(formData: FormData): Promise<void> {
   const back = returnPath(formData, courseSessionId, childId);
 
   const fail = () => redirect(localizedPath(locale, `${back}?badgeError=1`));
-  if (!title) fail();
+  if (!title || title.length > 120 || note.length > 1000) fail();
 
   const session = await getDbCourseSession(courseSessionId);
   if (!session || session.teacherId !== teacher.teacherId) {

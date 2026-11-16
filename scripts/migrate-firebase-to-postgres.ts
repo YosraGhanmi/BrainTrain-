@@ -123,7 +123,6 @@ async function migrateUsers(): Promise<Set<string>> {
       twoFactorEnabled: data.twoFactorEnabled === true,
       teacherCourseSlugs: courseSlugs,
       teacherSecretCodeHash: str(data.teacherSecretCodeHash),
-      teacherSecretCode: str(data.teacherSecretCode),
       createdAt: toDate(data.createdAt) ?? new Date(),
     });
   }
