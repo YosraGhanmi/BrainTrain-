@@ -146,8 +146,10 @@ function Opener({ story, accent }: { story: EventsViewStory; accent: string }) {
 function StoryMedia({ story, accent, labels, large }: { story: EventsViewStory; accent: string; labels: EventsViewData['labels']; large?: boolean }) {
   const video = hasVideo(story);
   const shape = video ? VIDEO_SHAPE : PHOTO_SHAPE;
+  // Tall video previews stay narrow; wide photos fill their column
+  const width = video ? (large ? 'max-w-[26rem]' : 'max-w-[22rem]') : 'max-w-none';
   return (
-    <div className={`relative mx-auto w-full ${large ? 'max-w-[26rem]' : 'max-w-[22rem]'}`}>
+    <div className={`relative mx-auto w-full ${width}`}>
       <div>
         {video ? (
           <EventVideo

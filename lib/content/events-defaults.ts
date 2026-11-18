@@ -72,10 +72,13 @@ export const DEFAULT_EVENTS: EventsContent = {
       title: { en: 'Closing Ceremony, second edition', fr: 'Cérémonie de clôture, deuxième édition' },
       date: { en: 'September 2026', fr: 'Septembre 2026' },
       standfirst: {
-        en: 'A year of building, celebrated together.',
-        fr: 'Une année à construire, célébrée ensemble.',
+        en: 'A summer of building, celebrated together.',
+        fr: 'Un été à construire, célébré ensemble.',
       },
-      body: { en: '', fr: '' },
+      body: {
+        en: 'For the second year in a row, the Summer School ended on stage. After a summer spent imagining, building and testing their own projects around the theme of biodiversity, our students presented their work in English in front of the jury.\n\nThe highlight of the day was the Pitch Battle, where the young founders went head to head to defend their projects. Confidence, creativity and courage were all there.\n\n"Best Project" awards, trophies, medals, valuable prizes and gifts, and a certificate for every child: everyone was celebrated. A big thank you to the children, parents, coaches, jury and sponsors for this beautiful adventure.',
+        fr: "Pour la deuxième année, la Summer School s'est terminée sur scène. Après un été à imaginer, construire et tester leurs propres projets autour du thème de la biodiversité, nos élèves ont présenté leur travail en anglais devant le jury.\n\nLe temps fort de la journée : la Pitch Battle, où les jeunes entrepreneurs se sont affrontés pour défendre leur projet. Confiance, créativité et courage étaient au rendez-vous.\n\nPrix « Best Project », trophées, médailles, prix et cadeaux de grande valeur, et un certificat pour chaque enfant : tout le monde a été célébré. Un grand merci aux enfants, aux parents, aux coachs, au jury et à nos sponsors pour cette belle aventure.",
+      },
       speakers: [],
       facebookUrl: FB_PAGE_VIDEO('1622576929212466'),
       videoFile: '',
@@ -119,7 +122,10 @@ export const DEFAULT_EVENTS: EventsContent = {
         en: 'Celebrating together what the children have built.',
         fr: 'On célèbre ensemble ce que les enfants ont construit.',
       },
-      body: { en: '', fr: '' },
+      body: {
+        en: 'The closing ceremony marks the end of our Summer School. All summer long, the children worked on their own projects, from the first idea to the final result, mixing technology, robotics and entrepreneurship.\n\nOn the big day, each of them stepped on stage to pitch their project in English in front of a jury: explaining the idea, defending their choices and answering questions, just like real entrepreneurs.\n\nThe best projects won valuable prizes, gifts and trophies, and every child left with a certificate. Thank you to the parents, coaches, jury and sponsors who made this first edition unforgettable.',
+        fr: "La cérémonie de clôture marque la fin de notre Summer School. Tout l'été, les enfants ont travaillé sur leurs propres projets, de la première idée au résultat final, entre technologie, robotique et entrepreneuriat.\n\nLe jour J, chacun est monté sur scène pour présenter son projet en anglais devant un jury : expliquer son idée, défendre ses choix et répondre aux questions, comme de vrais entrepreneurs.\n\nLes meilleurs projets ont remporté des prix de grande valeur, des cadeaux et des trophées, et chaque enfant est reparti avec son certificat. Merci aux parents, aux coachs, au jury et à nos sponsors d'avoir rendu cette première édition inoubliable.",
+      },
       speakers: [],
       facebookUrl: FB_PAGE_VIDEO('1584983709149897'),
       videoFile: '',
@@ -140,8 +146,8 @@ export const DEFAULT_EVENTS: EventsContent = {
         fr: 'Quatre entrepreneurs passionnés ont donné de leur temps pour inspirer la prochaine génération.',
       },
       body: {
-        en: 'We are delighted to share the success of our Inspire Talks, which brought together four passionate entrepreneurs who invested their time to inspire the next generation.\n\nThey shared the true stories of their journeys: the challenges they faced, the lessons they learned and the victories they celebrated.\n\nThis event was not only about business. It was above all about showing children that ideas can grow, that obstacles can be overcome and that dreams can come true. Through authentic exchanges and inspiring stories, we sparked curiosity, fed ambition and planted the seeds of future changemakers.\n\nA huge thank you to our speakers for sharing their expertise, vision and real-life experience.',
-        fr: "Nous sommes ravis de partager le succès de notre Inspire Talks, qui a réuni quatre entrepreneurs passionnés ayant investi de leur temps pour inspirer la prochaine génération.\n\nIls ont dévoilé les vraies histoires de leurs parcours : les défis qu'ils ont affrontés, les leçons qu'ils ont apprises et les victoires qu'ils ont célébrées.\n\nCet événement n'était pas seulement une question de business. Il s'agissait surtout de montrer aux enfants que les idées peuvent grandir, que les obstacles peuvent être surmontés et que les rêves peuvent devenir réalité. À travers des échanges authentiques et des récits inspirants, nous avons éveillé la curiosité, nourri l'ambition et semé les graines des futurs changemakers.\n\nUn immense merci à nos intervenants pour avoir partagé leur expertise, leur vision et leurs expériences concrètes.",
+        en: 'They shared the true stories of their journeys: the challenges they faced, the lessons they learned and the victories they celebrated.\n\nBeyond business, it was about showing children that ideas can grow, that obstacles can be overcome and that dreams can come true. Through authentic exchanges, we sparked curiosity, fed ambition and planted the seeds of future changemakers.\n\nA huge thank you to our speakers for their expertise, vision and real-life experience.',
+        fr: "Ils ont partagé les vraies histoires de leurs parcours : les défis affrontés, les leçons apprises et les victoires célébrées.\n\nAu-delà du business, il s'agissait de montrer aux enfants que les idées peuvent grandir, que les obstacles se surmontent et que les rêves peuvent devenir réalité. À travers des échanges authentiques, nous avons éveillé la curiosité, nourri l'ambition et semé les graines des futurs changemakers.\n\nUn immense merci à nos intervenants pour leur expertise, leur vision et leurs expériences concrètes.",
       },
       speakers: [
         { en: 'Chiheb Eddine Fatnassi | CEO, Pixelup', fr: 'Chiheb Eddine Fatnassi | CEO, Pixelup' },

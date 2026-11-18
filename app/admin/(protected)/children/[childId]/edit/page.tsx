@@ -78,8 +78,8 @@ export default async function EditChildPage(props: {
               <input name="institution" defaultValue={child.institution ?? ''} className={inputClassName} />
             </label>
             <label className="block">
-              <span className={labelClassName}>Registration date</span>
-              <input name="registeredAt" type="date" defaultValue={toDateInput(child.registeredAt ?? child.createdAt)} className={inputClassName} />
+              <span className={labelClassName}>Registration date (optional)</span>
+              <input name="registeredAt" type="date" defaultValue={child.registeredAt ? toDateInput(child.registeredAt) : ''} className={inputClassName} />
             </label>
             <label className="block">
               <span className={labelClassName}>Special accommodations</span>

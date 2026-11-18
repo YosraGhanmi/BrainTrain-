@@ -19,7 +19,6 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
   await requireAdmin();
   const enrollmentOptions = await loadStaffEnrollmentOptions();
   const courseSuggestions = [...new Set((await readContent()).courses.map((c) => c.title.en))];
-  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -71,8 +70,8 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
                   <input name="institution" className={inputClassName} />
                 </label>
                 <label className="block">
-                  <span className={labelClassName}>Registration date</span>
-                  <input name="registeredAt" type="date" defaultValue={today} className={inputClassName} />
+                  <span className={labelClassName}>Registration date (optional)</span>
+                  <input name="registeredAt" type="date" className={inputClassName} />
                 </label>
                 <label className="block">
                   <span className={labelClassName}>Special accommodations (optional)</span>
