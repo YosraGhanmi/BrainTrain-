@@ -52,6 +52,7 @@ function mapJoinedChild(row: Child, ageGroups: AgeGroupEntry[]): DbChild {
     photoUrl: row.photoUrl,
     photoColor: row.photoColor,
     claimCode: row.claimCode,
+    claimedAt: row.claimedAt,
     pastClasses: Array.isArray(row.pastClasses) ? (row.pastClasses as PastClass[]) : [],
     contactName: row.contactName,
     contactPhone: row.contactPhone,

@@ -21,16 +21,27 @@ export type DbChild = {
   photoColor: string | null;
   // One-time code the front desk hands to the parent to link this child
   claimCode: string | null;
+  // When a parent linked this staff-added child to their account
+  claimedAt: Date | null;
   pastClasses: PastClass[];
   // Parent contact from the paper records, for children with no linked
   // account yet. Once linked, the account's own details take precedence.
   contactName: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
-  // Original registration date from the paper records (null = createdAt)
+  // Original registration date from the paper records (null = see registrationDate)
   registeredAt: Date | null;
   createdAt: Date;
 };
+
+// The date to show as "Registered". A child a parent registered online was
+// registered the day it was added; a child staff added (it got a parent code)
+// has only the date typed in, which the Admin may leave empty: then null.
+export function registrationDate(child: Pick<DbChild, 'registeredAt' | 'createdAt' | 'claimCode' | 'claimedAt'>): Date | null {
+  if (child.registeredAt) return child.registeredAt;
+  const addedByStaff = Boolean(child.claimCode || child.claimedAt);
+  return addedByStaff ? null : child.createdAt;
+}
 
 // Front-desk details staff can set on an imported child
 export type ChildContactFields = Pick<DbChild, 'contactName' | 'contactPhone' | 'contactEmail' | 'registeredAt'>;
@@ -59,6 +70,7 @@ function mapChild(row: ChildRow, ageGroups: AgeGroupEntry[]): DbChild {
     photoUrl: row.photoUrl,
     photoColor: row.photoColor,
     claimCode: row.claimCode,
+    claimedAt: row.claimedAt,
     pastClasses: parsePastClasses(row.pastClasses),
     contactName: row.contactName,
     contactPhone: row.contactPhone,
@@ -83,7 +95,7 @@ export async function getDbChild(childId: string): Promise<DbChild | null> {
 }
 
 export async function createDbChild(
-  data: Omit<DbChild, 'id' | 'createdAt' | 'photoUrl' | 'photoColor' | 'claimCode' | 'pastClasses' | keyof ChildContactFields> &
+  data: Omit<DbChild, 'id' | 'createdAt' | 'photoUrl' | 'photoColor' | 'claimCode' | 'claimedAt' | 'pastClasses' | keyof ChildContactFields> &
     Partial<Pick<DbChild, 'claimCode' | 'pastClasses'> & ChildContactFields>,
 ): Promise<string> {
   const row = await prisma.child.create({

@@ -23,7 +23,7 @@ import { addChildEnrollment, addPastClass, markChildPaymentPaid, regenerateChild
 import { ageGroupLookup, courseLookup } from '@/lib/content/lookup';
 import { ageOn } from '@/lib/content/age-range';
 import { rotateHue } from '@/lib/color';
-import { formatClaimCode, getDbChild } from '@/lib/db/children';
+import { formatClaimCode, getDbChild, registrationDate } from '@/lib/db/children';
 import { getDbPortalProfile } from '@/lib/db/portal-auth';
 import { listDbBadgesByChild } from '@/lib/db/badges';
 import { listDbTeacherNotesByChild } from '@/lib/db/teacher-notes';
@@ -97,6 +97,7 @@ export default async function AdminChildProfilePage(props: {
 
   const child = await getDbChild(params.childId);
   if (!child) notFound();
+  const registeredOn = registrationDate(child);
 
   const [parent, enrollments, payments, badges, notes, sessions, teachers, timeSlots, enrollmentOptions] = await Promise.all([
     getDbPortalProfile(child.parentId),
@@ -199,7 +200,7 @@ export default async function AdminChildProfilePage(props: {
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Fact icon={<Cake />} label="Born" value={hasBirthDate ? formatDate(child.dateOfBirth) : '-'} />
             <Fact icon={<School />} label="School" value={child.institution ?? '-'} />
-            <Fact icon={<CalendarCheck />} label="Registered" value={formatDate(child.registeredAt ?? child.createdAt)} />
+            <Fact icon={<CalendarCheck />} label="Registered" value={registeredOn ? formatDate(registeredOn) : 'Not set'} />
             <Fact icon={<UserRound />} label="Special accommodations" value={child.specialNeeds ?? 'None'} />
           </div>
         </div>

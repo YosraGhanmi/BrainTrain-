@@ -5,7 +5,7 @@ import { deleteChild } from '@/lib/admin/portal-actions';
 import { ageOn } from '@/lib/content/age-range';
 import ClickableRow from '@/components/admin/ClickableRow';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
-import { formatClaimCode, listAllDbChildren } from '@/lib/db/children';
+import { formatClaimCode, listAllDbChildren, registrationDate } from '@/lib/db/children';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,7 +119,7 @@ export default async function AdminChildrenPage() {
                     </td>
                     <td className={`${td} whitespace-nowrap text-stone`}>{c.parentPhone || '-'}</td>
                     <td className={`${td} bg-orange-50/60 whitespace-nowrap text-stone`}>
-                      {(c.registeredAt ?? c.createdAt).toLocaleDateString('fr-FR')}
+                      {registrationDate(c)?.toLocaleDateString('fr-FR') ?? 'Not set'}
                     </td>
                     <td className={`${td} text-stone`}>{c.parentEmail || '-'}</td>
                     <td className={`${td} text-right`}>
