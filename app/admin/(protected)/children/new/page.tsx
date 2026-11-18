@@ -16,7 +16,11 @@ const labelClassName = 'mb-1.5 block text-xs font-semibold uppercase tracking-wi
 
 export default async function NewExistingChildPage(props: { searchParams: Promise<{ error?: string }> }) {
   const searchParams = await props.searchParams;
-  await requireAdmin();
+  const session = await requireAdmin();
+  // The Admin imports existing children, often with no known registration
+  // date; the front desk registers new arrivals, so the date is required
+  const dateRequired = session.kind === 'secretary';
+  const today = new Date().toISOString().slice(0, 10);
   const enrollmentOptions = await loadStaffEnrollmentOptions();
   const courseSuggestions = [...new Set((await readContent()).courses.map((c) => c.title.en))];
 
@@ -41,7 +45,9 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
 
       {searchParams.error ? (
         <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
-          Please fill in the name and date of birth (and the age group if none was detected).
+          {searchParams.error === 'registeredAt'
+            ? 'Please fill in the registration date.'
+            : 'Please fill in the name and date of birth (and the age group if none was detected).'}
         </p>
       ) : null}
 
@@ -70,8 +76,14 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
                   <input name="institution" className={inputClassName} />
                 </label>
                 <label className="block">
-                  <span className={labelClassName}>Registration date (optional)</span>
-                  <input name="registeredAt" type="date" className={inputClassName} />
+                  <span className={labelClassName}>{dateRequired ? 'Registration date' : 'Registration date (optional)'}</span>
+                  <input
+                    name="registeredAt"
+                    type="date"
+                    required={dateRequired}
+                    defaultValue={dateRequired ? today : undefined}
+                    className={inputClassName}
+                  />
                 </label>
                 <label className="block">
                   <span className={labelClassName}>Special accommodations (optional)</span>

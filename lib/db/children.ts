@@ -192,6 +192,7 @@ export async function listAllDbChildren(): Promise<AdminChildRow[]> {
       enrollmentCount: row._count.enrollments,
     };
   });
-  const registered = (c: DbChild) => (c.registeredAt ?? c.createdAt).getTime();
-  return children.sort((a, b) => registered(a) - registered(b));
+  // Newest first, by when the child was added to the system: imported
+  // children often have no registration date, so it can't drive the order
+  return children.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }

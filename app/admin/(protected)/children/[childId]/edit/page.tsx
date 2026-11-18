@@ -37,10 +37,12 @@ export default async function EditChildPage(props: {
   searchParams: Promise<{ error?: string }>;
 }) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const child = await getDbChild(params.childId);
   if (!child) notFound();
+  // The front desk can't erase a registration date once one is set
+  const dateRequired = session.kind === 'secretary' && Boolean(child.registeredAt);
   const profileHref = `/admin/children/${child.id}`;
 
   return (
@@ -53,7 +55,7 @@ export default async function EditChildPage(props: {
 
       {searchParams.error ? (
         <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
-          The name and date of birth are required.
+          {searchParams.error === 'registeredAt' ? 'The registration date is required.' : 'The name and date of birth are required.'}
         </p>
       ) : null}
 
@@ -78,8 +80,14 @@ export default async function EditChildPage(props: {
               <input name="institution" defaultValue={child.institution ?? ''} className={inputClassName} />
             </label>
             <label className="block">
-              <span className={labelClassName}>Registration date (optional)</span>
-              <input name="registeredAt" type="date" defaultValue={child.registeredAt ? toDateInput(child.registeredAt) : ''} className={inputClassName} />
+              <span className={labelClassName}>{dateRequired ? 'Registration date' : 'Registration date (optional)'}</span>
+              <input
+                name="registeredAt"
+                type="date"
+                required={dateRequired}
+                defaultValue={child.registeredAt ? toDateInput(child.registeredAt) : ''}
+                className={inputClassName}
+              />
             </label>
             <label className="block">
               <span className={labelClassName}>Special accommodations</span>

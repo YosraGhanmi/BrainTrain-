@@ -135,7 +135,7 @@ async function enrollAsStaff(child: DbChild, formData: FormData): Promise<'ok' |
 }
 
 export async function createExistingChild(formData: FormData): Promise<void> {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const fullName = field(formData, 'fullName');
   const dateOfBirth = new Date(field(formData, 'dateOfBirth'));
@@ -145,6 +145,10 @@ export async function createExistingChild(formData: FormData): Promise<void> {
   if (!fullName || Number.isNaN(dateOfBirth.getTime())) {
     redirect('/admin/children/new?error=required');
   }
+  const contact = parseContactFields(formData);
+  // Only the Admin, importing children from the paper records, may leave the
+  // registration date empty; the front desk registers new children with one
+  if (session.kind === 'secretary' && !contact.registeredAt) redirect('/admin/children/new?error=registeredAt');
   // Detected from the date of birth; the picked one only when no group fits
   const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? field(formData, 'ageGroupSlug');
   if (!ageGroupSlug) redirect('/admin/children/new?error=required');
@@ -160,7 +164,7 @@ export async function createExistingChild(formData: FormData): Promise<void> {
     specialNeeds: specialNeeds || null,
     claimCode,
     pastClasses: parsePastClasses(formData),
-    ...parseContactFields(formData),
+    ...contact,
   });
 
   // The child exists either way; an enrollment problem is reported on the
@@ -176,7 +180,7 @@ export async function createExistingChild(formData: FormData): Promise<void> {
 }
 
 export async function updateChildDetails(childId: string, formData: FormData): Promise<void> {
-  await requireAdmin();
+  const session = await requireAdmin();
   const child = await getDbChild(childId);
   if (!child) redirect('/admin/children');
 
@@ -185,6 +189,11 @@ export async function updateChildDetails(childId: string, formData: FormData): P
   if (!fullName || Number.isNaN(dateOfBirth.getTime())) redirect(`/admin/children/${childId}/edit?error=details`);
   const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? (field(formData, 'ageGroupSlug') || child!.ageGroupSlug);
   await getAgeGroupEntryOrThrow(ageGroupSlug);
+  const contact = parseContactFields(formData);
+  // The front desk can change a registration date but not erase one
+  if (session.kind === 'secretary' && child!.registeredAt && !contact.registeredAt) {
+    redirect(`/admin/children/${childId}/edit?error=registeredAt`);
+  }
 
   await updateDbChild(childId, {
     fullName,
@@ -192,7 +201,7 @@ export async function updateChildDetails(childId: string, formData: FormData): P
     ageGroupSlug,
     institution: field(formData, 'institution') || null,
     specialNeeds: field(formData, 'specialNeeds') || null,
-    ...parseContactFields(formData),
+    ...contact,
   });
   revalidatePath('/admin/children');
   revalidatePath(`/admin/children/${childId}`);
