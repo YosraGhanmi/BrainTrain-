@@ -33,6 +33,10 @@ export default async function AccountPage(
         <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.phoneTaken')}</p>
       ) : searchParams.error === 'no-secondary' ? (
         <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.noSecondary')}</p>
+      ) : searchParams.error === 'child-name' ? (
+        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.childName')}</p>
+      ) : searchParams.error === 'child-age' ? (
+        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.childAge')}</p>
       ) : searchParams.error ? (
         <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600">{t('errors.generic')}</p>
       ) : null}

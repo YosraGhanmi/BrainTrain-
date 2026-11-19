@@ -3,7 +3,10 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/admin/guard';
-import { ageGroupSlugForBirthDate, listAgeGroupEntries, getAgeGroupEntryOrThrow, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { listAgeGroupEntries, getCourseEntryOrThrow } from '@/lib/content/lookup';
+import { chooseAgeGroup } from '@/lib/content/age-range';
+import { findPossibleDuplicates, type DuplicateReason } from '@/lib/children/duplicates';
+import { birthDateProblem, nameTooLong } from '@/lib/children/validation';
 import { DEFAULT_SESSION_CAPACITY, DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
 import { getDbTimeSlot } from '@/lib/db/time-slots';
 import { quoteEnrollment } from '@/lib/pricing/compute';
@@ -13,10 +16,21 @@ import {
   generateUniqueClaimCode,
   getDbChild,
   updateDbChild,
-  type ChildContactFields,
   type DbChild,
   type PastClass,
 } from '@/lib/db/children';
+import {
+  createDbFamily,
+  detachDbChildFromFamily,
+  familyIsEmpty,
+  getDbFamily,
+  linkDbSiblings,
+  PARENT_RELATIONS,
+  saveDbChildFamily,
+  type FamilyFields,
+  type ParentRelation,
+} from '@/lib/db/families';
+import { prisma } from '@/lib/db/prisma';
 import { createDbEnrollment, getDbPayment, updateDbPayment, type PaymentMethod, type PlanType } from '@/lib/db/enrollments';
 import {
   createDbCourseSession,
@@ -41,14 +55,60 @@ function parsePastClasses(formData: FormData): PastClass[] {
     .filter((c) => c.course);
 }
 
-function parseContactFields(formData: FormData): ChildContactFields {
-  const registeredAt = new Date(field(formData, 'registeredAt'));
+// yyyy-mm-dd from <input type="date">, read as UTC midnight; null if empty
+function dateField(formData: FormData, name: string): Date | null {
+  const value = field(formData, name);
+  const date = new Date(value);
+  return value && !Number.isNaN(date.getTime()) ? date : null;
+}
+
+function relationField(formData: FormData, name: string): ParentRelation | null {
+  const value = field(formData, name) as ParentRelation;
+  return PARENT_RELATIONS.includes(value) ? value : null;
+}
+
+// The two parents' blocks of the child forms (components/admin/FamilyFields)
+function parseFamilyFields(formData: FormData): FamilyFields {
   return {
-    contactName: field(formData, 'contactName') || null,
-    contactPhone: field(formData, 'contactPhone') || null,
-    contactEmail: field(formData, 'contactEmail').toLowerCase() || null,
-    registeredAt: Number.isNaN(registeredAt.getTime()) ? null : registeredAt,
+    parent1Name: field(formData, 'parent1Name') || null,
+    parent1Relation: relationField(formData, 'parent1Relation'),
+    parent1Phone: field(formData, 'parent1Phone') || null,
+    parent1Phone2: field(formData, 'parent1Phone2') || null,
+    parent2Name: field(formData, 'parent2Name') || null,
+    parent2Relation: relationField(formData, 'parent2Relation'),
+    parent2Phone: field(formData, 'parent2Phone') || null,
+    parent2Phone2: field(formData, 'parent2Phone2') || null,
+    email: field(formData, 'email').toLowerCase() || null,
   };
+}
+
+// What's wrong with a child's form, or null: names over 30 characters, or a
+// date of birth making the child younger than 4 or older than 18. On an
+// edit, values left as they were aren't checked again: a child can age out
+// of the range while on record, and older records may hold longer names.
+function childFormProblem(
+  formData: FormData,
+  previous?: { fullName: string; dateOfBirth: Date | null; parent1Name: string | null; parent2Name: string | null },
+): string | null {
+  const changedName = (name: string, before: string | null | undefined) => (previous ? name !== (before ?? '') : true);
+  const fullName = field(formData, 'fullName');
+  if (changedName(fullName, previous?.fullName) && nameTooLong(fullName)) return 'nameLength';
+  for (const key of ['parent1Name', 'parent2Name'] as const) {
+    const name = field(formData, key);
+    if (changedName(name, previous?.[key]) && nameTooLong(name)) return 'parentNameLength';
+  }
+  const dateOfBirth = dateField(formData, 'dateOfBirth');
+  const unchanged = dateOfBirth && previous?.dateOfBirth && dateOfBirth.getTime() === previous.dateOfBirth.getTime();
+  if (dateOfBirth && !unchanged && birthDateProblem(dateOfBirth)) return 'age';
+  return null;
+}
+
+// Date of birth (optional) and age group: picked by hand, or "" for the one
+// the date gives, or left to complete when there is neither
+async function parseBirthAndGroup(formData: FormData) {
+  const dateOfBirth = dateField(formData, 'dateOfBirth');
+  const groups = await listAgeGroupEntries();
+  return { dateOfBirth, ...chooseAgeGroup(groups, dateOfBirth, field(formData, 'ageGroupSlug')) };
 }
 
 // The group for a course at a timetable slot. Staff import children from the
@@ -138,34 +198,32 @@ export async function createExistingChild(formData: FormData): Promise<void> {
   const session = await requireAdmin();
 
   const fullName = field(formData, 'fullName');
-  const dateOfBirth = new Date(field(formData, 'dateOfBirth'));
-  const institution = field(formData, 'institution');
-  const specialNeeds = field(formData, 'specialNeeds');
-
-  if (!fullName || Number.isNaN(dateOfBirth.getTime())) {
-    redirect('/admin/children/new?error=required');
-  }
-  const contact = parseContactFields(formData);
+  if (!fullName) redirect('/admin/children/new?error=required');
+  const registeredAt = dateField(formData, 'registeredAt');
   // Only the Admin, importing children from the paper records, may leave the
   // registration date empty; the front desk registers new children with one
-  if (session.kind === 'secretary' && !contact.registeredAt) redirect('/admin/children/new?error=registeredAt');
-  // Detected from the date of birth; the picked one only when no group fits
-  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? field(formData, 'ageGroupSlug');
-  if (!ageGroupSlug) redirect('/admin/children/new?error=required');
-  await getAgeGroupEntryOrThrow(ageGroupSlug);
+  if (session.kind === 'secretary' && !registeredAt) redirect('/admin/children/new?error=registeredAt');
+  const problem = childFormProblem(formData);
+  if (problem) redirect(`/admin/children/new?error=${problem}`);
 
-  const claimCode = await generateUniqueClaimCode();
+  const family = parseFamilyFields(formData);
   const childId = await createDbChild({
     parentId: '',
+    familyId: familyIsEmpty(family) ? null : await createDbFamily(family),
     fullName,
-    dateOfBirth,
-    ageGroupSlug,
-    institution: institution || null,
-    specialNeeds: specialNeeds || null,
-    claimCode,
+    ...(await parseBirthAndGroup(formData)),
+    institution: field(formData, 'institution') || null,
+    specialNeeds: field(formData, 'specialNeeds') || null,
+    claimCode: await generateUniqueClaimCode(),
     pastClasses: parsePastClasses(formData),
-    ...contact,
+    registeredAt,
   });
+
+  // Brother or sister of a child already here: joins their family (their
+  // parent details win, what was typed fills the blanks) and their parent
+  // account if they have one
+  const siblingId = field(formData, 'siblingId');
+  if (siblingId) await linkDbSiblings(siblingId, childId);
 
   // The child exists either way; an enrollment problem is reported on the
   // child's page where staff can retry with another group.
@@ -185,27 +243,73 @@ export async function updateChildDetails(childId: string, formData: FormData): P
   if (!child) redirect('/admin/children');
 
   const fullName = field(formData, 'fullName');
-  const dateOfBirth = new Date(field(formData, 'dateOfBirth'));
-  if (!fullName || Number.isNaN(dateOfBirth.getTime())) redirect(`/admin/children/${childId}/edit?error=details`);
-  const ageGroupSlug = ageGroupSlugForBirthDate(dateOfBirth, await listAgeGroupEntries()) ?? (field(formData, 'ageGroupSlug') || child!.ageGroupSlug);
-  await getAgeGroupEntryOrThrow(ageGroupSlug);
-  const contact = parseContactFields(formData);
+  if (!fullName) redirect(`/admin/children/${childId}/edit?error=details`);
+  const registeredAt = dateField(formData, 'registeredAt');
   // The front desk can change a registration date but not erase one
-  if (session.kind === 'secretary' && child!.registeredAt && !contact.registeredAt) {
+  if (session.kind === 'secretary' && child!.registeredAt && !registeredAt) {
     redirect(`/admin/children/${childId}/edit?error=registeredAt`);
   }
+  const family = await getDbFamily(child!.familyId);
+  const problem = childFormProblem(formData, {
+    fullName: child!.fullName,
+    dateOfBirth: child!.dateOfBirth,
+    parent1Name: family?.parent1Name ?? null,
+    parent2Name: family?.parent2Name ?? null,
+  });
+  if (problem) redirect(`/admin/children/${childId}/edit?error=${problem}`);
 
   await updateDbChild(childId, {
     fullName,
-    dateOfBirth,
-    ageGroupSlug,
+    ...(await parseBirthAndGroup(formData)),
     institution: field(formData, 'institution') || null,
     specialNeeds: field(formData, 'specialNeeds') || null,
-    ...contact,
+    registeredAt,
   });
+  // Shared with the brothers and sisters
+  await saveDbChildFamily(childId, parseFamilyFields(formData));
+
   revalidatePath('/admin/children');
   revalidatePath(`/admin/children/${childId}`);
   redirect(`/admin/children/${childId}?saved=1`);
+}
+
+// Brothers and sisters
+
+export async function linkSibling(childId: string, formData: FormData): Promise<void> {
+  await requireAdmin();
+  const siblingId = field(formData, 'siblingId');
+  const result = siblingId ? await linkDbSiblings(childId, siblingId) : 'same';
+  revalidatePath('/admin/children');
+  revalidatePath(`/admin/children/${childId}`);
+  redirect(`/admin/children/${childId}?${result === 'ok' ? 'saved=1' : result === 'accounts' ? 'error=siblingAccounts' : 'error=sibling'}`);
+}
+
+export async function unlinkSibling(childId: string, siblingId: string): Promise<void> {
+  await requireAdmin();
+  await detachDbChildFromFamily(siblingId);
+  revalidatePath('/admin/children');
+  revalidatePath(`/admin/children/${childId}`);
+}
+
+// Possible duplicates of a child being typed in, for the warning on the
+// "Add a child" form. Never blocks: staff decide.
+export type DuplicateHit = { id: string; fullName: string; dateOfBirth: string | null; reason: DuplicateReason };
+
+export async function checkChildDuplicates(input: { fullName: string; dateOfBirth: string }): Promise<DuplicateHit[]> {
+  await requireAdmin();
+  const fullName = String(input?.fullName ?? '').trim().slice(0, 200);
+  if (fullName.length < 2) return [];
+  const rawDate = String(input?.dateOfBirth ?? '');
+  const date = new Date(rawDate);
+  const dateOfBirth = rawDate && !Number.isNaN(date.getTime()) ? date : null;
+
+  const children = await prisma.child.findMany({ select: { id: true, fullName: true, dateOfBirth: true } });
+  return findPossibleDuplicates({ fullName, dateOfBirth }, children).map(({ child, reason }) => ({
+    id: child.id,
+    fullName: child.fullName,
+    dateOfBirth: child.dateOfBirth ? child.dateOfBirth.toISOString().slice(0, 10) : null,
+    reason,
+  }));
 }
 
 export async function addChildEnrollment(childId: string, formData: FormData): Promise<void> {

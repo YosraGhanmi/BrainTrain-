@@ -225,7 +225,9 @@
       "errors": {
         "phoneTaken": "That phone number is already in use.",
         "noSecondary": "Add a secondary phone number before deleting your primary one.",
-        "generic": "Please check the form and try again."
+        "generic": "Please check the form and try again.",
+        "childName": "The child's name can be at most 30 characters.",
+        "childAge": "BrainTrain welcomes children from 4 to 18 years old. Please check the date of birth."
       }
     },
     "addChild": {
@@ -247,6 +249,8 @@
       "specialNeeds": "Disabilities / special accommodations (optional)",
       "specialNeedsPlaceholder": "Anything our teachers should know to best support your child",
       "error": "Please fill in all required fields.",
+      "errorName": "The child's name can be at most 30 characters.",
+      "errorAge": "BrainTrain welcomes children from 4 to 18 years old. Please check the date of birth.",
       "submit": "Add child"
     },
     "schedule": {

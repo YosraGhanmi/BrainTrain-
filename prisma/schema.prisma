@@ -101,34 +101,66 @@ model AuthAttempt {
 // Children, groups and enrollments
 // ---------------------------------------------------------------------------
 
+enum ParentRelation {
+  FATHER
+  MOTHER
+  GUARDIAN
+}
+
+// The parents' contact details from the paper records, shared by brothers and
+// sisters: editing them on one child changes them for every child in the
+// family. Kept separate from parent accounts (User), which hold the details
+// the parent typed in themselves.
+model Family {
+  id              String          @id @default(cuid())
+  parent1Name     String?
+  parent1Relation ParentRelation?
+  parent1Phone    String?
+  parent1Phone2   String?
+  parent2Name     String?
+  parent2Relation ParentRelation?
+  parent2Phone    String?
+  parent2Phone2   String?
+  email           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  children Child[]
+
+  @@map("families")
+}
+
 model Child {
-  id           String    @id @default(cuid())
+  id             String    @id @default(cuid())
   // Null while a child imported from the paper records is unclaimed
-  parentId     String?
-  parent       User?     @relation(fields: [parentId], references: [id], onDelete: SetNull)
-  fullName     String
-  dateOfBirth  DateTime  @db.Date
-  // Fallback only: the age group is recomputed from the date of birth
-  ageGroupSlug String    @default("")
-  institution  String?
-  specialNeeds String?
-  photoUrl     String?
-  photoColor   String?
-  claimCode    String?   @unique
-  claimedAt    DateTime?
+  parentId       String?
+  parent         User?     @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  familyId       String?
+  family         Family?   @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  fullName       String
+  // Null when staff don't know it yet
+  dateOfBirth    DateTime? @db.Date
+  // Recomputed from the date of birth unless ageGroupManual: staff picked
+  // the group themselves. "" = still to fill in.
+  ageGroupSlug   String    @default("")
+  ageGroupManual Boolean   @default(false)
+  institution    String?
+  specialNeeds   String?
+  photoUrl       String?
+  photoColor     String?
+  claimCode      String?   @unique
+  claimedAt      DateTime?
   // [{ schoolYear, course, note }] from the paper records
-  pastClasses  Json      @default("[]")
-  contactName  String?
-  contactPhone String?
-  contactEmail String?
-  registeredAt DateTime?
-  createdAt    DateTime  @default(now())
+  pastClasses    Json      @default("[]")
+  registeredAt   DateTime?
+  createdAt      DateTime  @default(now())
 
   enrollments  Enrollment[]
   teacherNotes TeacherNote[]
   badges       Badge[]
 
   @@index([parentId])
+  @@index([familyId])
   @@map("children")
 }
 

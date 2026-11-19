@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatSessionDays } from '@/lib/scheduling/slots';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -27,9 +27,10 @@ const labelClassName = 'mb-1.5 block text-xs font-semibold uppercase tracking-wi
 
 // Course + timetable slot + plan + method + "already paid?" for staff
 // entering an enrollment. The group for that course and slot is reused if it
-// exists, or created on save. Courses of the child's age group are listed
-// first; the age group comes from the prop, or else from the surrounding
-// form's ageGroupSlug field (the new-child wizard detects it in step 1).
+// exists, or created on save. Once the child's age group is known only its
+// courses are offered; with no group yet, every course is listed by group.
+// The age group comes from the prop, or else from the surrounding form (the
+// new-child wizard sets it in step 1).
 export default function StaffEnrollmentFields({
   options,
   ageGroupSlug: ageGroupProp,
@@ -41,7 +42,7 @@ export default function StaffEnrollmentFields({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [formAgeGroup, setFormAgeGroup] = useState('');
-  const [courseSlug, setCourseSlug] = useState('');
+  const [pickedCourse, setCourseSlug] = useState('');
   const [timeSlotId, setTimeSlotId] = useState('');
   const [groupId, setGroupId] = useState('');
   const ageGroupSlug = ageGroupProp ?? formAgeGroup;
@@ -53,7 +54,8 @@ export default function StaffEnrollmentFields({
     // Runs after React has re-rendered the field that changed
     const read = () =>
       setTimeout(() => {
-        const input = form.elements.namedItem('ageGroupSlug');
+        // The group in effect (picked or detected from the date of birth)
+        const input = form.elements.namedItem('effectiveAgeGroupSlug') ?? form.elements.namedItem('ageGroupSlug');
         setFormAgeGroup(input instanceof HTMLInputElement || input instanceof HTMLSelectElement ? input.value : '');
       }, 0);
     read();
@@ -65,8 +67,15 @@ export default function StaffEnrollmentFields({
     };
   }, [ageGroupProp]);
 
-  const ageGroupLabel = new Map(options.ageGroups.map((g) => [g.slug, g.label]));
-  const orderedGroups = [...options.ageGroups].sort((a, b) => Number(b.slug === ageGroupSlug) - Number(a.slug === ageGroupSlug));
+  const knownGroup = options.ageGroups.some((g) => g.slug === ageGroupSlug);
+  const groupCourses = useMemo(
+    () => (knownGroup ? options.courses.filter((c) => c.ageGroupSlug === ageGroupSlug) : []),
+    [knownGroup, options.courses, ageGroupSlug],
+  );
+
+  // A course picked before the age group changed is no longer offered
+  const courseSlug = knownGroup && !groupCourses.some((c) => c.slug === pickedCourse) ? '' : pickedCourse;
+  const courseLabel = (c: StaffEnrollmentOptions['courses'][number]) => (c.summer ? `${c.title} (summer school)` : c.title);
 
   const groupFor = (slot: StaffEnrollmentOptions['timeSlots'][number]) =>
     options.sessions.find(
@@ -76,7 +85,6 @@ export default function StaffEnrollmentFields({
 
   const enrolling = Boolean(courseSlug);
   const selectedCourse = options.courses.find((c) => c.slug === courseSlug);
-  const courseAgeGroup = selectedCourse?.ageGroupSlug;
   const summer = Boolean(selectedCourse?.summer);
   const summerGroups = options.sessions.filter((s) => s.courseSlug === courseSlug);
 
@@ -96,20 +104,33 @@ export default function StaffEnrollmentFields({
           className={selectClassName}
         >
           <option value="">{optional ? 'Skip, enroll later' : 'Pick a course…'}</option>
-          {orderedGroups.map((g) => {
-            const courses = options.courses.filter((c) => c.ageGroupSlug === g.slug);
-            if (courses.length === 0) return null;
-            return (
-              <optgroup key={g.slug} label={g.slug === ageGroupSlug ? `${g.label} (child's age group)` : g.label}>
-                {courses.map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.summer ? `${c.title} (summer school)` : c.title}
-                  </option>
-                ))}
-              </optgroup>
-            );
-          })}
+          {knownGroup
+            ? groupCourses.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {courseLabel(c)}
+                </option>
+              ))
+            : options.ageGroups.map((g) => {
+                const courses = options.courses.filter((c) => c.ageGroupSlug === g.slug);
+                if (courses.length === 0) return null;
+                return (
+                  <optgroup key={g.slug} label={g.label}>
+                    {courses.map((c) => (
+                      <option key={c.slug} value={c.slug}>
+                        {courseLabel(c)}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
         </select>
+        {knownGroup ? (
+          <span className="mt-1 block text-xs text-stone">
+            {groupCourses.length > 0
+              ? `Courses for ${options.ageGroups.find((g) => g.slug === ageGroupSlug)?.label}.`
+              : 'No course for this age group yet.'}
+          </span>
+        ) : null}
       </label>
 
       {summer ? (
@@ -200,11 +221,6 @@ export default function StaffEnrollmentFields({
         </label>
       </fieldset>
 
-      {courseAgeGroup && ageGroupSlug && courseAgeGroup !== ageGroupSlug ? (
-        <p className="text-xs font-semibold text-amber-700 sm:col-span-2">
-          {`This course is for ${ageGroupLabel.get(courseAgeGroup) ?? 'another age group'}, not the child's age group. Staff can still enroll them.`}
-        </p>
-      ) : null}
     </div>
   );
 }

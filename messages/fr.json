@@ -225,7 +225,9 @@
       "errors": {
         "phoneTaken": "Ce numéro de téléphone est déjà utilisé.",
         "noSecondary": "Ajoutez un numéro secondaire avant de supprimer votre numéro principal.",
-        "generic": "Veuillez vérifier le formulaire et réessayer."
+        "generic": "Veuillez vérifier le formulaire et réessayer.",
+        "childName": "Le nom de l'enfant ne peut pas dépasser 30 caractères.",
+        "childAge": "BrainTrain accueille les enfants de 4 à 18 ans. Vérifiez la date de naissance."
       }
     },
     "addChild": {
@@ -247,6 +249,8 @@
       "specialNeeds": "Handicaps / aménagements particuliers (facultatif)",
       "specialNeedsPlaceholder": "Tout ce que nos enseignants devraient savoir pour mieux accompagner votre enfant",
       "error": "Veuillez remplir tous les champs obligatoires.",
+      "errorName": "Le nom de l'enfant ne peut pas dépasser 30 caractères.",
+      "errorAge": "BrainTrain accueille les enfants de 4 à 18 ans. Vérifiez la date de naissance.",
       "submit": "Ajouter l'enfant"
     },
     "schedule": {

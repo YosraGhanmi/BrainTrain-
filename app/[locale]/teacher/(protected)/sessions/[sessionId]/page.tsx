@@ -49,7 +49,7 @@ export default async function TeacherSessionRosterPage(
       fullName: child.fullName,
       photoUrl: child.photoUrl,
       photoColor: child.photoColor,
-      age: ageFromDateOfBirth(child.dateOfBirth),
+      age: child.dateOfBirth ? ageFromDateOfBirth(child.dateOfBirth) : null,
       status: enrollment.status as 'PENDING' | 'ACTIVE',
       progressPercent: percentFromCompleted(completed, course.sessions),
       badges: enrollment.badges.map((badge) => ({ id: badge.id, emoji: badge.emoji, imageUrl: badge.imageUrl, title: badge.title })),

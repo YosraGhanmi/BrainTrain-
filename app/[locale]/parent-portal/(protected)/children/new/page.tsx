@@ -6,6 +6,7 @@ import { listAgeGroupEntries } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
+import { NAME_MAX_LENGTH } from '@/lib/children/validation';
 import type { AppLocale } from '@/i18n/routing';
 
 export const dynamic = 'force-dynamic';
@@ -59,7 +60,7 @@ export default async function AddChildPage(
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-stone">{t('fullName')}</label>
-          <input name="fullName" required className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 outline-none focus:border-accent" />
+          <input name="fullName" required maxLength={NAME_MAX_LENGTH} className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3.5 outline-none focus:border-accent" />
         </div>
 
         <BirthDateAgeGroupFields
@@ -93,7 +94,11 @@ export default async function AddChildPage(
           />
         </div>
 
-        {searchParams.error ? <p className="text-sm font-semibold text-red-600">{t('error')}</p> : null}
+        {searchParams.error ? (
+          <p className="text-sm font-semibold text-red-600">
+            {searchParams.error === 'name' ? t('errorName') : searchParams.error === 'age' ? t('errorAge') : t('error')}
+          </p>
+        ) : null}
 
         <PendingSubmitButton className="w-full rounded-full bg-ink px-6 py-3.5 text-base font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
           {t('submit')}

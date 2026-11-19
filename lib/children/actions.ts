@@ -11,6 +11,7 @@ import { claimDbChild, createDbChild, getDbChild, updateDbChild } from '@/lib/db
 import { createDbNotification } from '@/lib/db/notifications';
 import { SELECTED_CHILD_COOKIE } from '@/lib/portal-auth/selected-child';
 import { takeAttempt, WINDOW } from '@/lib/auth/rate-limit';
+import { birthDateProblem, nameTooLong } from '@/lib/children/validation';
 import type { AppLocale } from '@/i18n/routing';
 
 function field(formData: FormData, name: string): string {
@@ -38,6 +39,9 @@ export async function addChild(formData: FormData): Promise<void> {
   if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
     redirect(localizedPath(locale, '/parent-portal/children/new?error=1'));
   }
+  // Names up to 30 characters, children aged 4 to 18
+  if (nameTooLong(fullName)) redirect(localizedPath(locale, '/parent-portal/children/new?error=name'));
+  if (birthDateProblem(dateOfBirth)) redirect(localizedPath(locale, '/parent-portal/children/new?error=age'));
 
   // Validates the age group slug exists in the JSON content store before
   // persisting a dangling reference.
@@ -63,23 +67,27 @@ export async function claimChild(formData: FormData): Promise<void> {
   const parent = await requireParent(locale);
 
   const allowed = await takeAttempt(`claim:${parent.parentId}`, 10, WINDOW.hour);
-  const child = allowed ? await claimDbChild(field(formData, 'code'), parent.parentId) : null;
-  if (!child) {
+  const claimed = allowed ? await claimDbChild(field(formData, 'code'), parent.parentId) : null;
+  if (!claimed) {
     redirect(localizedPath(locale, '/parent-portal/children/new?codeError=1'));
   }
+  const { child, siblings } = claimed!;
 
   try {
     await createDbNotification({
       type: 'CHILD_LINKED',
-      title: `${parent.fullName} linked ${child!.fullName}`,
-      body: 'Used the code from the front desk',
-      link: `/admin/children/${child!.id}`,
+      title: `${parent.fullName} linked ${child.fullName}`,
+      body:
+        siblings > 0
+          ? `Used the code from the front desk; ${siblings} sibling${siblings === 1 ? '' : 's'} linked too`
+          : 'Used the code from the front desk',
+      link: `/admin/children/${child.id}`,
     });
   } catch {
     // Best-effort: the link itself already succeeded
   }
 
-  (await cookies()).set(SELECTED_CHILD_COOKIE, child!.id, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
+  (await cookies()).set(SELECTED_CHILD_COOKIE, child.id, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
   revalidatePath('/', 'layout');
   redirect(localizedPath(locale, '/parent-portal?linked=1'));
 }
@@ -106,9 +114,23 @@ export async function editChild(formData: FormData): Promise<void> {
   if (!fullName || Number.isNaN(dateOfBirth.getTime()) || !ageGroupSlug) {
     redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&error=1`));
   }
+  // Same limits as when adding, on what the parent changed
+  if (fullName !== child!.fullName && nameTooLong(fullName)) {
+    redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&error=child-name`));
+  }
+  if (dateOfBirth.getTime() !== child!.dateOfBirth?.getTime() && birthDateProblem(dateOfBirth)) {
+    redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&error=child-age`));
+  }
   await getAgeGroupEntryOrThrow(ageGroupSlug);
 
-  await updateDbChild(childId, { fullName, dateOfBirth, ageGroupSlug, institution: institution || null, specialNeeds: specialNeeds || null });
+  await updateDbChild(childId, {
+    fullName,
+    dateOfBirth,
+    // A group the front desk picked by hand stays until staff change it
+    ...(child!.ageGroupManual ? {} : { ageGroupSlug }),
+    institution: institution || null,
+    specialNeeds: specialNeeds || null,
+  });
 
   revalidatePath(`/${locale === 'fr' ? 'fr/' : ''}parent-portal/account`);
   redirect(localizedPath(locale, `/parent-portal/account?tab=children&child=${childId}&saved=1`));

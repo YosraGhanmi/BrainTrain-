@@ -144,8 +144,20 @@ async function main(): Promise<void> {
     return id && ids.has(id) ? id : null;
   };
 
-  // Children
+  // Children. The paper-record contact becomes the child's family (one per
+  // child: brothers and sisters are grouped from the admin afterwards).
   const childDocs = await readCollection('children');
+  const familyIdOf = (id: string) => `fam_${id}`;
+  const families = childDocs
+    .map(({ id, data }) => ({
+      id: familyIdOf(id),
+      parent1Name: str(data.contactName),
+      parent1Phone: str(data.contactPhone),
+      email: str(data.contactEmail),
+    }))
+    .filter((f) => f.parent1Name || f.parent1Phone || f.email);
+  const withFamily = new Set(families.map((f) => f.id));
+  await insert('families', families, (batch) => prisma.family.createMany({ data: batch, skipDuplicates: true }));
   await insert(
     'children',
     childDocs.map(({ id, data }) => {
@@ -155,7 +167,8 @@ async function main(): Promise<void> {
         id,
         parentId,
         fullName: String(data.fullName ?? ''),
-        dateOfBirth: toDate(data.dateOfBirth) ?? new Date(0),
+        dateOfBirth: toDate(data.dateOfBirth),
+        familyId: withFamily.has(familyIdOf(id)) ? familyIdOf(id) : null,
         ageGroupSlug: String(data.ageGroupSlug ?? ''),
         institution: str(data.institution),
         specialNeeds: str(data.specialNeeds),
@@ -164,9 +177,6 @@ async function main(): Promise<void> {
         claimCode: str(data.claimCode),
         claimedAt: toDate(data.claimedAt),
         pastClasses: Array.isArray(data.pastClasses) ? data.pastClasses : [],
-        contactName: str(data.contactName),
-        contactPhone: str(data.contactPhone),
-        contactEmail: str(data.contactEmail),
         registeredAt: toDate(data.registeredAt),
         createdAt: toDate(data.createdAt) ?? new Date(),
       };

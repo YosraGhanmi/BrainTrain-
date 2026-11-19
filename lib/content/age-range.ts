@@ -39,3 +39,32 @@ export function detectAgeGroupSlug(groups: AgeRange[], dateOfBirth: Date, today:
   const group = groups.find((g) => g.minAge !== null && g.maxAge !== null && age >= g.minAge && age <= g.maxAge);
   return group?.slug ?? null;
 }
+
+// How a group picked by hand fits the child's age, for a warning shown next
+// to it (staff may still keep it: it's never refused). null when there is no
+// date of birth or the group has no age range.
+export function ageGroupFit(
+  group: AgeRange | undefined,
+  dateOfBirth: Date | null,
+  today: Date = new Date(),
+): { age: number; fits: boolean } | null {
+  if (!group || !dateOfBirth || Number.isNaN(dateOfBirth.getTime())) return null;
+  if (group.minAge === null || group.maxAge === null) return null;
+  const age = schoolYearAge(dateOfBirth, today);
+  return { age, fits: age >= group.minAge && age <= group.maxAge };
+}
+
+// The group to store for a child staff edited. `picked` is the group chosen
+// in the form, "" for automatic. A pick that matches what the date of birth
+// gives is not "by hand", so that child keeps moving up each year.
+export function chooseAgeGroup(
+  groups: AgeRange[],
+  dateOfBirth: Date | null,
+  picked: string,
+  today: Date = new Date(),
+): { ageGroupSlug: string; ageGroupManual: boolean } {
+  const detected = dateOfBirth ? detectAgeGroupSlug(groups, dateOfBirth, today) : null;
+  const valid = picked && groups.some((g) => g.slug === picked) ? picked : '';
+  if (!valid) return { ageGroupSlug: detected ?? '', ageGroupManual: false };
+  return { ageGroupSlug: valid, ageGroupManual: valid !== detected };
+}

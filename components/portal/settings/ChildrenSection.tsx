@@ -6,12 +6,13 @@ import { ageGroupLookup, courseLookup } from '@/lib/content/lookup';
 import { localized } from '@/lib/i18n/format';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
+import { NAME_MAX_LENGTH } from '@/lib/children/validation';
 import type { AppLocale } from '@/i18n/routing';
 import type { AgeGroupEntry } from '@/lib/content/types';
 type ChildWithEnrollments = {
   id: string;
   fullName: string;
-  dateOfBirth: Date;
+  dateOfBirth: Date | null;
   ageGroupSlug: string;
   institution: string | null;
   specialNeeds: string | null;
@@ -92,6 +93,7 @@ export default async function ChildrenSection({
                 <input
                   name="fullName"
                   required
+                  maxLength={NAME_MAX_LENGTH}
                   defaultValue={selected.fullName}
                   className="w-full rounded-xl border border-ink/10 bg-slate-50 px-5 py-3 outline-none focus:border-accent"
                 />
@@ -100,7 +102,7 @@ export default async function ChildrenSection({
               <BirthDateAgeGroupFields
                 key={selected.id}
                 groups={ageGroups.map((g) => ({ slug: g.slug, label: localized(g.label, locale), minAge: g.minAge, maxAge: g.maxAge }))}
-                defaultDateOfBirth={selected.dateOfBirth.toISOString().slice(0, 10)}
+                defaultDateOfBirth={selected.dateOfBirth ? selected.dateOfBirth.toISOString().slice(0, 10) : ''}
                 defaultAgeGroupSlug={selected.ageGroupSlug}
                 labels={{
                   dateOfBirth: t('dateOfBirth'),

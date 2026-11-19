@@ -1,12 +1,11 @@
 import { prisma } from '@/lib/db/prisma';
-import { ageGroupSlugForBirthDate, listAgeGroupEntries } from '@/lib/content/lookup';
-import { getDbChild, listDbChildren, type DbChild, type PastClass } from '@/lib/db/children';
+import { listAgeGroupEntries } from '@/lib/content/lookup';
+import { getDbChild, listDbChildren, mapChild, type DbChild } from '@/lib/db/children';
 import { mapPayment, mapPlan, type DbEnrollment, type DbPayment, type DbPaymentPlan, type EnrollmentStatus } from '@/lib/db/enrollments';
 import { mapSession, type DbCourseSession } from '@/lib/db/sessions';
 import { listDbTeacherNotesByChild, listDbTeacherNotesByCourseSession, listDbTeacherNotesByEnrollment, type DbTeacherNote } from '@/lib/db/teacher-notes';
 import { listDbBadgesForTeacherAndChild, type DbBadge } from '@/lib/db/badges';
-import type { AgeGroupEntry } from '@/lib/content/types';
-import type { Child, CourseSession, Enrollment, Prisma } from '@/lib/generated/prisma/client';
+import type { CourseSession, Enrollment, Prisma } from '@/lib/generated/prisma/client';
 
 export type EnrollmentWithSession = DbEnrollment & { courseSession: DbCourseSession };
 export type SessionWithCount = DbCourseSession & { enrollmentCount: number };
@@ -37,29 +36,6 @@ function withSession(row: Enrollment & { courseSession: CourseSession | null }):
 
 function isPresent<T>(value: T | null): value is T {
   return value !== null;
-}
-
-// Same mapping as lib/db/children, for rows already loaded through a join
-function mapJoinedChild(row: Child, ageGroups: AgeGroupEntry[]): DbChild {
-  return {
-    id: row.id,
-    parentId: row.parentId ?? '',
-    fullName: row.fullName,
-    dateOfBirth: row.dateOfBirth,
-    ageGroupSlug: ageGroupSlugForBirthDate(row.dateOfBirth, ageGroups) ?? row.ageGroupSlug,
-    institution: row.institution,
-    specialNeeds: row.specialNeeds,
-    photoUrl: row.photoUrl,
-    photoColor: row.photoColor,
-    claimCode: row.claimCode,
-    claimedAt: row.claimedAt,
-    pastClasses: Array.isArray(row.pastClasses) ? (row.pastClasses as PastClass[]) : [],
-    contactName: row.contactName,
-    contactPhone: row.contactPhone,
-    contactEmail: row.contactEmail,
-    registeredAt: row.registeredAt,
-    createdAt: row.createdAt,
-  };
 }
 
 async function withCounts(sessions: CourseSession[]): Promise<SessionWithCount[]> {
@@ -156,7 +132,7 @@ async function listPaymentsWithRelations(where: Prisma.PaymentWhereInput): Promi
       ...mapPayment(row),
       paymentPlan: mapPlan(row.paymentPlan),
       enrollment: withSession(row.enrollment),
-      child: child ? mapJoinedChild(child, ageGroups) : null,
+      child: child ? mapChild(child, ageGroups) : null,
       parentName: child?.parent?.fullName ?? '',
     };
   });
@@ -207,7 +183,7 @@ export async function getDbRosterForSession(
       const enrollment = withSession(row);
       if (!enrollment || !row.child) return null;
       const badges = row.child.badges.map((b) => ({ ...b, teacherId: b.teacherId ?? '' }));
-      return { ...enrollment, child: mapJoinedChild(row.child, ageGroups), badges };
+      return { ...enrollment, child: mapChild(row.child, ageGroups), badges };
     })
     .filter(isPresent);
 }

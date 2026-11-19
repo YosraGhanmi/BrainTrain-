@@ -10,7 +10,8 @@ export type RosterStudent = {
   fullName: string;
   photoUrl: string | null;
   photoColor: string | null;
-  age: number;
+  // null when the front desk hasn't recorded the date of birth
+  age: number | null;
   status: 'PENDING' | 'ACTIVE';
   progressPercent: number;
   badges: { id: string; emoji: string; imageUrl: string | null; title: string }[];
@@ -252,7 +253,7 @@ export default function StudentRoster({
                 <Avatar student={student} courseColor={courseColor} size={48} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-display text-sm font-bold text-ink">{student.fullName}</p>
-                  <p className="text-xs text-stone">{t('age', { age: student.age })}</p>
+                  {student.age !== null ? <p className="text-xs text-stone">{t('age', { age: student.age })}</p> : null}
                   <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${STATUS_STYLES[student.status]}`}>
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                     {t(student.status === 'ACTIVE' ? 'active' : 'pending')}
@@ -281,7 +282,7 @@ export default function StudentRoster({
               <Avatar student={student} courseColor={courseColor} size={44} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display text-sm font-bold text-ink">{student.fullName}</p>
-                <p className="text-xs text-stone">{t('age', { age: student.age })}</p>
+                {student.age !== null ? <p className="text-xs text-stone">{t('age', { age: student.age })}</p> : null}
               </div>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${STATUS_STYLES[student.status]}`}>
                 {t(student.status === 'ACTIVE' ? 'active' : 'pending')}

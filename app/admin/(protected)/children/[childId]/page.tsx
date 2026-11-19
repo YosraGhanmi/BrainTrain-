@@ -4,9 +4,9 @@ import {
   ArrowLeft,
   Award,
   BookOpen,
-  Cake,
-  CalendarCheck,
   CalendarClock,
+  CircleCheck,
+  Clock,
   History,
   KeyRound,
   Link2,
@@ -14,16 +14,27 @@ import {
   MessageSquareText,
   Pencil,
   Phone,
-  School,
   Sparkles,
+  TriangleAlert,
   UserRound,
+  Users,
 } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
-import { addChildEnrollment, addPastClass, markChildPaymentPaid, regenerateChildClaimCode, removePastClass } from '@/lib/admin/children-actions';
-import { ageGroupLookup, courseLookup } from '@/lib/content/lookup';
-import { ageOn } from '@/lib/content/age-range';
+import {
+  addChildEnrollment,
+  addPastClass,
+  linkSibling,
+  markChildPaymentPaid,
+  regenerateChildClaimCode,
+  removePastClass,
+  unlinkSibling,
+} from '@/lib/admin/children-actions';
+import { ageGroupLookup, courseLookup, listAgeGroupEntries } from '@/lib/content/lookup';
+import { ageGroupFit, ageOn } from '@/lib/content/age-range';
+import { MISSING_DETAIL_LABELS, missingDetails, missingDetailsText } from '@/lib/children/list';
+import { familyPhones, getDbFamily, listDbSiblings, PARENT_RELATION_LABELS, type DbFamily } from '@/lib/db/families';
 import { rotateHue } from '@/lib/color';
-import { formatClaimCode, getDbChild, registrationDate } from '@/lib/db/children';
+import { formatClaimCode, getDbChild, listDbChildPickerOptions, registrationDate } from '@/lib/db/children';
 import { getDbPortalProfile } from '@/lib/db/portal-auth';
 import { listDbBadgesByChild } from '@/lib/db/badges';
 import { listDbTeacherNotesByChild } from '@/lib/db/teacher-notes';
@@ -36,6 +47,7 @@ import { loadStaffEnrollmentOptions } from '@/lib/admin/staff-enrollment';
 import StaffEnrollmentFields from '@/components/admin/StaffEnrollmentFields';
 import DeleteIconButton from '@/components/admin/DeleteIconButton';
 import RegenerateCodeButton from '@/components/admin/RegenerateCodeButton';
+import ChildPicker from '@/components/admin/ChildPicker';
 import InitialsAvatar from '@/components/portal/course/InitialsAvatar';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
@@ -50,14 +62,30 @@ const ERRORS: Record<string, string> = {
   conflict: 'The child already has another class at that same day and time.',
   duplicate: 'The child is already in that group.',
   pastClass: 'Type the course name.',
+  sibling: 'Pick another child to link as a brother or sister.',
+  siblingAccounts: 'These children are linked to two different parent accounts, so they can\'t be put in one family here.',
 };
 
-const PAYMENT_STYLES: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-700',
-  PAID: 'bg-emerald-100 text-emerald-700',
-  OVERDUE: 'bg-red-100 text-red-600',
-  FAILED: 'bg-slate-200 text-slate-600',
+// A payment as staff read it: paid, late, or still to come
+type PaymentState = 'paid' | 'overdue' | 'upcoming' | 'failed';
+const PAYMENT_STATE: Record<PaymentState, { label: string; className: string }> = {
+  paid: { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
+  overdue: { label: 'Overdue', className: 'bg-red-50 text-red-700 ring-red-200' },
+  upcoming: { label: 'Upcoming', className: 'bg-slate-50 text-slate-600 ring-slate-200' },
+  failed: { label: 'Failed', className: 'bg-slate-100 text-slate-500 ring-slate-200' },
 };
+const PLAN_LABELS: Record<string, string> = { MONTHLY: 'Monthly', QUARTERLY: '3 months', YEARLY: 'Full year', SEASON: 'Full season' };
+const METHOD_LABELS: Record<string, string> = { CASH: 'Cash', CHEQUE: 'Cheque', CARD: 'Card' };
+
+// Late from the day after the due date: a payment due today isn't overdue yet
+function paymentState(p: { status: string; dueDate: Date }, now: Date): PaymentState {
+  if (p.status === 'PAID') return 'paid';
+  if (p.status === 'FAILED') return 'failed';
+  const startOfToday = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return p.status === 'OVERDUE' || p.dueDate.getTime() < startOfToday ? 'overdue' : 'upcoming';
+}
+
+const money = (amount: number, currency: string) => `${amount.toFixed(2)} ${currency}`;
 
 const inputClassName = 'w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent';
 const labelClassName = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone';
@@ -67,23 +95,71 @@ const formatDate = (date: Date) => date.toLocaleDateString('fr-FR');
 
 function CardTitle({ icon, children, count }: { icon: React.ReactNode; children: React.ReactNode; count?: number }) {
   return (
-    <h2 className="flex items-center gap-2.5 font-display text-lg font-bold text-ink">
-      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 text-accent [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+    <h2 className="flex items-center gap-2 font-display text-base font-bold text-ink">
+      <span className="text-accent [&>svg]:h-[1.1rem] [&>svg]:w-[1.1rem]">{icon}</span>
       {children}
-      {count ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-stone">{count}</span> : null}
+      {count ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold tabular-nums text-stone">{count}</span> : null}
     </h2>
   );
 }
 
-function Fact({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+// A phone number or email that can be tapped to call or write
+function ContactLink({ kind, value }: { kind: 'phone' | 'email'; value: string }) {
+  const Icon = kind === 'phone' ? Phone : Mail;
   return (
-    <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-      <span className="mt-0.5 text-accent [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-      <div className="min-w-0">
-        <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">{label}</p>
-        <p className="truncate text-sm font-semibold text-ink">{value}</p>
-      </div>
+    <a
+      href={kind === 'phone' ? `tel:${value.replace(/[^\d+]/g, '')}` : `mailto:${value}`}
+      title={value}
+      className="group flex min-w-0 items-center gap-2 rounded-lg py-0.5 text-sm text-stone transition hover:text-accent"
+    >
+      <Icon className="h-4 w-4 shrink-0 text-accent/80 group-hover:text-accent" />
+      <span className={`truncate ${kind === 'phone' ? 'tabular-nums' : ''}`}>{value}</span>
+    </a>
+  );
+}
+
+// One figure of the summary strip under the header
+function Stat({ label, value, hint, tone = 'ink' }: { label: string; value: string; hint?: string; tone?: 'ink' | 'emerald' | 'amber' | 'red' }) {
+  const color = { ink: 'text-ink', emerald: 'text-emerald-700', amber: 'text-amber-700', red: 'text-red-600' }[tone];
+  return (
+    <div className="min-w-0 px-5 py-4">
+      <p className="text-[0.7rem] font-bold uppercase tracking-wide text-stone">{label}</p>
+      <p className={`mt-1 truncate font-display text-xl font-semibold tabular-nums ${color}`}>{value}</p>
+      {hint ? <p className="truncate text-xs text-stone">{hint}</p> : null}
     </div>
+  );
+}
+
+// One parent from the paper records: relation, name, phones
+function FamilyParent({ name, relation, phones }: { name: string | null; relation: string | null; phones: (string | null)[] }) {
+  const numbers = phones.filter(Boolean);
+  if (!name && numbers.length === 0) return null;
+  return (
+    <li className="rounded-2xl bg-slate-50 px-4 py-3">
+      <p className="text-[0.65rem] font-bold uppercase tracking-wide text-stone">{relation ?? 'Parent'}</p>
+      <p className="font-semibold text-ink">{name || 'Name not recorded'}</p>
+      <div className="mt-1 space-y-0.5">
+        {numbers.map((phone) => (
+          <ContactLink key={phone} kind="phone" value={phone!} />
+        ))}
+      </div>
+    </li>
+  );
+}
+
+function FamilyParents({ family }: { family: DbFamily | null }) {
+  if (!family) return null;
+  const relation = (r: DbFamily['parent1Relation']) => (r ? PARENT_RELATION_LABELS[r] : null);
+  return (
+    <ul className="space-y-2">
+      <FamilyParent name={family.parent1Name} relation={relation(family.parent1Relation)} phones={[family.parent1Phone, family.parent1Phone2]} />
+      <FamilyParent name={family.parent2Name} relation={relation(family.parent2Relation)} phones={[family.parent2Phone, family.parent2Phone2]} />
+      {family.email ? (
+        <li className="px-1">
+          <ContactLink kind="email" value={family.email} />
+        </li>
+      ) : null}
+    </ul>
   );
 }
 
@@ -99,8 +175,12 @@ export default async function AdminChildProfilePage(props: {
   if (!child) notFound();
   const registeredOn = registrationDate(child);
 
-  const [parent, enrollments, payments, badges, notes, sessions, teachers, timeSlots, enrollmentOptions] = await Promise.all([
+  const [parent, family, siblings, siblingOptions, ageGroups, enrollments, payments, badges, notes, sessions, teachers, timeSlots, enrollmentOptions] = await Promise.all([
     getDbPortalProfile(child.parentId),
+    getDbFamily(child.familyId),
+    listDbSiblings(child),
+    listDbChildPickerOptions(),
+    listAgeGroupEntries(),
     listDbEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']),
     listDbPaymentsWithRelationsByChild(child.id),
     listDbBadgesByChild(child.id),
@@ -119,8 +199,24 @@ export default async function AdminChildProfilePage(props: {
   };
 
   const ageGroup = ageGroupOf(child.ageGroupSlug);
-  const hasBirthDate = child.dateOfBirth.getTime() > 0;
-  const age = hasBirthDate ? ageOn(child.dateOfBirth, new Date()) : null;
+  const age = child.dateOfBirth ? ageOn(child.dateOfBirth, new Date()) : null;
+  // A group picked by hand that doesn't match the age: kept, but flagged
+  const fit = child.ageGroupManual ? ageGroupFit(ageGroups.find((g) => g.slug === child.ageGroupSlug), child.dateOfBirth) : null;
+  const parentNames = [parent?.fullName, family?.parent1Name, family?.parent2Name].filter((n): n is string => Boolean(n));
+  const phones = [parent?.phone, parent?.secondaryPhone, ...familyPhones(family)].filter((p): p is string => Boolean(p));
+  const missing = missingDetails({ dateOfBirth: child.dateOfBirth, ageGroupSlug: child.ageGroupSlug, parentNames, phones });
+  const siblingIds = new Set([child.id, ...siblings.map((s) => s.id)]);
+
+  // Money at a glance, over this year's groups
+  const now = new Date();
+  const openPayments = payments.filter((p) => enrollments.some((e) => e.id === p.enrollmentId));
+  const currency = openPayments[0]?.currency ?? 'TND';
+  const sum = (list: typeof openPayments) => list.reduce((total, p) => total + p.amount, 0);
+  const paid = openPayments.filter((p) => paymentState(p, now) === 'paid');
+  const overdue = openPayments.filter((p) => paymentState(p, now) === 'overdue');
+  const upcoming = openPayments.filter((p) => paymentState(p, now) === 'upcoming');
+  const nextDue = [...upcoming].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())[0];
+  const firstPhone = phones[0];
   const banner = child.photoColor
     ? `linear-gradient(to bottom right, ${rotateHue(child.photoColor, -25)}, ${child.photoColor}, ${rotateHue(child.photoColor, 35)})`
     : DEFAULT_GRADIENT;
@@ -147,62 +243,134 @@ export default async function AdminChildProfilePage(props: {
 
       {/* Profile header */}
       <section className="mt-4 overflow-hidden rounded-3xl border border-white/60 bg-white shadow-[0_24px_60px_-24px_rgba(30,41,90,0.35)]">
-        <div className="relative h-28" style={{ background: banner }}>
+        <div className="relative h-24" style={{ background: banner }}>
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15 blur-xl" />
             <div className="absolute bottom-0 right-16 h-16 w-16 rounded-full bg-white/10 blur-lg" />
           </div>
-          <Link
-            href={`/admin/children/${child.id}/edit`}
-            className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur transition hover:bg-white"
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Link>
+          <div className="absolute right-4 top-4 flex items-center gap-2">
+            {firstPhone ? (
+              <a
+                href={`tel:${firstPhone.replace(/[^\d+]/g, '')}`}
+                className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white ring-1 ring-inset ring-white/40 backdrop-blur transition hover:bg-white/30"
+              >
+                <Phone className="h-4 w-4" />
+                Call parent
+              </a>
+            ) : null}
+            <Link
+              href={`/admin/children/${child.id}/edit`}
+              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:bg-slate-50"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Link>
+          </div>
         </div>
 
-        <div className="px-6 pb-6 sm:px-8">
-          {/* relative so the avatar paints over the banner; the name starts
-              below the banner edge instead of under it */}
-          <div className="relative -mt-12 flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="px-6 pb-5 sm:px-8">
+          {/* relative so the avatar paints over the banner */}
+          <div className="relative -mt-10 flex flex-col gap-4 sm:flex-row sm:items-start">
             {child.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={child.photoUrl}
                 alt={child.fullName}
-                className="h-24 w-24 shrink-0 rounded-full border-4 border-white object-cover shadow-soft"
+                className="h-20 w-20 shrink-0 rounded-full border-4 border-white object-cover shadow-soft"
               />
             ) : (
-              <InitialsAvatar name={child.fullName} className="h-24 w-24 border-4 border-white text-3xl shadow-soft" />
+              <InitialsAvatar name={child.fullName} className="h-20 w-20 border-4 border-white text-2xl shadow-soft" />
             )}
-            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:pt-14">
-              <h1 className="min-w-0 truncate font-display text-3xl font-semibold text-ink">{child.fullName}</h1>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {ageGroup.label.en}
-                </span>
-                {age !== null ? (
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-ink">{age} years old</span>
-                ) : null}
+            {/* starts below the banner edge, never on the colors */}
+            <div className="min-w-0 flex-1 sm:pt-12">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <h1 className="min-w-0 truncate font-display text-3xl font-semibold text-ink">{child.fullName}</h1>
                 {child.parentId ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">
                     <Link2 className="h-3.5 w-3.5" />
-                    Linked to a parent account
+                    Parent account linked
                   </span>
                 ) : (
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">Not linked yet</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 ring-1 ring-inset ring-amber-200">
+                    <KeyRound className="h-3.5 w-3.5" />
+                    Waiting for the parent code
+                  </span>
                 )}
               </div>
+              {/* Who the child is, in one line */}
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-stone">
+                {child.ageGroupSlug ? (
+                  <span
+                    title={child.ageGroupManual ? 'Age group picked by hand' : 'Age group from the date of birth'}
+                    className="inline-flex items-center gap-1 font-semibold text-accent"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {ageGroup.label.en}
+                    {child.ageGroupManual ? ' (picked by hand)' : ''}
+                  </span>
+                ) : (
+                  <span className="font-semibold text-amber-700">No age group yet</span>
+                )}
+                <span aria-hidden className="text-ink/20">•</span>
+                <span>
+                  {age !== null && child.dateOfBirth ? `${age} years old, born ${formatDate(child.dateOfBirth)}` : 'Date of birth not set'}
+                </span>
+                <span aria-hidden className="text-ink/20">•</span>
+                <span>{child.institution ? child.institution : <span className="italic text-stone/70">School not set</span>}</span>
+                <span aria-hidden className="text-ink/20">•</span>
+                <span>{registeredOn ? `Registered ${formatDate(registeredOn)}` : <span className="italic text-stone/70">Registration date not set</span>}</span>
+              </p>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Fact icon={<Cake />} label="Born" value={hasBirthDate ? formatDate(child.dateOfBirth) : '-'} />
-            <Fact icon={<School />} label="School" value={child.institution ?? '-'} />
-            <Fact icon={<CalendarCheck />} label="Registered" value={registeredOn ? formatDate(registeredOn) : 'Not set'} />
-            <Fact icon={<UserRound />} label="Special accommodations" value={child.specialNeeds ?? 'None'} />
-          </div>
+          {/* Things staff must not miss */}
+          {missing.length > 0 || (fit && !fit.fits) || child.specialNeeds ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {child.specialNeeds ? (
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-violet-50 px-3 py-1.5 text-sm font-semibold text-violet-800 ring-1 ring-inset ring-violet-200">
+                  <UserRound className="h-4 w-4" />
+                  Special accommodations: {child.specialNeeds}
+                </span>
+              ) : null}
+              {missing.length > 0 ? (
+                <Link
+                  href={`/admin/children/${child.id}/edit`}
+                  title={missingDetailsText(missing)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-200 transition hover:bg-amber-100"
+                >
+                  <TriangleAlert className="h-4 w-4" />
+                  To complete: {missing.map((m) => MISSING_DETAIL_LABELS[m]).join(', ')}
+                </Link>
+              ) : null}
+              {fit && !fit.fits ? (
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
+                  <TriangleAlert className="h-4 w-4" />
+                  Age {fit.age} this school year, outside {ageGroup.label.en}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {/* This year at a glance */}
+        <div className="grid grid-cols-2 divide-x divide-y divide-ink/5 border-t border-ink/5 bg-slate-50/60 sm:grid-cols-4 sm:divide-y-0">
+          <Stat
+            label="Courses this year"
+            value={String(enrollments.length)}
+            hint={enrollments.length ? enrollments.map((e) => courseOf(e.courseSession.courseSlug).title.en).join(', ') : 'Not enrolled yet'}
+          />
+          <Stat label="Paid" value={money(sum(paid), currency)} hint={`${paid.length} of ${openPayments.length} payments`} tone={paid.length ? 'emerald' : 'ink'} />
+          <Stat
+            label="Still to pay"
+            value={money(sum(upcoming), currency)}
+            hint={nextDue ? `Next due ${formatDate(nextDue.dueDate)}` : 'Nothing upcoming'}
+          />
+          <Stat
+            label="Overdue"
+            value={overdue.length ? money(sum(overdue), currency) : 'None'}
+            hint={overdue.length ? `${overdue.length} payment${overdue.length === 1 ? '' : 's'} late` : 'All on time'}
+            tone={overdue.length ? 'red' : 'emerald'}
+          />
         </div>
       </section>
 
@@ -210,14 +378,19 @@ export default async function AdminChildProfilePage(props: {
         {/* Side column */}
         <div className="space-y-6">
           <section className={cardClassName}>
-            <CardTitle icon={<UserRound />}>Parent</CardTitle>
+            <CardTitle icon={<UserRound />}>Parents</CardTitle>
             {child.parentId ? (
               <div className="mt-4">
                 <div className="flex items-center gap-3">
                   <InitialsAvatar name={String(parent?.fullName ?? '?')} />
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-ink">{String(parent?.fullName ?? 'Parent account')}</p>
-                    <p className="text-xs font-semibold text-emerald-600">Linked account</p>
+                    <p className="text-xs font-semibold text-emerald-600">
+                      Linked account
+                      {family?.parent1Relation && !family.parent1Name && !family.parent1Phone
+                        ? ` · ${PARENT_RELATION_LABELS[family.parent1Relation]}`
+                        : ''}
+                    </p>
                   </div>
                   <Link
                     href={`/admin/parents?highlight=${child.parentId}#parent-${child.parentId}`}
@@ -227,31 +400,29 @@ export default async function AdminChildProfilePage(props: {
                     View
                   </Link>
                 </div>
-                <ul className="mt-4 space-y-2 text-sm">
-                  <li className="flex items-center gap-2 text-stone">
-                    <Phone className="h-4 w-4 text-accent" />
-                    {String(parent?.phone || '-')}
-                  </li>
-                  <li className="flex items-center gap-2 break-all text-stone">
-                    <Mail className="h-4 w-4 shrink-0 text-accent" />
-                    {String(parent?.email || '-')}
-                  </li>
-                </ul>
+                <div className="mt-3 space-y-0.5">
+                  {[parent?.phone, parent?.secondaryPhone].filter((p): p is string => Boolean(p)).map((p) => (
+                    <ContactLink key={p} kind="phone" value={p} />
+                  ))}
+                  {parent?.email ? <ContactLink kind="email" value={parent.email} /> : null}
+                </div>
+                {family ? (
+                  <div className="mt-4 border-t border-ink/5 pt-4">
+                    <p className="mb-2 text-xs text-stone">From the paper records</p>
+                    <FamilyParents family={family} />
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="mt-4">
-                <p className="font-semibold text-ink">{child.contactName ?? 'No contact recorded'}</p>
-                <p className="text-xs text-stone">From the paper records</p>
-                <ul className="mt-3 space-y-2 text-sm">
-                  <li className="flex items-center gap-2 text-stone">
-                    <Phone className="h-4 w-4 text-accent" />
-                    {child.contactPhone ?? '-'}
-                  </li>
-                  <li className="flex items-center gap-2 break-all text-stone">
-                    <Mail className="h-4 w-4 shrink-0 text-accent" />
-                    {child.contactEmail ?? '-'}
-                  </li>
-                </ul>
+                {family ? (
+                  <>
+                    <p className="mb-2 text-xs text-stone">From the paper records</p>
+                    <FamilyParents family={family} />
+                  </>
+                ) : (
+                  <p className="text-sm text-stone">No parent recorded yet.</p>
+                )}
                 {child.claimCode ? (
                   <div className="mt-4 rounded-2xl border border-accent/20 bg-accent/5 p-4">
                     <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-accent">
@@ -265,11 +436,66 @@ export default async function AdminChildProfilePage(props: {
                         confirmMessage="Issue a new code? The current code will stop working."
                       />
                     </div>
-                    <p className="mt-2 text-xs text-stone">The parent types it in the parent portal under &quot;Add a child&quot;.</p>
+                    <p className="mt-2 text-xs text-stone">
+                      The parent types it in the parent portal under &quot;Add a child&quot;
+                      {siblings.length > 0 ? '. It links the brothers and sisters below too.' : '.'}
+                    </p>
                   </div>
                 ) : null}
               </div>
             )}
+          </section>
+
+          <section className={cardClassName}>
+            <CardTitle icon={<Users />} count={siblings.length}>
+              Brothers and sisters
+            </CardTitle>
+            {siblings.length === 0 ? (
+              <p className="mt-3 text-sm text-stone">None linked.</p>
+            ) : (
+              <ul className="mt-4 space-y-2">
+                {siblings.map((s) => (
+                  <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                    <InitialsAvatar name={s.fullName} className="h-8 w-8 text-xs" />
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/admin/children/${s.id}`} className="block truncate text-sm font-semibold text-ink hover:text-accent hover:underline">
+                        {s.fullName}
+                      </Link>
+                      <p className="text-xs text-stone">{s.dateOfBirth ? `Born ${formatDate(s.dateOfBirth)}` : 'No date of birth'}</p>
+                    </div>
+                    {/* Only a shared family can be undone here; children on the
+                        same parent account stay siblings through the account */}
+                    {child.familyId && s.familyId === child.familyId ? (
+                      <form action={unlinkSibling.bind(null, child.id, s.id)}>
+                        <PendingSubmitButton
+                          title={`Take ${s.fullName} out of this family`}
+                          className="rounded-full border border-ink/10 bg-white px-3 py-1 text-xs font-semibold text-stone transition hover:bg-slate-100 hover:text-ink"
+                        >
+                          Unlink
+                        </PendingSubmitButton>
+                      </form>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <details className="mt-4 rounded-2xl border border-dashed border-ink/15 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-accent">+ Link a brother or sister</summary>
+              <form action={linkSibling.bind(null, child.id)} className="mt-4 space-y-3">
+                <ChildPicker
+                  name="siblingId"
+                  options={siblingOptions.filter((o) => !siblingIds.has(o.id))}
+                  inputClassName={inputClassName}
+                  required
+                />
+                <p className="text-xs text-stone">
+                  They will share the same parents&apos; details{child.parentId ? ' and parent account' : ''}; one parent code links them all.
+                </p>
+                <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">
+                  Link
+                </PendingSubmitButton>
+              </form>
+            </details>
           </section>
 
           <section className={cardClassName}>
@@ -312,50 +538,99 @@ export default async function AdminChildProfilePage(props: {
                 {enrollments.map((e) => {
                   const s = e.courseSession;
                   const slotLabel = sessionGroupLabel(timeSlots, s);
-                  const enrollmentPayments = payments.filter((p) => p.enrollmentId === e.id);
+                  const list = payments
+                    .filter((p) => p.enrollmentId === e.id)
+                    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+                  const paidCount = list.filter((p) => paymentState(p, now) === 'paid').length;
                   return (
-                    <li key={e.id} className="rounded-2xl border border-ink/5 bg-slate-50/70 p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="flex items-center gap-2 font-semibold text-ink">
-                          <BookOpen className="h-4 w-4 text-accent" />
-                          {courseOf(s.courseSlug).title.en}
-                        </p>
-                        <span className="text-xs font-semibold text-stone">
-                          {slotLabel ? `${slotLabel} · ` : ''}
-                          {formatSessionDays(s, DAYS)} {s.startTime}-{s.endTime}
-                          {s.teacherId ? ` · ${teacherName.get(s.teacherId) ?? 'Teacher'}` : ' · No teacher yet'}
-                        </span>
+                    <li key={e.id} className="overflow-hidden rounded-2xl border border-ink/10">
+                      <div className="flex flex-wrap items-start justify-between gap-3 bg-slate-50/70 px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-2 font-semibold text-ink">
+                            <BookOpen className="h-4 w-4 text-accent" />
+                            {courseOf(s.courseSlug).title.en}
+                            {e.status === 'PENDING' ? (
+                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[0.7rem] font-bold text-amber-800 ring-1 ring-inset ring-amber-200">
+                                Waiting for approval
+                              </span>
+                            ) : null}
+                          </p>
+                          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {formatSessionDays(s, DAYS)} {s.startTime}-{s.endTime}
+                              {slotLabel ? ` (${slotLabel})` : ''}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 ${s.teacherId ? '' : 'font-semibold text-amber-700'}`}>
+                              <UserRound className="h-3.5 w-3.5" />
+                              {s.teacherId ? (teacherName.get(s.teacherId) ?? 'Teacher') : 'No teacher yet'}
+                            </span>
+                          </p>
+                        </div>
+                        {list.length > 0 ? (
+                          <div className="w-32 shrink-0 text-right">
+                            <p className="text-xs font-semibold text-stone">
+                              <span className="text-ink">{paidCount}</span> of {list.length} paid
+                            </p>
+                            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden>
+                              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${(paidCount / list.length) * 100}%` }} />
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
-                      {enrollmentPayments.length > 0 ? (
-                        <ul className="mt-3 space-y-2">
-                          {enrollmentPayments.map((p) => (
-                            <li key={p.id} className="flex flex-wrap items-center gap-3 text-sm">
-                              <span className={`rounded-full px-3 py-1 text-xs font-bold ${PAYMENT_STYLES[p.status]}`}>{p.status}</span>
-                              <span className="font-semibold text-ink">
-                                {p.amount.toFixed(2)} {p.currency}
-                              </span>
-                              <span className="text-stone">
-                                {p.paymentPlan?.type ?? ''} · {p.paymentPlan?.method ?? ''} · due {formatDate(p.dueDate)}
-                              </span>
-                              {p.status !== 'PAID' ? (
-                                <form action={markChildPaymentPaid.bind(null, child.id, p.id)} className="ml-auto">
-                                  <PendingSubmitButton className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
-                                    Mark paid
-                                  </PendingSubmitButton>
-                                </form>
-                              ) : null}
-                            </li>
-                          ))}
+                      {list.length > 0 ? (
+                        <ul className="divide-y divide-ink/5">
+                          {list.map((p) => {
+                            const state = paymentState(p, now);
+                            return (
+                              <li
+                                key={p.id}
+                                className={`grid grid-cols-[6.5rem_1fr_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm sm:grid-cols-[6.5rem_7.5rem_1fr_6rem_6.5rem] ${
+                                  state === 'overdue' ? 'bg-red-50/40' : ''
+                                }`}
+                              >
+                                <span className={`tabular-nums ${state === 'overdue' ? 'font-semibold text-red-700' : 'text-stone'}`}>
+                                  {formatDate(p.dueDate)}
+                                </span>
+                                <span className="font-semibold tabular-nums text-ink">{money(p.amount, p.currency)}</span>
+                                <span className="hidden truncate text-stone sm:block">
+                                  {[PLAN_LABELS[p.paymentPlan?.type ?? ''], METHOD_LABELS[p.paymentPlan?.method ?? '']].filter(Boolean).join(' · ')}
+                                </span>
+                                <span
+                                  className={`inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ring-inset ${PAYMENT_STATE[state].className}`}
+                                >
+                                  {state === 'paid' ? <CircleCheck className="h-3.5 w-3.5" /> : null}
+                                  {PAYMENT_STATE[state].label}
+                                </span>
+                                <span className="col-span-3 justify-self-start sm:col-span-1 sm:justify-self-end">
+                                  {state === 'paid' ? (
+                                    <span className="text-xs text-stone">{p.paidAt ? formatDate(p.paidAt) : ''}</span>
+                                  ) : (
+                                    <form action={markChildPaymentPaid.bind(null, child.id, p.id)}>
+                                      <PendingSubmitButton className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                                        Mark paid
+                                      </PendingSubmitButton>
+                                    </form>
+                                  )}
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
-                      ) : null}
+                      ) : (
+                        <p className="px-4 py-3 text-sm text-stone">No payments recorded for this course.</p>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             )}
 
-            <details className="mt-4 rounded-2xl border border-dashed border-ink/15 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-accent">+ Enroll in a course</summary>
+            <details className="group mt-4 rounded-2xl border border-dashed border-ink/15 p-4 open:border-solid open:bg-slate-50/50">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-accent [&::-webkit-details-marker]:hidden">
+                <span className="group-open:hidden">+ Enroll in a course</span>
+                <span className="hidden group-open:inline">Enroll in a course</span>
+              </summary>
               <form action={addChildEnrollment.bind(null, child.id)} className="mt-4 space-y-4">
                 <StaffEnrollmentFields options={enrollmentOptions} ageGroupSlug={child.ageGroupSlug} />
                 <PendingSubmitButton className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-accent">

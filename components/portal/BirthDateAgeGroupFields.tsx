@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { detectAgeGroupSlug, schoolYearAge, type AgeRange } from '@/lib/content/age-range';
+import { birthDateBounds } from '@/lib/children/validation';
 
 export type AgeGroupOption = AgeRange & { label: string };
 
@@ -37,6 +38,9 @@ export default function BirthDateAgeGroupFields({
   inputClassName: string;
 }) {
   const [dateOfBirth, setDateOfBirth] = useState(defaultDateOfBirth);
+  // Children are 4 to 18; a date already saved isn't held against an edit
+  const [bounds] = useState(() => birthDateBounds());
+  const changed = dateOfBirth !== defaultDateOfBirth;
   const date = new Date(dateOfBirth);
   const hasDate = Boolean(dateOfBirth) && !Number.isNaN(date.getTime());
   const detectedSlug = hasDate ? detectAgeGroupSlug(groups, date) : null;
@@ -52,6 +56,8 @@ export default function BirthDateAgeGroupFields({
           type="date"
           required
           value={dateOfBirth}
+          min={changed ? bounds.min : undefined}
+          max={changed ? bounds.max : undefined}
           onChange={(e) => setDateOfBirth(e.target.value)}
           className={inputClassName}
         />

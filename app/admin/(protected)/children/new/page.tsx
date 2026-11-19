@@ -3,16 +3,28 @@ import { ArrowLeft, Baby, CalendarClock, History, KeyRound, Users } from 'lucide
 import { requireAdmin } from '@/lib/admin/guard';
 import { createExistingChild } from '@/lib/admin/children-actions';
 import { readContent } from '@/lib/content/store';
-import { ADMIN_BIRTH_DATE_LABELS, adminAgeGroupOptions, loadStaffEnrollmentOptions } from '@/lib/admin/staff-enrollment';
+import { adminAgeGroupOptions, loadStaffEnrollmentOptions } from '@/lib/admin/staff-enrollment';
+import { listDbChildPickerOptions } from '@/lib/db/children';
 import StaffEnrollmentFields from '@/components/admin/StaffEnrollmentFields';
-import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
+import AdminAgeGroupFields from '@/components/admin/AdminAgeGroupFields';
+import DuplicateChildWarning from '@/components/admin/DuplicateChildWarning';
+import FamilyFields from '@/components/admin/FamilyFields';
+import ChildPicker from '@/components/admin/ChildPicker';
 import PastClassesFields from '@/components/admin/PastClassesFields';
 import FormSteps from '@/components/admin/FormSteps';
+import { CHILD_MAX_AGE, CHILD_MIN_AGE, NAME_MAX_LENGTH } from '@/lib/children/validation';
 
 export const dynamic = 'force-dynamic';
 
 const inputClassName = 'w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent';
 const labelClassName = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone';
+
+const FORM_ERRORS: Record<string, string> = {
+  registeredAt: 'Please fill in the registration date.',
+  nameLength: `The child's name can be at most ${NAME_MAX_LENGTH} characters.`,
+  parentNameLength: `Parents' names can be at most ${NAME_MAX_LENGTH} characters.`,
+  age: `The date of birth must make the child between ${CHILD_MIN_AGE} and ${CHILD_MAX_AGE} years old.`,
+};
 
 export default async function NewExistingChildPage(props: { searchParams: Promise<{ error?: string }> }) {
   const searchParams = await props.searchParams;
@@ -21,8 +33,13 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
   // date; the front desk registers new arrivals, so the date is required
   const dateRequired = session.kind === 'secretary';
   const today = new Date().toISOString().slice(0, 10);
-  const enrollmentOptions = await loadStaffEnrollmentOptions();
-  const courseSuggestions = [...new Set((await readContent()).courses.map((c) => c.title.en))];
+  const [enrollmentOptions, content, ageGroups, siblingOptions] = await Promise.all([
+    loadStaffEnrollmentOptions(),
+    readContent(),
+    adminAgeGroupOptions(),
+    listDbChildPickerOptions(),
+  ]);
+  const courseSuggestions = [...new Set(content.courses.map((c) => c.title.en))];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -45,9 +62,7 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
 
       {searchParams.error ? (
         <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
-          {searchParams.error === 'registeredAt'
-            ? 'Please fill in the registration date.'
-            : 'Please fill in the name and date of birth (and the age group if none was detected).'}
+          {FORM_ERRORS[searchParams.error] ?? "Please fill in the child's name."}
         </p>
       ) : null}
 
@@ -57,20 +72,16 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
         steps={[
           {
             title: 'Child',
-            description: 'Who the child is.',
+            description: 'Who the child is. Only the name is required: the rest can be completed later.',
             icon: <Baby />,
             content: (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="block">
+                <label className="block sm:col-span-2">
                   <span className={labelClassName}>Full name</span>
-                  <input name="fullName" required autoFocus className={inputClassName} />
+                  <input name="fullName" required autoFocus maxLength={NAME_MAX_LENGTH} className={inputClassName} />
                 </label>
-                <BirthDateAgeGroupFields
-                  groups={await adminAgeGroupOptions()}
-                  labels={ADMIN_BIRTH_DATE_LABELS}
-                  labelClassName={labelClassName}
-                  inputClassName={inputClassName}
-                />
+                <AdminAgeGroupFields groups={ageGroups} labelClassName={labelClassName} inputClassName={inputClassName} />
+                <DuplicateChildWarning className="sm:col-span-2 empty:hidden" />
                 <label className="block">
                   <span className={labelClassName}>School (optional)</span>
                   <input name="institution" className={inputClassName} />
@@ -85,7 +96,7 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
                     className={inputClassName}
                   />
                 </label>
-                <label className="block">
+                <label className="block sm:col-span-2">
                   <span className={labelClassName}>Special accommodations (optional)</span>
                   <input name="specialNeeds" className={inputClassName} />
                 </label>
@@ -93,24 +104,21 @@ export default async function NewExistingChildPage(props: { searchParams: Promis
             ),
           },
           {
-            title: 'Parent',
+            title: 'Parents',
             description: 'From the paper records. Shown in the children list until the parent links the child.',
             icon: <Users />,
             optional: true,
             content: (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="block sm:col-span-2">
-                  <span className={labelClassName}>Full name</span>
-                  <input name="contactName" className={inputClassName} />
-                </label>
-                <label className="block">
-                  <span className={labelClassName}>Phone</span>
-                  <input name="contactPhone" type="tel" className={inputClassName} />
-                </label>
-                <label className="block">
-                  <span className={labelClassName}>Email</span>
-                  <input name="contactEmail" type="email" className={inputClassName} />
-                </label>
+              <div className="space-y-5">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <span className={labelClassName}>Brother or sister of (optional)</span>
+                  <ChildPicker name="siblingId" options={siblingOptions} inputClassName={`${inputClassName} bg-white`} />
+                  <p className="mt-1.5 text-xs text-stone">
+                    The child joins that family: same parents, and one parent code links them all. Anything typed below fills in what the
+                    family is missing.
+                  </p>
+                </div>
+                <FamilyFields labelClassName={labelClassName} inputClassName={inputClassName} />
               </div>
             ),
           },

@@ -4,8 +4,12 @@ import { ArrowLeft, Baby, Users } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { updateChildDetails } from '@/lib/admin/children-actions';
 import { getDbChild } from '@/lib/db/children';
-import { ADMIN_BIRTH_DATE_LABELS, adminAgeGroupOptions } from '@/lib/admin/staff-enrollment';
-import BirthDateAgeGroupFields from '@/components/portal/BirthDateAgeGroupFields';
+import { getDbFamily, listDbSiblings } from '@/lib/db/families';
+import { getDbPortalProfile } from '@/lib/db/portal-auth';
+import { adminAgeGroupOptions } from '@/lib/admin/staff-enrollment';
+import AdminAgeGroupFields from '@/components/admin/AdminAgeGroupFields';
+import FamilyFields from '@/components/admin/FamilyFields';
+import { CHILD_MAX_AGE, CHILD_MIN_AGE, NAME_MAX_LENGTH } from '@/lib/children/validation';
 import PendingSubmitButton from '@/components/portal/PendingSubmitButton';
 
 export const dynamic = 'force-dynamic';
@@ -13,9 +17,16 @@ export const dynamic = 'force-dynamic';
 const inputClassName = 'w-full rounded-xl border border-ink/10 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-accent';
 const labelClassName = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-stone';
 
+const FORM_ERRORS: Record<string, string> = {
+  registeredAt: 'The registration date is required.',
+  nameLength: `The child's name can be at most ${NAME_MAX_LENGTH} characters.`,
+  parentNameLength: `Parents' names can be at most ${NAME_MAX_LENGTH} characters.`,
+  age: `The date of birth must make the child between ${CHILD_MIN_AGE} and ${CHILD_MAX_AGE} years old.`,
+};
+
 // yyyy-mm-dd for <input type="date">
-function toDateInput(date: Date): string {
-  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+function toDateInput(date: Date | null): string {
+  return !date || Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
 }
 
 function SectionHeader({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
@@ -44,6 +55,13 @@ export default async function EditChildPage(props: {
   // The front desk can't erase a registration date once one is set
   const dateRequired = session.kind === 'secretary' && Boolean(child.registeredAt);
   const profileHref = `/admin/children/${child.id}`;
+  const [family, siblings, ageGroups, account] = await Promise.all([
+    getDbFamily(child.familyId),
+    listDbSiblings(child),
+    adminAgeGroupOptions(),
+    getDbPortalProfile(child.parentId),
+  ]);
+  const familySiblings = siblings.filter((s) => child.familyId && s.familyId === child.familyId);
 
   return (
     <div className="mx-auto max-w-3xl pb-6">
@@ -55,7 +73,7 @@ export default async function EditChildPage(props: {
 
       {searchParams.error ? (
         <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
-          {searchParams.error === 'registeredAt' ? 'The registration date is required.' : 'The name and date of birth are required.'}
+          {FORM_ERRORS[searchParams.error] ?? "The child's name is required."}
         </p>
       ) : null}
 
@@ -63,15 +81,15 @@ export default async function EditChildPage(props: {
         <section className="overflow-hidden rounded-3xl border border-white/60 bg-white shadow-[0_24px_60px_-24px_rgba(30,41,90,0.35)]">
           <SectionHeader icon={<Baby />} title="Child" description="Who the child is." />
           <div className="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-2 sm:px-8">
-            <label className="block">
+            <label className="block sm:col-span-2">
               <span className={labelClassName}>Full name</span>
-              <input name="fullName" required defaultValue={child.fullName} className={inputClassName} />
+              <input name="fullName" required maxLength={NAME_MAX_LENGTH} defaultValue={child.fullName} className={inputClassName} />
             </label>
-            <BirthDateAgeGroupFields
-              groups={await adminAgeGroupOptions()}
+            <AdminAgeGroupFields
+              groups={ageGroups}
               defaultDateOfBirth={toDateInput(child.dateOfBirth)}
               defaultAgeGroupSlug={child.ageGroupSlug}
-              labels={ADMIN_BIRTH_DATE_LABELS}
+              defaultManual={child.ageGroupManual}
               labelClassName={labelClassName}
               inputClassName={inputClassName}
             />
@@ -89,7 +107,7 @@ export default async function EditChildPage(props: {
                 className={inputClassName}
               />
             </label>
-            <label className="block">
+            <label className="block sm:col-span-2">
               <span className={labelClassName}>Special accommodations</span>
               <input name="specialNeeds" defaultValue={child.specialNeeds ?? ''} className={inputClassName} />
             </label>
@@ -99,26 +117,25 @@ export default async function EditChildPage(props: {
         <section className="overflow-hidden rounded-3xl border border-white/60 bg-white shadow-[0_24px_60px_-24px_rgba(30,41,90,0.35)]">
           <SectionHeader
             icon={<Users />}
-            title="Parent contact"
+            title="Parents"
             description={
               child.parentId
-                ? "From the paper records. The linked parent account's own details are shown on the profile."
+                ? 'Parent 1 is the linked parent account. Add the other parent, or extra details from the paper records.'
                 : 'From the paper records. Shown until the parent links the child with the code.'
             }
           />
-          <div className="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-2 sm:px-8">
-            <label className="block sm:col-span-2">
-              <span className={labelClassName}>Full name</span>
-              <input name="contactName" defaultValue={child.contactName ?? ''} className={inputClassName} />
-            </label>
-            <label className="block">
-              <span className={labelClassName}>Phone</span>
-              <input name="contactPhone" type="tel" defaultValue={child.contactPhone ?? ''} className={inputClassName} />
-            </label>
-            <label className="block">
-              <span className={labelClassName}>Email</span>
-              <input name="contactEmail" type="email" defaultValue={child.contactEmail ?? ''} className={inputClassName} />
-            </label>
+          <div className="px-6 py-5 sm:px-8">
+            {familySiblings.length > 0 ? (
+              <p className="mb-4 rounded-2xl bg-accent/5 px-4 py-3 text-sm text-ink">
+                Shared with {familySiblings.map((s) => s.fullName).join(', ')}: changes here apply to the whole family.
+              </p>
+            ) : null}
+            <FamilyFields
+              defaults={family}
+              account={account ? { fullName: account.fullName, phone: account.phone, secondaryPhone: account.secondaryPhone, email: account.email } : null}
+              labelClassName={labelClassName}
+              inputClassName={inputClassName}
+            />
           </div>
         </section>
 

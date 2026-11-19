@@ -17,9 +17,23 @@ export async function courseLookup(): Promise<(slug: string) => CourseEntry> {
   };
 }
 
+// Stands in for the group of a child staff added without a date of birth or
+// a group ("" slug), so pages can still show a label
+export const AGE_GROUP_TO_COMPLETE: AgeGroupEntry = {
+  slug: '',
+  label: { en: 'Age group to complete', fr: "Groupe d'âge à compléter" },
+  description: { en: '', fr: '' },
+  icon: '',
+  image: '',
+  minAge: null,
+  maxAge: null,
+  stage: { en: '', fr: '' },
+};
+
 export async function ageGroupLookup(): Promise<(slug: string) => AgeGroupEntry> {
   const bySlug = new Map((await readContent()).ageGroups.map((g) => [g.slug, g]));
   return (slug) => {
+    if (!slug) return AGE_GROUP_TO_COMPLETE;
     const group = bySlug.get(slug);
     if (!group) throw new Error(`Unknown age group slug "${slug}"`);
     return group;
