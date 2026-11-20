@@ -1,11 +1,11 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { parseAgeRange } from './age-range';
-import { PROGRAM_KEYS } from './types';
+import { PROGRAM_KEYS, COURSES_STORY_TEXT_KEYS } from './types';
 import { DEFAULT_PALMARES } from './palmares-defaults';
 import { DEFAULT_EVENTS } from './events-defaults';
 import { normalizeGaId } from '@/lib/analytics/ga';
-import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings, PalmaresContent, EventsContent } from './types';
+import type { SiteContent, HeroVideo, HeroText, ProgramCard, MethodContent, AboutContent, ContactContent, FaqContent, ProgramKey, LocalizedString, StatEntry, TimelineEntry, CourseEntry, AgeGroupEntry, NewsPost, CalendarEvent, ClassFormat, SummerSchoolSettings, PalmaresContent, EventsContent, CoursesStoryContent, CoursesStoryTextKey } from './types';
 
 // Everything the admin dashboard edits about the public site is one JSON
 // document in the site_content table (see prisma/schema.prisma).
@@ -258,6 +258,145 @@ const DEFAULT_CONTENT: SiteContent = {
         },
       },
     ],
+  },
+  coursesStory: {
+    eyebrow: { en: 'Our courses, ages 4 to 18', fr: 'Nos cours, de 4 à 18 ans' },
+    heading: {
+      en: 'Your child uses technology every day. Here, they *learn to create it*.',
+      fr: 'Votre enfant utilise la technologie chaque jour. Ici, il *apprend à la créer*.',
+    },
+    intro: {
+      en: 'Robotics, coding, electronics, 3D design and entrepreneurship, taught step by step from age 4 to 18. Each stage builds on the last, and every child leaves with projects made with their own hands.',
+      fr: "Robotique, programmation, électronique, design 3D et entrepreneuriat, enseignés pas à pas de 4 à 18 ans. Chaque étape s'appuie sur la précédente, et chaque enfant repart avec des projets construits de ses propres mains.",
+    },
+    problemEyebrow: { en: 'The problem', fr: 'Le constat' },
+    problemHeading: {
+      en: 'Children grow up surrounded by technology, but *few learn how it works*.',
+      fr: 'Les enfants grandissent entourés de technologie, mais *peu apprennent comment elle fonctionne*.',
+    },
+    problemIntro: {
+      en: 'Screens are everywhere. What is missing is the place where a child stops scrolling and starts building.',
+      fr: "Les écrans sont partout. Ce qui manque, c'est l'endroit où l'enfant arrête de faire défiler et commence à construire.",
+    },
+    problems: [
+      {
+        title: { en: 'Watching instead of making', fr: 'Regarder plutôt que créer' },
+        body: {
+          en: 'Most of the time spent on screens is spent consuming. Very little of it teaches a child to imagine, test and build.',
+          fr: 'La plupart du temps passé devant un écran sert à consommer. Très peu apprend à imaginer, tester et construire.',
+        },
+      },
+      {
+        title: { en: 'Theory without practice', fr: 'Beaucoup de théorie, peu de pratique' },
+        body: {
+          en: 'At school, computing often stays on paper: few hands-on hours, few real projects, little room to try and get it wrong.',
+          fr: "À l'école, l'informatique reste souvent sur le papier : peu d'heures pratiques, peu de vrais projets, peu de place pour essayer et se tromper.",
+        },
+      },
+      {
+        title: { en: "Tomorrow's skills are not on the timetable", fr: "Les compétences de demain manquent à l'emploi du temps" },
+        body: {
+          en: 'Logic, teamwork, problem solving and the confidence to present an idea are rarely taught as such.',
+          fr: "La logique, le travail en équipe, la résolution de problèmes et l'aisance pour présenter une idée sont rarement enseignés en tant que tels.",
+        },
+      },
+    ],
+    answerEyebrow: { en: 'Our answer', fr: 'Notre réponse' },
+    answerHeading: {
+      en: 'A place where children *learn by building*, step by step.',
+      fr: 'Un lieu où les enfants *apprennent en construisant*, pas à pas.',
+    },
+    answerIntro: {
+      en: 'At BrainTrain, every session starts with a challenge and ends with something that works. The coach guides; the child imagines, tries, fixes and presents.',
+      fr: "Chez BrainTrain, chaque séance commence par un défi et se termine par quelque chose qui fonctionne. Le coach guide ; l'enfant imagine, essaie, corrige et présente.",
+    },
+    answers: [
+      {
+        title: { en: 'Hands on from the first session', fr: 'Les mains dans le projet dès la première séance' },
+        body: {
+          en: 'Robots, circuits, code and 3D models: children learn the ideas by using them, not by memorising them.',
+          fr: "Robots, circuits, code et modèles 3D : les notions s'apprennent en les utilisant, pas en les récitant.",
+        },
+      },
+      {
+        title: { en: 'A path for every age', fr: 'Un parcours pour chaque âge' },
+        body: {
+          en: 'Four stages from 4 to 18, each with its own courses, pace and goals, so a child is always challenged at the right level.',
+          fr: "Quatre étapes de 4 à 18 ans, chacune avec ses cours, son rythme et ses objectifs, pour que l'enfant soit toujours stimulé à son niveau.",
+        },
+      },
+      {
+        title: { en: 'Small groups, real coaches', fr: 'Petits groupes, vrais coachs' },
+        body: {
+          en: 'The coach follows each child, reviews what has been learned after every module and shows what to strengthen.',
+          fr: "Le coach suit chaque enfant, fait le point après chaque module et montre ce qu'il reste à renforcer.",
+        },
+      },
+      {
+        title: { en: 'Projects that go further', fr: 'Des projets qui vont plus loin' },
+        body: {
+          en: 'Children present their work to their families, and the most motivated go on to national and international competitions.',
+          fr: "Les enfants présentent leurs projets à leurs familles, et les plus motivés vont jusqu'aux compétitions nationales et internationales.",
+        },
+      },
+    ],
+    pathEyebrow: { en: 'The path', fr: 'Le parcours' },
+    pathHeading: {
+      en: 'From first discoveries to real projects, *one step at a time*.',
+      fr: "Des premières découvertes aux vrais projets, *une étape après l'autre*.",
+    },
+    pathIntro: {
+      en: 'Each age group is a stage. A child can join at any age, then move up a stage as they grow.',
+      fr: "Chaque tranche d'âge est une étape. On peut commencer à tout âge, puis monter d'une étape en grandissant.",
+    },
+    pathPitches: {
+      '4-5': {
+        en: 'Your child learns to focus, to share and to put feelings into words while building their first robots by hand. They come out more confident, more curious, and already asking when the next session is.',
+        fr: "Votre enfant apprend à se concentrer, à partager et à exprimer ce qu'il ressent, en construisant ses premiers robots de ses mains. Il en ressort plus confiant, plus curieux, et impatient de revenir la semaine suivante.",
+      },
+      '6-9': {
+        en: 'Here the screen becomes a tool: your child codes their own robot, invents a small project and learns to present it. They find out that a mistake is just a step, and gain a confidence they carry everywhere, classroom included.',
+        fr: "Ici, l'écran devient un outil : votre enfant programme son propre robot, invente un petit projet et apprend à le présenter. Il découvre qu'une erreur n'est qu'une étape, et gagne une confiance qu'il emporte partout, jusqu'en classe.",
+      },
+      '10-13': {
+        en: 'The age where anything becomes possible: electronics, 3D design and code to make real things that work. Your child goes from using technology to inventing it, with a coach by their side at every step.',
+        fr: "L'âge où tout devient possible : électronique, design 3D et programmation pour fabriquer de vrais objets qui fonctionnent. Votre enfant passe de celui qui utilise la technologie à celui qui l'invente, avec un coach à ses côtés à chaque étape.",
+      },
+      '14-18': {
+        en: 'Advanced Python, robotics and entrepreneurship: your teen builds portfolio-worthy projects, prepares for competitions and starts thinking like an engineer or a founder. A real head start for their studies and their future.',
+        fr: "Python avancé, robotique et entrepreneuriat : votre ado construit des projets dignes d'un portfolio, se prépare aux compétitions et pense déjà comme un ingénieur ou un fondateur. Une vraie longueur d'avance pour ses études et son avenir.",
+      },
+    },
+    visionEyebrow: { en: 'Our vision', fr: 'Notre vision' },
+    visionHeading: {
+      en: 'We want every child to leave BrainTrain\nready to *build what does not exist yet*.',
+      fr: "Nous voulons que chaque enfant quitte BrainTrain\nprêt à *construire ce qui n'existe pas encore*.",
+    },
+    visions: [
+      {
+        title: { en: 'Think', fr: 'Penser' },
+        body: {
+          en: 'Break a problem down, reason with logic and find more than one solution.',
+          fr: "Décomposer un problème, raisonner avec logique et trouver plus d'une solution.",
+        },
+      },
+      {
+        title: { en: 'Create', fr: 'Créer' },
+        body: {
+          en: 'Design, code and build their own projects, from the idea to the prototype.',
+          fr: "Concevoir, programmer et construire leurs propres projets, de l'idée au prototype.",
+        },
+      },
+      {
+        title: { en: 'Dare', fr: 'Oser' },
+        body: {
+          en: 'Work as a team, present their ideas with confidence and start something of their own.',
+          fr: 'Travailler en équipe, présenter leurs idées avec assurance et se lancer dans leurs propres projets.',
+        },
+      },
+    ],
+    pickHeading: { en: 'Where does your child start?', fr: 'Par où votre enfant commence-t-il ?' },
+    pickIntro: { en: 'Pick an age group to see its courses.', fr: "Choisissez une tranche d'âge pour voir ses cours." },
   },
   about: {
     images: ['/ALL.png', '/About us 2.jpg', '/About us 1.jpg', '/About us 3.jpg'],
@@ -1563,6 +1702,28 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     })),
   };
 
+  const rawStory: Partial<CoursesStoryContent> = raw.coursesStory ?? {};
+  const ds = DEFAULT_CONTENT.coursesStory;
+  const storyText = (key: CoursesStoryTextKey) => toLocalized(rawStory[key], ds[key]);
+  const storyPoints = (key: 'problems' | 'answers' | 'visions') =>
+    ds[key].map((fallback, i) => ({
+      title: toLocalized(rawStory[key]?.[i]?.title, fallback.title),
+      body: toLocalized(rawStory[key]?.[i]?.body, fallback.body),
+    }));
+  const coursesStory: CoursesStoryContent = {
+    ...(Object.fromEntries(COURSES_STORY_TEXT_KEYS.map((key) => [key, storyText(key)])) as Pick<CoursesStoryContent, CoursesStoryTextKey>),
+    problems: storyPoints('problems'),
+    answers: storyPoints('answers'),
+    visions: storyPoints('visions'),
+    // Saved pitches, then the defaults for any slug never saved
+    pathPitches: Object.fromEntries(
+      [...new Set([...Object.keys(ds.pathPitches), ...Object.keys(rawStory.pathPitches ?? {})])].map((slug) => [
+        slug,
+        toLocalized(rawStory.pathPitches?.[slug], ds.pathPitches[slug] ?? { en: '', fr: '' }),
+      ]),
+    ),
+  };
+
   const footer = { tagline: toLocalized(raw.footer?.tagline, DEFAULT_CONTENT.footer.tagline) };
 
   // Never saved: the default ID. Saved empty (or invalid): tracking is off
@@ -1697,7 +1858,7 @@ function normalize(raw: Partial<SiteContent>): SiteContent {
     })),
   };
 
-  return { ...merged, heroVideo, heroText, programs, method, about, contact, faq, footer, analytics, palmares, events, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
+  return { ...merged, heroVideo, heroText, programs, method, coursesStory, about, contact, faq, footer, analytics, palmares, events, stats, timeline, timelineIntro, courses, ageGroups, news, calendarEvents, classFormat, familyDiscountPercent, summerSchool };
 }
 
 const CONTENT_ID = 'main';

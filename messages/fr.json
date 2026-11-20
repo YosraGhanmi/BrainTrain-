@@ -39,6 +39,14 @@
     "competitions": "Nos réalisations",
     "events": "Notre parcours"
   },
+  "coursesStory": {
+    "seePath": "Voir le parcours",
+    "preregister": "Préinscription",
+    "step": "Étape {number}",
+    "chapters": "Les parties de cette page",
+    "coursesIn": "Cours pour les {group}",
+    "seeCourses": "Voir les cours {group}"
+  },
   "courses": {
     "seeMore": "Voir plus",
     "pickAgeGroup": "Choisissez une tranche d'âge pour voir ses cours.",

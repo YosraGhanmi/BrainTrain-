@@ -316,6 +316,61 @@ export type TimelineIntro = { heading: LocalizedString; intro: LocalizedString }
 
 export type MethodContent = { heading: LocalizedString; intro: LocalizedString; steps: MethodStep[] };
 
+// The Courses page (/courses) tells a story before the age group picker:
+// the problem, BrainTrain's answer, the path from 4 to 18 (one step per age
+// group, from the age groups and their courses), the vision, then the picker.
+// In headings, words wrapped in *stars* are highlighted. A point with an
+// empty title is hidden.
+export const COURSES_STORY_PROBLEM_COUNT = 3;
+export const COURSES_STORY_ANSWER_COUNT = 4;
+export const COURSES_STORY_VISION_COUNT = 3;
+export type CoursesStoryPoint = { title: LocalizedString; body: LocalizedString };
+export type CoursesStoryContent = {
+  eyebrow: LocalizedString;
+  heading: LocalizedString;
+  intro: LocalizedString;
+  problemEyebrow: LocalizedString;
+  problemHeading: LocalizedString;
+  problemIntro: LocalizedString;
+  problems: CoursesStoryPoint[];
+  answerEyebrow: LocalizedString;
+  answerHeading: LocalizedString;
+  answerIntro: LocalizedString;
+  answers: CoursesStoryPoint[];
+  pathEyebrow: LocalizedString;
+  pathHeading: LocalizedString;
+  pathIntro: LocalizedString;
+  // Each step's text for parents, by age group slug; an empty one falls back
+  // to the age group's description
+  pathPitches: Record<string, LocalizedString>;
+  visionEyebrow: LocalizedString;
+  // The big statement; line breaks are kept
+  visionHeading: LocalizedString;
+  visions: CoursesStoryPoint[];
+  pickHeading: LocalizedString;
+  pickIntro: LocalizedString;
+};
+// Every single-text field of the story, for the admin form and the reader
+export const COURSES_STORY_TEXT_KEYS = [
+  'eyebrow',
+  'heading',
+  'intro',
+  'problemEyebrow',
+  'problemHeading',
+  'problemIntro',
+  'answerEyebrow',
+  'answerHeading',
+  'answerIntro',
+  'pathEyebrow',
+  'pathHeading',
+  'pathIntro',
+  'visionEyebrow',
+  'visionHeading',
+  'pickHeading',
+  'pickIntro',
+] as const satisfies readonly (keyof CoursesStoryContent)[];
+export type CoursesStoryTextKey = (typeof COURSES_STORY_TEXT_KEYS)[number];
+
 // The "À propos" page: a flip gallery of photos beside the academy's story.
 // In the heading and the story, words wrapped in *stars* are highlighted;
 // the story's paragraphs are separated by a blank line. Two key facts sit
@@ -348,6 +403,7 @@ export type SiteContent = {
   heroText: HeroText;
   programs: Record<ProgramKey, ProgramCard>;
   method: MethodContent;
+  coursesStory: CoursesStoryContent;
   about: AboutContent;
   // The line under the logo in the footer
   footer: { tagline: LocalizedString };

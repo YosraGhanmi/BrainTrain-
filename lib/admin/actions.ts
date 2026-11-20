@@ -24,6 +24,8 @@ import { DEFAULT_SESSION_TERM } from '@/lib/scheduling/slots';
 import {
   PROGRAM_KEYS,
   PALMARES_HERO_PHOTO_SLOTS,
+  COURSES_STORY_TEXT_KEYS,
+  type CoursesStoryContent,
   type TimelineEntry,
   type LocalizedString,
   type PalmaresCompetition,
@@ -559,6 +561,35 @@ export async function updateMethod(formData: FormData): Promise<void> {
   await writeContent(content);
   revalidatePublicContent();
   redirect('/admin/method?saved=1');
+}
+
+// The story on the Courses page. Every field is optional: an empty point
+// title hides that point, an empty heading hides that line.
+export async function updateCoursesStory(formData: FormData): Promise<void> {
+  await requireAdminOnly();
+  const field = (name: string) => String(formData.get(name) ?? '').trim().slice(0, 600);
+  const localized = (name: string) => ({ en: field(`${name}En`), fr: field(`${name}Fr`) });
+  const content = await readContent();
+  const story = content.coursesStory;
+  const points = (key: 'problems' | 'answers' | 'visions') =>
+    story[key].map((_, i) => ({ title: localized(`${key}${i}Title`), body: localized(`${key}${i}Body`) }));
+  content.coursesStory = {
+    ...(Object.fromEntries(COURSES_STORY_TEXT_KEYS.map((key) => [key, localized(key)])) as Omit<
+      CoursesStoryContent,
+      'problems' | 'answers' | 'visions' | 'pathPitches'
+    >),
+    problems: points('problems'),
+    answers: points('answers'),
+    visions: points('visions'),
+    // One per age group; pitches of age groups no longer listed are kept
+    pathPitches: {
+      ...story.pathPitches,
+      ...Object.fromEntries(content.ageGroups.map((g) => [g.slug, localized(`pathPitch_${g.slug}`)])),
+    },
+  };
+  await writeContent(content);
+  revalidatePublicContent();
+  redirect('/admin/courses-story?saved=1');
 }
 
 export async function updateAbout(formData: FormData): Promise<void> {

@@ -39,7 +39,12 @@ import {
   Compass,
   Info,
   CircleHelp,
+  BookOpenText,
 } from 'lucide-react';
+
+// The page itself or one below it: /admin/courses must not light up on
+// /admin/courses-story
+const isUnder = (pathname: string | null, href: string) => pathname === href || (pathname?.startsWith(`${href}/`) ?? false);
 
 const customizationItems = [
   { label: 'Hero', href: '/admin/hero', icon: Clapperboard },
@@ -48,6 +53,7 @@ const customizationItems = [
   { label: 'About', href: '/admin/about', icon: Info },
   { label: 'Partners', href: '/admin/sponsors', icon: Handshake },
   { label: 'Statistics', href: '/admin/stats', icon: BarChart3 },
+  { label: 'Courses page story', href: '/admin/courses-story', icon: BookOpenText },
   { label: 'Courses', href: '/admin/courses', icon: BookOpen },
   { label: 'Age groups', href: '/admin/age-groups', icon: Users },
   { label: 'Contact', href: '/admin/contact', icon: Mail },
@@ -126,7 +132,7 @@ export default function SidebarNav({
   noticeBadges?: Record<string, number>;
 }) {
   const pathname = usePathname();
-  const isChildActive = customizationItems.some((item) => pathname?.startsWith(item.href));
+  const isChildActive = customizationItems.some((item) => isUnder(pathname, item.href));
   const [open, setOpen] = useState(true);
   const [closedSections, setClosedSections] = useState<Set<string>>(new Set());
   const toggleSection = (key: string) =>
@@ -165,7 +171,7 @@ export default function SidebarNav({
 
   if (role === 'secretary') {
     const flatLink = (href: string, label: string, Icon: typeof Inbox, badge = 0, badgeClass = 'bg-amber-500') => {
-      const active = href === '/admin' ? pathname === '/admin' : (pathname?.startsWith(href) ?? false);
+      const active = href === '/admin' ? pathname === '/admin' : isUnder(pathname, href);
       return (
         <Link key={href} href={href} className={linkClass(active)}>
           <span className={iconClass(active)}>
@@ -195,7 +201,7 @@ export default function SidebarNav({
         </p>
         <div className="flex flex-col gap-1 border-l border-emerald-200 pl-2">
           {secretaryAccountItems.map((item) => {
-            const active = pathname?.startsWith(item.href) ?? false;
+            const active = isUnder(pathname, item.href);
             const Icon = item.icon;
             return (
               <Link key={item.href} href={item.href} className={linkClass(active)}>
@@ -253,7 +259,7 @@ export default function SidebarNav({
           {open && (
             <div className="mt-1 flex flex-col gap-1 border-l border-accent2/20 pl-2">
               {customizationItems.map((item) => {
-                const active = pathname?.startsWith(item.href) ?? false;
+                const active = isUnder(pathname, item.href);
                 const Icon = item.icon;
                 return (
                   <Link key={item.href} href={item.href} className={linkClass(active)}>
@@ -271,7 +277,7 @@ export default function SidebarNav({
 
       {portalSections.map((section) => {
         const sectionOpen = !closedSections.has(section.key);
-        const sectionActive = section.items.some((item) => pathname?.startsWith(item.href));
+        const sectionActive = section.items.some((item) => isUnder(pathname, item.href));
         // While collapsed, surface the section's unread count on its header
         const sectionBadge = section.items.reduce((sum, item) => sum + badgeFor(item.href), 0);
         const SectionIcon = section.icon;
@@ -301,7 +307,7 @@ export default function SidebarNav({
             {sectionOpen && (
               <div className="mt-1 flex flex-col gap-1 border-l border-emerald-200 pl-2">
                 {section.items.map((item) => {
-                  const active = pathname?.startsWith(item.href) ?? false;
+                  const active = isUnder(pathname, item.href);
                   const Icon = item.icon;
                   const badge = badgeFor(item.href);
                   return (

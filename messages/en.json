@@ -39,6 +39,14 @@
     "competitions": "Our achievements",
     "events": "Our journey"
   },
+  "coursesStory": {
+    "seePath": "See the path",
+    "preregister": "Pre-register",
+    "step": "Step {number}",
+    "chapters": "The parts of this page",
+    "coursesIn": "Courses for {group}",
+    "seeCourses": "See the {group} courses"
+  },
   "courses": {
     "seeMore": "See more",
     "pickAgeGroup": "Pick an age group to see its courses.",

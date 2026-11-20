@@ -415,3 +415,243 @@ section {
     transform: none;
   }
 }
+
+/* Courses page story: blocks rise in as they scroll into view. Scroll-driven
+   CSS only, so a browser without it (or a visitor who asked for less motion)
+   simply shows everything, and nothing is ever left hidden. */
+@keyframes story-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .story-reveal {
+      animation: story-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+/* Courses page path: the line fills with colour as the page passes it, each
+   step's number pops in, its card slides in from the right and its photo is
+   wiped open. Same rule: without scroll-driven CSS, all is simply shown. */
+@keyframes path-line {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+@keyframes path-dot {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes path-card {
+  from {
+    opacity: 0;
+    transform: translateX(72px) rotate(1.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes path-photo {
+  from {
+    clip-path: inset(0 100% 0 0 round 1.25rem);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 1.25rem);
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .path-line {
+      animation: path-line linear both;
+      animation-timeline: view();
+      /* Filled down to the middle of the screen */
+      animation-range: cover 50vh cover calc(100% - 50vh);
+    }
+    .path-dot {
+      animation: path-dot linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 30%;
+    }
+    .path-card {
+      animation: path-card linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+    .path-photo {
+      animation: path-photo linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 40%;
+    }
+  }
+}
+
+/* Courses page road: the road unrolls from the left, then its stops rise in
+   one after another. Without motion everything is simply there. */
+@keyframes road-reveal {
+  from {
+    clip-path: inset(-40px calc(100% + 50vw) -40px -50vw);
+  }
+  to {
+    clip-path: inset(-40px -50vw -40px -50vw);
+  }
+}
+@keyframes road-stop {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .road-reveal {
+    animation: road-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+  }
+  .road-stop {
+    animation: road-stop 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* The little walker on the Courses page road: legs and arms swing from the
+   hip and shoulder; a tap makes him fall forward along the road, bounce,
+   lie still a moment, then spring back up */
+.walker-leg {
+  transform-origin: 12px 24px;
+  animation: walker-swing 0.9s ease-in-out infinite alternate;
+}
+.walker-arm {
+  transform-origin: 12px 14px;
+  animation: walker-swing-arm 0.9s ease-in-out infinite alternate;
+}
+.walker-leg-back,
+.walker-arm-back {
+  animation-delay: -0.9s;
+}
+.walker-falling .walker-leg,
+.walker-falling .walker-arm {
+  animation-play-state: paused;
+}
+.walker-falling {
+  animation: walker-fall 1.9s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+@keyframes walker-swing {
+  from {
+    transform: rotate(20deg);
+  }
+  to {
+    transform: rotate(-20deg);
+  }
+}
+@keyframes walker-swing-arm {
+  from {
+    transform: rotate(-24deg);
+  }
+  to {
+    transform: rotate(24deg);
+  }
+}
+@keyframes walker-fall {
+  0% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(96deg);
+  }
+  27% {
+    transform: rotate(82deg);
+  }
+  33% {
+    transform: rotate(90deg);
+  }
+  66% {
+    transform: rotate(90deg);
+  }
+  82% {
+    transform: rotate(-10deg);
+  }
+  91% {
+    transform: rotate(4deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .walker-leg,
+  .walker-arm {
+    animation: none;
+  }
+  .walker-leg-back {
+    transform: rotate(-12deg);
+  }
+  .walker-leg:not(.walker-leg-back) {
+    transform: rotate(12deg);
+  }
+}
+
+/* Courses page opening photos: on hover a border in the stage's colour
+   (--photo-color) fades in around the photo and keeps turning. Without
+   motion it simply appears, still. */
+@property --photo-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.photo-frame {
+  position: relative;
+  isolation: isolate;
+}
+.photo-frame::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: calc(1.75rem + 3px);
+  background: conic-gradient(
+    from var(--photo-angle),
+    var(--photo-color),
+    transparent 25%,
+    var(--photo-color) 50%,
+    transparent 75%,
+    var(--photo-color)
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.photo-frame:hover::before,
+.photo-frame:focus-visible::before {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .photo-frame:hover::before,
+  .photo-frame:focus-visible::before {
+    animation: photo-spin 3.5s linear infinite;
+  }
+}
+@keyframes photo-spin {
+  to {
+    --photo-angle: 360deg;
+  }
+}
