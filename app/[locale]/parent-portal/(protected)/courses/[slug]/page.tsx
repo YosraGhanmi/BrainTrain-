@@ -14,7 +14,7 @@ import { applyDiscount, getFamilyDiscountPercent } from '@/lib/pricing/family-di
 import { formatSummerDates, isCourseOffered } from '@/lib/content/summer';
 import { enrollChild } from '@/lib/enrollment/actions';
 import { formatSessionDays, sessionDays, sessionsConflict } from '@/lib/scheduling/slots';
-import { sessionGroupLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
+import { currentSessionTimes, getActiveTimetable, sessionGroupLabel } from '@/lib/scheduling/time-slots';
 import CourseIllustration from '@/components/illustrations/CourseIllustration';
 import CurriculumTimeline from '@/components/course/CurriculumTimeline';
 import EnrollWizard from '@/components/portal/EnrollWizard';
@@ -89,9 +89,9 @@ export default async function CourseDetailPage(
     points: phase.points.map((point) => point[params.locale] || point.en),
   }));
 
-  const [sessions, timeSlots] = await Promise.all([
+  const [sessions, timetable] = await Promise.all([
     listDbSessionsWithCountsByCourse(params.slug),
-    listTimeSlots(),
+    getActiveTimetable(),
   ]);
 
   const otherEnrollments = await listDbEnrollmentsWithSessionsByChild(child.id, ['PENDING', 'ACTIVE']);
@@ -101,17 +101,20 @@ export default async function CourseDetailPage(
 
   // This child's whole schedule (every course, not just this one) — used to
   // flag groups here that would double-book them at the same day/time.
+  // Clashes are checked on the stored school-year times; parents are shown
+  // the Ramadan times while the Ramadan timetable is on.
   const groups = sessions.map((s, i) => {
     const conflict = otherEnrollments.find(
       (e) => e.courseSessionId !== s.id && sessionsConflict(s, e.courseSession)
     );
+    const shown = currentSessionTimes(s, timetable);
     return {
       id: s.id,
-      label: sessionGroupLabel(timeSlots, s) ?? `G${i + 1}`,
-      dayOfWeek: s.dayOfWeek,
-      daysLabel: sessionDays(s).length > 1 ? formatSessionDays(s, DAYS) : null,
-      startTime: s.startTime,
-      endTime: s.endTime,
+      label: sessionGroupLabel(timetable.slots, shown) ?? `G${i + 1}`,
+      dayOfWeek: shown.dayOfWeek,
+      daysLabel: sessionDays(shown).length > 1 ? formatSessionDays(shown, DAYS) : null,
+      startTime: shown.startTime,
+      endTime: shown.endTime,
       location: s.location,
       seatsLeft: s.capacity - s.enrollmentCount,
       enrolled: enrolledSessionIds.has(s.id),

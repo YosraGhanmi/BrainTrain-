@@ -5,7 +5,7 @@ import { requireTeacher } from '@/lib/portal-auth/guard';
 import { courseLookup } from '@/lib/content/lookup';
 import { getIcon } from '@/lib/content/icons';
 import { localized } from '@/lib/i18n/format';
-import { sessionGroupLabel, listTimeSlots } from '@/lib/scheduling/time-slots';
+import { currentSessionTimes, getActiveTimetable, sessionGroupLabel } from '@/lib/scheduling/time-slots';
 import { formatSessionDays } from '@/lib/scheduling/slots';
 import { listDbSessionsWithCountsByTeacher } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
@@ -19,10 +19,13 @@ export default async function TeacherDashboardPage(props: { params: Promise<{ lo
   const t = await getTranslations({ locale: params.locale, namespace: 'teacherPortal.dashboard' });
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const DAYS = tc.raw('days') as string[];
-  const [sessions, timeSlots] = await Promise.all([
+  const [storedSessions, timetable] = await Promise.all([
     listDbSessionsWithCountsByTeacher(teacher.teacherId),
-    listTimeSlots(),
+    getActiveTimetable(),
   ]);
+  const timeSlots = timetable.slots;
+  // At their Ramadan times while the Ramadan timetable is on
+  const sessions = storedSessions.map((s) => currentSessionTimes(s, timetable));
 
   return (
     <div>

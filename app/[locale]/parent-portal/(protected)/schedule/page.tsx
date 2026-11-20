@@ -12,6 +12,7 @@ import { isInSummer } from '@/lib/content/summer';
 import type { AppLocale } from '@/i18n/routing';
 import { listDbChildren } from '@/lib/db/children';
 import { listDbEnrollmentsWithSessionsByChild } from '@/lib/db/read-models';
+import { currentSessionTimes, getActiveTimetable } from '@/lib/scheduling/time-slots';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +55,12 @@ export default async function ParentSchedulePage(
 
   const child = children.find((entry) => entry.id === selected.id) ?? null;
   if (!child) return null;
-  const enrollments = await listDbEnrollmentsWithSessionsByChild(child.id, ['ACTIVE']);
+  const [storedEnrollments, timetable] = await Promise.all([
+    listDbEnrollmentsWithSessionsByChild(child.id, ['ACTIVE']),
+    getActiveTimetable(),
+  ]);
+  // At their Ramadan times while the Ramadan timetable is on
+  const enrollments = storedEnrollments.map((e) => ({ ...e, courseSession: currentSessionTimes(e.courseSession, timetable) }));
 
   const byDayOfWeek = new Map<number, typeof enrollments>();
   for (const e of enrollments) {

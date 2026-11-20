@@ -116,7 +116,8 @@ async function parseBirthAndGroup(formData: FormData) {
 // sessions page yet is created on the spot (no teacher, default capacity).
 async function findOrCreateSession(courseSlug: string, timeSlotId: string): Promise<DbCourseSession | null> {
   const slot = timeSlotId ? await getDbTimeSlot(timeSlotId) : null;
-  if (!slot) return null;
+  // Groups store their school-year slot, never a Ramadan one
+  if (!slot || slot.ramadan) return null;
   const sameSlot = (s: DbCourseSession) =>
     s.dayOfWeek === slot.dayOfWeek && s.startTime === slot.startTime && s.endTime === slot.endTime;
 

@@ -41,7 +41,7 @@ import { listDbTeacherNotesByChild } from '@/lib/db/teacher-notes';
 import { listDbCourseSessions } from '@/lib/db/sessions';
 import { listDbTeachers } from '@/lib/db/teachers';
 import { listDbEnrollmentsWithSessionsByChild, listDbPaymentsWithRelationsByChild } from '@/lib/db/read-models';
-import { listTimeSlots, sessionGroupLabel } from '@/lib/scheduling/time-slots';
+import { currentSessionTimes, getActiveTimetable, sessionGroupLabel } from '@/lib/scheduling/time-slots';
 import { formatSessionDays } from '@/lib/scheduling/slots';
 import { loadStaffEnrollmentOptions } from '@/lib/admin/staff-enrollment';
 import StaffEnrollmentFields from '@/components/admin/StaffEnrollmentFields';
@@ -175,7 +175,7 @@ export default async function AdminChildProfilePage(props: {
   if (!child) notFound();
   const registeredOn = registrationDate(child);
 
-  const [parent, family, siblings, siblingOptions, ageGroups, enrollments, payments, badges, notes, sessions, teachers, timeSlots, enrollmentOptions] = await Promise.all([
+  const [parent, family, siblings, siblingOptions, ageGroups, enrollments, payments, badges, notes, sessions, teachers, timetable, enrollmentOptions] = await Promise.all([
     getDbPortalProfile(child.parentId),
     getDbFamily(child.familyId),
     listDbSiblings(child),
@@ -187,9 +187,10 @@ export default async function AdminChildProfilePage(props: {
     listDbTeacherNotesByChild(child.id),
     listDbCourseSessions(),
     listDbTeachers(),
-    listTimeSlots(),
+    getActiveTimetable(),
     loadStaffEnrollmentOptions(),
   ]);
+  const timeSlots = timetable.slots;
 
   const teacherName = new Map(teachers.map((t) => [t.id, t.fullName]));
   const sessionById = new Map(sessions.map((s) => [s.id, s]));
@@ -536,7 +537,8 @@ export default async function AdminChildProfilePage(props: {
             ) : (
               <ul className="mt-4 space-y-3">
                 {enrollments.map((e) => {
-                  const s = e.courseSession;
+                  // At its Ramadan time while the Ramadan timetable is on
+                  const s = currentSessionTimes(e.courseSession, timetable);
                   const slotLabel = sessionGroupLabel(timeSlots, s);
                   const list = payments
                     .filter((p) => p.enrollmentId === e.id)

@@ -1,8 +1,8 @@
-// The school's weekly timetable used to be this hardcoded list; it now lives
-// in the TimeSlot table, editable from /admin/time-slots (see
-// lib/scheduling/time-slots.ts for the DB-backed lookup/CRUD). This literal
-// copy survives only as the initial seed data — see prisma/seed.ts — so a
-// fresh database starts with the same 10 groups the school has always used.
+// The school's default weekly timetables. The live ones are in the TimeSlot
+// table, editable from /admin/time-slots. These lists are what the
+// 20261120000000_ramadan_time_slots migration fills an empty table with, and
+// what the "Restore defaults" button on that page puts back. Keep the two in
+// step.
 export const DEFAULT_TIME_SLOTS = [
   { label: 'G1', dayOfWeek: 3, startTime: '14:00', endTime: '16:00' }, // Wednesday
   { label: 'G2', dayOfWeek: 3, startTime: '16:00', endTime: '18:00' },
@@ -14,6 +14,20 @@ export const DEFAULT_TIME_SLOTS = [
   { label: 'G8', dayOfWeek: 6, startTime: '16:00', endTime: '18:00' },
   { label: 'G9', dayOfWeek: 0, startTime: '09:00', endTime: '11:00' }, // Sunday
   { label: 'G10', dayOfWeek: 0, startTime: '11:00', endTime: '13:00' },
+] as const;
+
+// Ramadan: shorter classes, and G2 moves from Wednesday to Sunday
+export const DEFAULT_RAMADAN_TIME_SLOTS = [
+  { label: 'G1', dayOfWeek: 3, startTime: '13:00', endTime: '14:40' }, // Wednesday
+  { label: 'G2', dayOfWeek: 0, startTime: '13:00', endTime: '14:40' }, // Sunday
+  { label: 'G3', dayOfWeek: 5, startTime: '13:00', endTime: '14:40' }, // Friday
+  { label: 'G4', dayOfWeek: 5, startTime: '14:50', endTime: '16:30' },
+  { label: 'G5', dayOfWeek: 6, startTime: '09:00', endTime: '10:40' }, // Saturday
+  { label: 'G6', dayOfWeek: 6, startTime: '11:00', endTime: '12:40' },
+  { label: 'G7', dayOfWeek: 6, startTime: '13:00', endTime: '14:40' },
+  { label: 'G8', dayOfWeek: 6, startTime: '14:50', endTime: '16:30' },
+  { label: 'G9', dayOfWeek: 0, startTime: '09:00', endTime: '10:40' }, // Sunday
+  { label: 'G10', dayOfWeek: 0, startTime: '11:00', endTime: '12:40' },
 ] as const;
 
 // Every course runs the same school year — admins don't set a start date per

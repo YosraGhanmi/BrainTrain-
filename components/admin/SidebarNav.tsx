@@ -214,7 +214,11 @@ export default function SidebarNav({
           })}
         </div>
 
-        <div className="mt-4">{flatLink('/admin/timetable', 'Calendar', CalendarDays)}</div>
+        <div className="mt-4 flex flex-col gap-1">
+          {flatLink('/admin/timetable', 'Calendar', CalendarDays)}
+          {flatLink('/admin/sessions', 'Course sessions', CalendarClock)}
+          {flatLink('/admin/time-slots', 'Time slots', Clock4)}
+        </div>
       </nav>
     );
   }

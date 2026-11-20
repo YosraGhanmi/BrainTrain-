@@ -289,8 +289,9 @@ export async function deleteChild(childId: string): Promise<void> {
 // Course sessions
 // ---------------------------------------------------------------------------
 
+// Admin and Reception both manage groups
 export async function upsertCourseSession(formData: FormData): Promise<void> {
-  await requireAdminOnly();
+  await requireAdmin();
   const id = field(formData, 'id');
   const courseSlug = field(formData, 'courseSlug');
   const teacherId = field(formData, 'teacherId');
@@ -302,7 +303,8 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
 
   // Summer groups are managed on the Summer school page
   const summerCourse = (await readContent()).courses.some((c) => c.slug === courseSlug && c.summer);
-  if (!courseSlug || !location || !slot || summerCourse) {
+  // Groups store their school-year slot; the Ramadan one follows from its label
+  if (!courseSlug || !location || !slot || slot.ramadan || summerCourse) {
     redirect('/admin/sessions?error=1');
   }
 
@@ -339,7 +341,7 @@ export async function upsertCourseSession(formData: FormData): Promise<void> {
 }
 
 export async function deleteCourseSession(id: string): Promise<void> {
-  await requireAdminOnly();
+  await requireAdmin();
   await deleteDbCourseSession(id);
   redirect('/admin/sessions?saved=1');
 }

@@ -1,7 +1,7 @@
-import { requireAdminOnly } from '@/lib/admin/guard';
+import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { upsertCourseSession, deleteCourseSession } from '@/lib/admin/portal-actions';
-import { listTimeSlots, sessionGroupLabel } from '@/lib/scheduling/time-slots';
+import { currentSessionTimes, getActiveTimetable, sessionGroupLabel } from '@/lib/scheduling/time-slots';
 import { formatSessionDays } from '@/lib/scheduling/slots';
 import { listDbCourseSessions } from '@/lib/db/sessions';
 import { listDbTeachers } from '@/lib/db/teachers';
@@ -17,15 +17,16 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 export default async function AdminSessionsPage(props: { searchParams: Promise<{ error?: string; saved?: string }> }) {
   const searchParams = await props.searchParams;
-  await requireAdminOnly();
-  const [sessions, teachers, content, timeSlots, enrollmentCounts] = await Promise.all([
+  await requireAdmin();
+  const [sessions, teachers, content, timetable, enrollmentCounts] = await Promise.all([
     listDbCourseSessions(),
     listDbTeachers(),
     (await readContent()),
-    listTimeSlots(),
+    getActiveTimetable(),
     prisma.enrollment.groupBy({ by: ['courseSessionId'], _count: { _all: true } }),
   ]);
 
+  const timeSlots = timetable.slots;
   // Enrollment count per session
   const enrollmentCountBySession = new Map(enrollmentCounts.map((row) => [row.courseSessionId ?? '', row._count._all]));
   const teacherById = new Map(teachers.map((t) => [t.id, t]));
@@ -111,6 +112,8 @@ export default async function AdminSessionsPage(props: { searchParams: Promise<{
             {sessions.map((s) => {
               const course = content.courses.find((c) => c.slug === s.courseSlug);
               const slotLabel = sessionGroupLabel(timeSlots, s);
+              const now = currentSessionTimes(s, timetable);
+              const ramadanMoved = now !== s;
               const teacher = s.teacherId ? teacherById.get(s.teacherId) : null;
               const enrollmentCount = enrollmentCountBySession.get(s.id) ?? 0;
               return (
@@ -123,6 +126,11 @@ export default async function AdminSessionsPage(props: { searchParams: Promise<{
                   <td className="px-5 py-4 text-stone">
                     {formatSessionDays(s, DAYS)} {s.startTime}–{s.endTime}
                     {s.location ? ` · ${s.location}` : ''}
+                    {ramadanMoved ? (
+                      <span className="mt-1 block text-xs font-semibold text-amber-700">
+                        Ramadan: {formatSessionDays(now, DAYS)} {now.startTime}–{now.endTime}
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-5 py-4 text-stone">{teacher?.fullName ?? '—'}</td>
                   <td className="px-5 py-4 text-stone">

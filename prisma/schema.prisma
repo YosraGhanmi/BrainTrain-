@@ -164,15 +164,20 @@ model Child {
   @@map("children")
 }
 
+// A named slot of the weekly timetable (G1, G2, ...). The school year and
+// Ramadan each have their own set: while the Ramadan timetable is switched
+// on, a group meets at the Ramadan slot that shares its label
 model TimeSlot {
   id        String   @id @default(cuid())
-  label     String   @unique
+  label     String
+  ramadan   Boolean  @default(false)
   dayOfWeek Int
   startTime String
   endTime   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([label, ramadan])
   @@map("time_slots")
 }
 

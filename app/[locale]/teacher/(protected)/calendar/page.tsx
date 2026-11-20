@@ -8,6 +8,7 @@ import { localized } from '@/lib/i18n/format';
 import { formatSessionDays, sessionDays } from '@/lib/scheduling/slots';
 import { isInSummer } from '@/lib/content/summer';
 import { readContent } from '@/lib/content/store';
+import { currentSessionTimes, getActiveTimetable } from '@/lib/scheduling/time-slots';
 import { listDbSessionsWithCountsByTeacher } from '@/lib/db/read-models';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -38,7 +39,12 @@ export default async function TeacherCalendarPage(
   const tc = await getTranslations({ locale: params.locale, namespace: 'common' });
   const WEEKDAYS = tc.raw('daysShort') as string[];
   const MONTH_NAMES = tc.raw('months') as string[];
-  const sessions = await listDbSessionsWithCountsByTeacher(teacher.teacherId);
+  const [storedSessions, timetable] = await Promise.all([
+    listDbSessionsWithCountsByTeacher(teacher.teacherId),
+    getActiveTimetable(),
+  ]);
+  // At their Ramadan times while the Ramadan timetable is on
+  const sessions = storedSessions.map((s) => currentSessionTimes(s, timetable));
 
   const byDayOfWeek = new Map<number, typeof sessions>();
   for (const s of sessions) {

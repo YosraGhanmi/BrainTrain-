@@ -3,7 +3,7 @@ import { Clock, MapPin, Pin, UserRound, Users } from 'lucide-react';
 import { requireAdmin } from '@/lib/admin/guard';
 import { readContent } from '@/lib/content/store';
 import { getIcon } from '@/lib/content/icons';
-import { listTimeSlots, sessionGroupLabel } from '@/lib/scheduling/time-slots';
+import { currentSessionTimes, getActiveTimetable, sessionGroupLabel } from '@/lib/scheduling/time-slots';
 import { sessionDays } from '@/lib/scheduling/slots';
 import { listDbCourseSessions } from '@/lib/db/sessions';
 import { listDbTeachers } from '@/lib/db/teachers';
@@ -17,21 +17,24 @@ const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 // Read-only weekly timetable of every group, for Reception (and Admin) to
 // answer "when does this group meet / who teaches it / is there a seat".
-// Editing groups stays on the admin-only Course sessions page. School-year
-// and summer groups never run at the same time, so they're shown apart.
+// Groups are edited on the Course sessions page. School-year and summer
+// groups never run at the same time, so they're shown apart. While the
+// Ramadan timetable is on, school-year groups show their Ramadan times.
 export default async function AdminTimetablePage(props: { searchParams: Promise<{ season?: string }> }) {
   const summerView = (await props.searchParams).season === 'summer';
   await requireAdmin();
-  const [allSessions, teachers, timeSlots, seatCounts, content] = await Promise.all([
+  const [allSessions, teachers, timetable, seatCounts, content] = await Promise.all([
     listDbCourseSessions(),
     listDbTeachers(),
-    listTimeSlots(),
+    getActiveTimetable(),
     // Same statuses the capacity check counts as a taken seat
     prisma.enrollment.groupBy({ by: ['courseSessionId'], where: { status: { in: ['PENDING', 'ACTIVE'] } }, _count: { _all: true } }),
     (await readContent()),
   ]);
   const { courses, ageGroups, calendarEvents } = content;
-  const sessions = allSessions.filter((s) => s.summer === summerView);
+  const timeSlots = timetable.slots;
+  const sessions = allSessions.filter((s) => s.summer === summerView).map((s) => currentSessionTimes(s, timetable));
+  const ramadanShown = timetable.ramadanActive && !summerView;
 
   const seatsBySession = new Map(seatCounts.map((row) => [row.courseSessionId ?? '', row._count._all]));
   const teacherById = new Map(teachers.map((t) => [t.id, t]));
@@ -74,6 +77,16 @@ export default async function AdminTimetablePage(props: { searchParams: Promise<
           </Link>
         ))}
       </div>
+
+      {ramadanShown ? (
+        <p className="mt-4 max-w-2xl rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Ramadan timetable is on: groups are shown at their Ramadan times. Switch it off on the{' '}
+          <Link href="/admin/time-slots" className="font-semibold underline">
+            Time slots
+          </Link>{' '}
+          page when Ramadan ends.
+        </p>
+      ) : null}
 
       {days.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-dashed border-ink/15 bg-white p-10 text-center text-stone">
